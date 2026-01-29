@@ -17,6 +17,7 @@ export async function getRIByKode(ri_kode: string): Promise<RI> {
 }
 
 export async function createRI(data: any): Promise<boolean> {
+  try{
   const payload = {
     ri_kode: data.ri_kode,
     po_id: data.po_id,
@@ -37,6 +38,9 @@ export async function createRI(data: any): Promise<boolean> {
 
   const res = await api.post("/receive", payload);
   return res.data.status === true;
+} catch (err: any) {
+    throw err; // lempar ke component
+}
 }
 
 

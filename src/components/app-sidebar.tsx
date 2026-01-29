@@ -148,6 +148,11 @@ export function AppSidebar({
 }) {
   const location = useLocation()
   const currentPath = location.pathname
+  const isFiananceMarketing = user.role === "finance" || user.role === "marketing";
+  const visibleNavMain = isFiananceMarketing ? data.navMain.filter(
+    (item) => item.title === "Stock Out"
+  )
+  : data.navMain;
 
   const markActive = (items: typeof data.navMain) =>
     items.map((item) => ({
@@ -170,7 +175,7 @@ export function AppSidebar({
         {user.role === "admin" && (
           <NavMain label="Admin" items={markActive(data.navAdmin)} />
         )}
-        <NavMain items={markActive(data.navMain)} />
+        <NavMain items={markActive(visibleNavMain)} />
         <NavMain label="About" items={markActive(data.navSecondary)} />
       </SidebarContent>
 

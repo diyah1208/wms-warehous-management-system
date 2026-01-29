@@ -37,3 +37,16 @@ export async function downloadStockExcel() {
   window.URL.revokeObjectURL(url);
 }
 
+export async function importStockExcel(file: File): Promise<boolean> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await api.post("/stock/import", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return res.data.status === true;
+}
+

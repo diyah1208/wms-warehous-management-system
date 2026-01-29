@@ -23,9 +23,9 @@ export default function WithSidebar({ children }: WithSidebarProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return <SkeletonContent />;
-  }
+  // if (loading) {
+  //   return <SkeletonContent />;
+  // }
 
   return (
     <SidebarProvider>

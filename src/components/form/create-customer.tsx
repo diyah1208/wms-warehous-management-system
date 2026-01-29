@@ -42,8 +42,8 @@ export default function CreateCustomerForm({
         return;
       }
 
-         if (telephone.length < 11 || telephone.length > 13) {
-    toast.error("Nomor telepon harus 11-13 digit");
+         if (telephone.length < 8 || telephone.length > 13) {
+    toast.error("Nomor telepon harus 8-13 digit");
     return;
   }
     }

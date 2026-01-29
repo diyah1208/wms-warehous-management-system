@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useState } from "react";
 import SignaturePad from "@/components/signature-pad";
@@ -18,7 +17,7 @@ export default function PRSign() {
     try {
       setLoading(true);
       await submitSignature(kode, signature);
-
+ decodeURIComponent(kode!), 
       setSubmitted(true);
       toast.success("Tanda tangan berhasil disimpan!");
     } catch (error) {

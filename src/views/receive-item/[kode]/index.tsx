@@ -110,7 +110,7 @@ export function ReceiveDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`http://10.10.6.175:5173/receive/sign/${encodeURIComponent(
+              value={`http://192.168.21.144:5173/receive/sign/${encodeURIComponent(
                 ri.ri_kode
               )}`}
               size={200}
@@ -193,7 +193,8 @@ export function ReceiveDetail() {
           </div>
         </SectionBody>
         <SectionFooter>
-          {ri.ri_lokasi == user!.lokasi &&(
+          {ri.ri_lokasi == user!.lokasi &&
+          !ri.signed_penerima_sign &&(
             <Button
                 variant="outline"
                 onClick={() => setShowSignature(true)}

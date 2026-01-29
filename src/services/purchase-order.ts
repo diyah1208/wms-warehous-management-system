@@ -46,15 +46,11 @@ export async function getPoByKode(
   po_kode: string
 ): Promise<POReceive | null> {
   try {
-    const res = await api.get(
-      `${BASE_URL}/kode/${encodeURIComponent(po_kode)}`
-    );
-
+    const res = await api.get(`/po/kode/${po_kode}`);
     return res.data ?? null;
   } catch (error: any) {
     if (error.response?.status === 404) return null;
-    console.error("Error fetching PR by kode:", error);
-    throw new Error("Failed to fetch PR by kode");
+    throw error;
   }
 }
 
@@ -103,35 +99,38 @@ export async function updatePO(
   return res.data?.status === true;
 }
 
-export async function submitSignature(kode: string, signatureBase64: string) {
-  const res = await api.post("/po/sign", {
-    kode,
+export async function submitSignature(
+  kode: string,
+  signatureBase64: string
+) {
+  return api.post("/po/sign", {
+    kode: decodeURIComponent(kode), // 🔥 WAJIB
     signature: signatureBase64,
   });
-  return res.data;
 }
+
 
 // services/purchase-request.ts
 export async function clearSignature(kode: string) {
-  return api.delete(`/po/${encodeURIComponent(kode)}/signature`);
+  return api.delete(`/po/${kode}/signature`);
 }
 
-export function downloadPoPdf(kode: string) {
-  api
-    .get(`/po/${encodeURIComponent(kode)}/export/pdf`, {
-      responseType: "blob",
-    })
-    .then((res) => {
-      const blob = new Blob([res.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `PO_${kode.replace(/\//g, "_")}.pdf`;
-      document.body.appendChild(a);
-      a.click();
+export async function downloadPoPdf(kode: string) {
+  const res = await api.get(
+    `/po/${encodeURIComponent(kode)}/export/pdf`,
+    { responseType: "blob" }
+  );
 
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    });
+  const blob = new Blob([res.data], { type: "application/pdf" });
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `PO_${kode.replace(/\//g, "_")}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }

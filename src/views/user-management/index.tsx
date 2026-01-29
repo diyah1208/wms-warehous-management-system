@@ -49,26 +49,35 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { userCache } from "@/services/user-cache";
+import { useMemo } from "react";
+
+
 
 /* =========================
    PAGE
 ========================= */
 export default function UserManagementPage() {
-  const [users, setUsers] = useState<UserDb[]>([]);
   const [refresh, setRefresh] = useState(false);
-
-  useEffect(() => {
-    async function fetchUsers() {
-      try {
-        const res = await getAllUsers();
-        if (res) setUsers(res);
-      } catch {
-        toast.error("Gagal mengambil data user");
+const [users, setUsers] = useState<UserDb[]>(
+  userCache.data ?? []
+);
+useEffect(() => {
+  async function fetchUsers() {
+    try {
+      const res = await getAllUsers();
+      if (res) {
+        userCache.data = res; // ⬅️ SIMPAN CACHE
+        setUsers(res);
       }
+    } catch {
+      toast.error("Gagal mengambil data user");
     }
+  }
 
-    fetchUsers();
-  }, [refresh]);
+  fetchUsers(); // background
+}, [refresh]);
+
 
   return (
     <WithSidebar>
@@ -253,6 +262,10 @@ function DataUserSection({
   // filter
   const [email, setEmail] = useState("");
   const [nama, setNama] = useState("");
+const columns = useMemo(
+  () => UserColumnsGenerator(setRefresh),
+  [setRefresh]
+);
 
   useEffect(() => {
     setFilteredUsers(users);
@@ -361,11 +374,12 @@ function DataUserSection({
           </div>
 
           {/* TABLE */}
-          <QuickTable
-            data={tableUsers}
-            columns={UserColumnsGenerator(setRefresh)}
-            page={currentPage}
-          />
+         <QuickTable
+  data={tableUsers}
+  columns={columns}
+  page={currentPage}
+/>
+
         </div>
       </SectionBody>
 

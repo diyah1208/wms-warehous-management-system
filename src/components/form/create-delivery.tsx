@@ -46,6 +46,8 @@ import { cn } from "@/lib/utils";
 import { createDelivery } from "@/services/delivery";
 import { getAllStocks } from "@/services/stock";
 import { AddItemDeliveryDialog } from "../dialog/add-item-delivery";
+import { DatePicker } from "../date-picker";
+
 
 interface CreateDeliveryFormProps {
   user: UserComplete | UserDb;
@@ -54,6 +56,20 @@ interface CreateDeliveryFormProps {
 
 function toMysqlDatetime(date: Date) {
   return date.toISOString().slice(0, 19).replace("T", " ");
+}
+const CLOSING_DAY = 5;
+
+function isClosedDate(date?: Date) {
+  if (!date) return false;
+
+  const closingDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    CLOSING_DAY,
+    0, 0, 0
+  );
+
+  return date <= closingDate;
 }
 
 export default function CreateDeliveryForm({
@@ -68,6 +84,9 @@ export default function CreateDeliveryForm({
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
   const [selectedFrom, setSelectedFrom] = useState<string>("");
+  const [dlvTanggal, setDlvTanggal] = useState<Date | undefined>(undefined);
+  const closed = isClosedDate(dlvTanggal);
+
 
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [deliveryItems, setDeliveryItems] = useState<DeliveryDetail[]>([]);
@@ -115,6 +134,11 @@ export default function CreateDeliveryForm({
       toast.error("Silakan pilih MR dahulu.");
       return;
     }
+    if (!dlvTanggal) {
+      toast.error("Tanggal delivery wajib dipilih.");
+      return;
+    }
+
 
     if (deliveryItems.length === 0) {
       toast.error("Delivery tidak boleh kosong.");
@@ -137,6 +161,7 @@ export default function CreateDeliveryForm({
       dlv_status: "pending",
       dlv_pic: user.nama,
       dlv_no_resi,
+      dlv_tanggal: dlvTanggal.toISOString().slice(0, 10),
       dlv_jumlah_koli: dlv_jumlah_koli ? parseInt(dlv_jumlah_koli) : 0,
       mr_id: selectedMr.mr_id,
       created_at: toMysqlDatetime(new Date()),
@@ -185,6 +210,11 @@ export default function CreateDeliveryForm({
       toast.error("Pilih MR dahulu.");
       return;
     }
+    if (!dlvTanggal) {
+    toast.error("Tanggal delivery wajib dipilih.");
+    return;
+  }
+
 
     if (qty <= 0) {
       toast.error("Qty tidak valid.");
@@ -244,6 +274,38 @@ export default function CreateDeliveryForm({
 
   return (
     <form id="create-delivery-form" onSubmit={handleSubmit} className="grid grid-cols-12 gap-4">
+      {closed && (
+        <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black">
+          
+          {/* STRIPE */}
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" />
+
+          {/* CONTENT */}
+          <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
+            <div className="text-4xl font-black tracking-widest uppercase">
+              🚫 TRANSAKSI DELIVERY DITUTUP
+            </div>
+
+            <div className="text-lg font-semibold">
+              DELIVERY TERKUNCI OLEH SISTEM
+            </div>
+
+            <div className="text-sm opacity-90">
+              Periode DELIVERY sampai tanggal{" "}
+              <span className="font-bold underline">
+                {dlvTanggal?.getDate()}
+              </span>{" "}
+              sudah ditutup
+            </div>
+          </div>
+        </div>
+      )}
+      <fieldset
+        disabled={closed}
+        className={`col-span-12 grid grid-cols-12 gap-4 ${
+          closed ? "opacity-50" : ""
+        }`}
+      >
       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         <input type="hidden" name="dlv_pic" value={user.nama} />
         <div className="flex flex-col gap-2">
@@ -297,7 +359,14 @@ export default function CreateDeliveryForm({
             </PopoverContent>
           </Popover>
         </div>
+        <div className="flex flex-col gap-2">
+          <Label>Tanggal Delivery<span className="text-red-500">*</span></Label>
 
+          <DatePicker
+            value={dlvTanggal}
+            onChange={setDlvTanggal}
+          />
+        </div>
         <div className="flex flex-col gap-2">
           
           <Label>Pilih Ekspedisi<span className="text-red-500">*</span></Label>
@@ -517,7 +586,7 @@ export default function CreateDeliveryForm({
 
         </Table>
       </div>
-
+      </fieldset>
     </form>
   );
 }

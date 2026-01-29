@@ -42,34 +42,42 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { useMemo } from "react";
 
+import { customerCache } from "@/services/customer-cache";
 
 export default function MasterCustomerPage() {
-  const [customers, setCustomers] = useState<MasterCustomer[]>([]);
-  const [refresh, setRefresh] = useState<boolean>(false);
+  const [customers, setCustomers] = useState<MasterCustomer[]>(
+    customerCache.data ?? [] // ⬅️ LANGSUNG ISI
+  );
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     async function fetchCustomers() {
       try {
         const res = await getMasterCustomers();
-        if (res) setCustomers(res);
-      } catch (error) {
+        if (res) {
+          customerCache.data = res; // ⬅️ SIMPAN CACHE
+          setCustomers(res);
+        }
+      } catch {
         toast.error("Gagal mengambil data customer");
       }
     }
 
-    fetchCustomers();
+    fetchCustomers(); // background
   }, [refresh]);
+
 
   return (
     <WithSidebar>
       {/* =======================
           DATA MASTER CUSTOMER
       ======================== */}
-      <DataMasterCustomerSection
-        customers={customers}
-        setRefresh={setRefresh}
-      />
+    <DataMasterCustomerSection
+  customers={customers}
+  setRefresh={setRefresh}
+/>
 
       {/* =======================
           TAMBAH CUSTOMER
@@ -287,11 +295,14 @@ function CustomerColumnsGenerator(
 ========================= */
 function DataMasterCustomerSection({
   customers,
+
   setRefresh,
 }: {
   customers: MasterCustomer[];
+
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }) {
+
   const [filteredCustomers, setFilteredCustomers] =
     useState<MasterCustomer[]>([]);
   const [tableCustomers, setTableCustomers] =
@@ -299,16 +310,21 @@ function DataMasterCustomerSection({
 
   const pageSize = PagingSize;
   const [currentPage, setCurrentPage] = useState<number>(1);
-
+const columns = useMemo(
+  () => CustomerColumnsGenerator(setRefresh),
+  [setRefresh]
+);
   // filter state
   const [customerNo, setCustomerNo] = useState("");
   const [customerName, setCustomerName] = useState("");
+useEffect(() => {
+  if (customers.length === 0) return;
 
-  useEffect(() => {
-    setFilteredCustomers(customers);
-    setTableCustomers(customers.slice(0, pageSize));
-    setCurrentPage(1);
-  }, [customers]);
+  setFilteredCustomers(customers);
+  setTableCustomers(customers.slice(0, pageSize));
+  setCurrentPage(1);
+}, [customers]);
+
 
   useEffect(() => {
     const start = (currentPage - 1) * pageSize;
@@ -465,23 +481,26 @@ function DataMasterCustomerSection({
 </div>
 
 
-          <QuickTable
-            data={tableCustomers}
-            columns={CustomerColumnsGenerator(setRefresh)}
-            page={currentPage}
-          />
+<QuickTable
+  data={tableCustomers}
+  columns={columns}
+  page={currentPage}
+/>
+
         </div>
       </SectionBody>
 
-      <SectionFooter>
-        <MyPagination
-          data={filteredCustomers}
-          currentPage={currentPage}
-          triggerNext={() => setCurrentPage((p) => p + 1)}
-          triggerPrevious={() => setCurrentPage((p) => p - 1)}
-          triggerPageChange={(page) => setCurrentPage(page)}
-        />
-      </SectionFooter>
+    <SectionFooter>
+<MyPagination
+  data={filteredCustomers}
+  currentPage={currentPage}
+  triggerNext={() => setCurrentPage((p) => p + 1)}
+  triggerPrevious={() => setCurrentPage((p) => p - 1)}
+  triggerPageChange={(page) => setCurrentPage(page)}
+/>
+
+</SectionFooter>
+
     </SectionContainer>
   );
 }

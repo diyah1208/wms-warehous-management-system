@@ -79,3 +79,18 @@ export async function downloadBarangExcel() {
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
+export async function importMasterPartExcel(
+  file: File
+): Promise<boolean> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await api.post("/barang/import", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return res.data.status === true;
+}

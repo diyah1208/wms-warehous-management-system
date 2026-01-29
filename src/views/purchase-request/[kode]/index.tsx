@@ -6,8 +6,6 @@ import SectionContainer, {
 import WithSidebar from "@/components/layout/WithSidebar";
 import type { PurchaseRequest } from "@/types"; // Pastikan path ini benar
 import { useEffect, useState, useRef } from "react";
-
-import { useParams } from "react-router-dom";
 import { toast } from "sonner"; // Import toast for user feedback
 import {
   Table,
@@ -25,79 +23,91 @@ import { PenTool, Printer } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
 import { useAuth } from "@/context/AuthContext";
 import { downloadPrPdf } from "@/services/purchase-request";
+import { useLocation, useParams } from "react-router-dom";
+
+import { prDetailCache } from "@/services/pr-detail-cache";
+
 
 export function PurchaseRequestDetail() {
+
+
+const { kode } = useParams<{ kode?: string }>();
+const location = useLocation();
+
+if (!kode) {
+  return (
+    <WithSidebar>
+      <SectionContainer span={12}>
+        <SectionHeader>Detail Purchase Request</SectionHeader>
+        <SectionBody className="p-8 text-center text-muted-foreground">
+          Kode Purchase Request tidak ditemukan.
+        </SectionBody>
+      </SectionContainer>
+    </WithSidebar>
+  );
+}
+
+const prKode = kode;
+const statePr = (location.state as { pr?: PurchaseRequest })?.pr;
+
+
     const { user } = useAuth();
-  const { kode } = useParams<{ kode: string }>();
-  const [pr, setPr] = useState<PurchaseRequest | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-const [hasPrinted, setHasPrinted] = useState(false);
+
   // const [refresh, setRefresh] = useState<boolean>(false);
   const [showSignature, setShowSignature] = useState(false);
-   const [refresh, setRefresh] = useState<boolean>(false);
+   const [, setRefresh] = useState<boolean>(false);
 const signatureToastShownRef = useRef(false);
 const [isPrinting, setIsPrinting] = useState(false);
-
-
-  
-  useEffect(() => {
-    async function fetchMrDetail() {
-      if (!kode) {
-        toast.error("Kode Purchase Request tidak ditemukan di URL.");
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const res = await getPrByKode(kode);
-        if (res) {
-          setPr(res);
-        } else {
-          toast.error(`Purchase Request dengan kode ${kode} tidak ditemukan.`);
-          setPr(null);
-        }
-      } catch (error) {
-        console.error("Gagal mengambil detail MR:", error);
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil detail MR: ${error.message}`);
-        } else {
-          toast.error(
-            "Terjadi kesalahan saat mengambil detail Material Request."
-          );
-        }
-        setPr(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchMrDetail();
-  }, [kode]);
+const [pr, setPr] = useState<PurchaseRequest | null>(
+  prDetailCache[prKode] ?? statePr ?? null
+);
 
 useEffect(() => {
-  if (!showSignature || !kode) return;
+  if (statePr && !prDetailCache[prKode]) {
+    prDetailCache[prKode] = statePr;
+  }
+}, [statePr, prKode]);
+
+  
+useEffect(() => {
+  async function fetchDetail() {
+    try {
+      const res = await getPrByKode(prKode);
+      if (res) {
+        prDetailCache[prKode] = res; // cache
+        setPr(res);                 // update UI
+      }
+    } catch {
+      toast.error("Gagal mengambil detail Purchase Request");
+    }
+  }
+
+  fetchDetail(); // background fetch
+}, [prKode]);
+
+
+useEffect(() => {
+  if (!showSignature) return;
   if (signatureToastShownRef.current) return;
 
   const interval = setInterval(async () => {
     try {
-      const res = await getPrByKode(kode);
+      const res = await getPrByKode(prKode);
 
       if (res?.signature_url && !signatureToastShownRef.current) {
-        signatureToastShownRef.current = true; // 🔒 LOCK
-
-      setPr(res);
+        signatureToastShownRef.current = true;
+        prDetailCache[prKode] = res;
+        setPr(res);
         setShowSignature(false);
-
         toast.success("Tanda tangan diterima! Siap export PDF.");
-
         clearInterval(interval);
       }
-    } catch (error) {
-      console.error("Error polling signature:", error);
-    }
-  }, 1000); // lebih responsif
+    } catch {}
+  }, 1000);
 
   return () => clearInterval(interval);
-}, [showSignature, kode]);
+}, [showSignature, prKode]);
+
 
 
 const handleDownloadPdf = async () => {
@@ -110,57 +120,29 @@ const handleDownloadPdf = async () => {
     setRefresh((prev) => !prev);
 
   } catch (error) {
-    toast.error("Gagal mengunduh PDF MR");
+    toast.error("Gagal mengunduh PDF PR");
   } finally {
     setIsPrinting(false);
   }
 };
-const handlePrintClick = async () => {
-  // 🔴 Sudah pernah print → WAJIB scan ulang
-  if (hasPrinted) {
-    setShowSignature(true);
-    return;
-  }
 
-  // 🔴 Belum ada TTD → QR
-  if (!pr?.signature_url) {
-    setShowSignature(true);
-    return;
-  }
 
-  // 🟢 Ada TTD & belum pernah print
-  window.print();
 
-  setHasPrinted(true);
 
-  // 🔥 reset FE
-  setPr(prev =>
-    prev ? { ...prev, signature_url: null, sign_at: null } : prev
+
+if (!pr) {
+  return (
+    <WithSidebar>
+      <SectionContainer span={12}>
+        <SectionHeader>Detail Purchase Request</SectionHeader>
+        <SectionBody className="p-8 text-center text-muted-foreground">
+          Data Purchase Request belum tersedia.
+        </SectionBody>
+      </SectionContainer>
+    </WithSidebar>
   );
+}
 
-  // 🔥 clear backend
-  if (kode) {
-    await clearSignature(kode);
-  }
-};
-
-
-
-
-  if (isLoading && !pr) {
-    return (
-      <WithSidebar>
-        <SectionContainer span={12}>
-          <SectionHeader>Memuat Detail Purchase Request...</SectionHeader>
-          <SectionBody className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 flex items-center justify-center border border-dashed border-border rounded-sm p-8 text-muted-foreground text-lg">
-              Memuat data...
-            </div>
-          </SectionBody>
-        </SectionContainer>
-      </WithSidebar>
-    );
-  }
 
   if (!pr) {
     return (
@@ -190,7 +172,7 @@ const handlePrintClick = async () => {
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
 
             <QRCodeCanvas
-              value={`http://10.10.6.175:5173/pr-sign/${encodeURIComponent(
+              value={`http://10.10.6.207:5173/pr-sign/${encodeURIComponent(
                 pr.pr_kode
               )}`}
               size={200}
@@ -318,25 +300,28 @@ const handlePrintClick = async () => {
 </TableHeader>
 
                 <TableBody>
-                  {pr.details.length > 0 ? (
-                    pr.details.map((item, index) => (
-                 <TableRow key={item.pr_id} className="[&>td]:border">
-  <TableCell>{index + 1}</TableCell>
-  <TableCell>{item.dtl_pr_part_number}</TableCell>
-  <TableCell>{item.dtl_pr_part_name}</TableCell>
-  <TableCell>{item.dtl_pr_satuan}</TableCell>
-  <TableCell>{item.dtl_pr_qty}</TableCell>
-  <TableCell>{item.mr?.mr_kode}</TableCell>
-</TableRow>
+              {pr.details.length > 0 ? (
+  pr.details.map((item, index) => (
+    <TableRow
+      key={`${item.mr_id}-${item.dtl_pr_part_number}-${index}`}
+      className="[&>td]:border"
+    >
+      <TableCell>{index + 1}</TableCell>
+      <TableCell>{item.dtl_pr_part_number}</TableCell>
+      <TableCell>{item.dtl_pr_part_name}</TableCell>
+      <TableCell>{item.dtl_pr_satuan}</TableCell>
+      <TableCell>{item.dtl_pr_qty}</TableCell>
+      <TableCell>{item.mr?.mr_kode}</TableCell>
+    </TableRow>
+  ))
+) : (
+  <TableRow>
+    <TableCell colSpan={6} className="text-center">
+      Tidak ada barang
+    </TableCell>
+  </TableRow>
+)}
 
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center">
-                        Tidak ada barang
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
      {pr.signature_url && (
@@ -344,7 +329,7 @@ const handlePrintClick = async () => {
                   <div className="text-center w-[220px]">
                     <p className="font-semibold mb-2">Tanda Tangan</p>
              <img
-  src={`http://10.10.6.175:8000/storage/${pr.signature_url}`}
+  src={`http://10.10.6.207:8000/storage/${pr.signature_url}`}
   alt="signature"
   className="h-28 mx-auto border-b-2 border-black"
 />

@@ -120,6 +120,7 @@ export default function SpbInvoicePage() {
                 <TableRow>
                   <TableHead>No</TableHead>
                   <TableHead>No SPB</TableHead>
+                  <TableHead>No DO</TableHead>
                   <TableHead>No Invoice</TableHead>
                   <TableHead>Tanggal Invoice</TableHead>
                   <TableHead>Tanggal Email</TableHead>
@@ -133,6 +134,7 @@ export default function SpbInvoicePage() {
                         {PagingSize * (currentPage - 1) + (i + 1)}
                       </TableCell>
                       <TableCell>{row.spb?.spb_no}</TableCell>
+                      <TableCell>{row.do?.do_no}</TableCell>
                       <TableCell>{row.invoice_no}</TableCell>
                       <TableCell>{row.invoice_date}</TableCell>
                       <TableCell>

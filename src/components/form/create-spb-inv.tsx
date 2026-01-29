@@ -19,8 +19,8 @@ import {
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-import { createSpbInvoice, getAllSpb } from "@/services/spb";
-import type { Spb } from "@/types";
+import { createSpbInvoice, getAllSpb, getAllSpbDo } from "@/services/spb";
+import type { Spb, SpbDo } from "@/types";
 
 interface CreateSpbInvoiceFormProps {
   setRefresh: Dispatch<SetStateAction<boolean>>;
@@ -32,6 +32,23 @@ export default function CreateSpbInvoiceForm({
   const [open, setOpen] = useState(false);
   const [spbs, setSpbs] = useState<Spb[]>([]);
   const [selectedSpb, setSelectedSpb] = useState<Spb | undefined>();
+  const [openDo, setOpenDo] = useState(false);
+  const [dos, setDos] = useState<SpbDo[]>([]);
+  const [selectedDo, setSelectedDo] = useState<SpbDo | undefined>();
+
+  useEffect(() => {
+  async function fetchDo() {
+    try {
+      const res = await getAllSpbDo();
+      setDos(res);
+    } catch {
+      toast.error("Gagal mengambil data DO");
+    }
+  }
+
+  fetchDo();
+}, []);
+
 
   useEffect(() => {
     async function fetchSpb() {
@@ -58,6 +75,7 @@ export default function CreateSpbInvoiceForm({
     try {
       await createSpbInvoice({
         spb_id: selectedSpb.spb_id,
+        spb_do_id: selectedDo?.spb_do_id,
         invoice_no: formData.get("invoice_no") as string,
         invoice_date: formData.get("invoice_date") as string,
         invoice_email_date:
@@ -83,7 +101,6 @@ return (
     id="create-spb-invoice-form"
     className="grid grid-cols-12 gap-4"
   >
-    {/* ================= ROW 1 ================= */}
     {/* PILIH SPB */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
       <Label>Pilih SPB<span className="text-red-500">*</span></Label>
@@ -131,14 +148,62 @@ return (
         </PopoverContent>
       </Popover>
     </div>
+    {/* PILIH DO */}
+    <div className="col-span-12 lg:col-span-6 space-y-2">
+      <Label>
+        Pilih DO<span className="text-red-500">*</span>
+      </Label>
 
+      <Popover open={openDo} onOpenChange={setOpenDo}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            className="w-full justify-between"
+          >
+            {selectedDo ? selectedDo.do_no : "Pilih DO..."}
+            <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="p-0">
+          <Command>
+            <CommandInput placeholder="Cari No DO..." />
+            <CommandList>
+              <CommandEmpty>Tidak ada DO.</CommandEmpty>
+              <CommandGroup>
+                {dos.map((doItem) => (
+                  <CommandItem
+                    key={doItem.spb_do_id}
+                    value={doItem.do_no}
+                    onSelect={() => {
+                      setSelectedDo(doItem);
+                      setOpenDo(false);
+                    }}
+                  >
+                    <CheckIcon
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedDo?.spb_do_id === doItem.spb_do_id
+                          ? "opacity-100"
+                          : "opacity-0"
+                      )}
+                    />
+                    {doItem.do_no}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
     {/* NO INVOICE */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
       <Label>No Invoice<span className="text-red-500">*</span></Label>
       <Input name="invoice_no" required />
     </div>
 
-    {/* ================= ROW 2 ================= */}
     {/* TANGGAL INVOICE */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
       <Label>Tanggal Invoice<span className="text-red-500">*</span></Label>

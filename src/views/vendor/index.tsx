@@ -43,23 +43,31 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
+import { vendorCache } from "@/services/vendor-cache";
+import { useMemo } from "react";
 
 export default function MasterVendorPage() {
-  const [vendors, setVendors] = useState<MasterVendor[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
+const [vendors, setVendors] = useState<MasterVendor[]>(
+  vendorCache.data ?? []
+);
 
-  useEffect(() => {
-    async function fetchVendors() {
-      try {
-        const res = await getMasterVendors();
-        if (res) setVendors(res);
-      } catch (error) {
-        toast.error("Gagal mengambil data vendor");
+useEffect(() => {
+  async function fetchVendors() {
+    try {
+      const res = await getMasterVendors();
+      if (res) {
+        vendorCache.data = res; // ⬅️ SIMPAN CACHE
+        setVendors(res);
       }
+    } catch {
+      toast.error("Gagal mengambil data vendor");
     }
+  }
 
-    fetchVendors();
-  }, [refresh]);
+  fetchVendors();
+}, [refresh]);
+
 
   return (
     <WithSidebar>
@@ -306,6 +314,10 @@ function DataMasterVendorSection({
   // filter state
   const [vendorNo, setVendorNo] = useState("");
   const [vendorName, setVendorName] = useState("");
+const columns = useMemo(
+  () => VendorColumnsGenerator(setRefresh),
+  [setRefresh]
+);
 
   useEffect(() => {
     setFilteredVendors(vendors);
@@ -474,11 +486,12 @@ return (
         {/* =====================
             TABLE
         ====================== */}
-        <QuickTable
-          data={tableVendors}
-          columns={VendorColumnsGenerator(setRefresh)}
-          page={currentPage}
-        />
+      <QuickTable
+  data={tableVendors}
+  columns={columns}
+  page={currentPage}
+/>
+
       </div>
     </SectionBody>
 

@@ -46,6 +46,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Clock, ShoppingCart, CheckCircle } from "lucide-react";
+import { poCache } from "@/services/po-cache";
+import { userAuthCache } from "@/services/user-auth-cache";
+
+
 
 // Error Boundary Component
 class ErrorBoundary extends Component<
@@ -59,10 +63,6 @@ class ErrorBoundary extends Component<
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error("❌ Error in CreatePOForm:", error, errorInfo);
   }
 
   render() {
@@ -92,50 +92,63 @@ class ErrorBoundary extends Component<
 
 export default function PurchaseOrder() {
   const [refresh, setRefresh] = useState<boolean>(false);
-  const [user, setUser] = useState<UserComplete | null>(null);
-  const [pos, setPos] = useState<POHeader[]>([]);
-  const [filteredPos, setFilteredPos] = useState<POHeader[]>([]);
-  const [poToShow, setPoToShow] = useState<POHeader[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
-
+const [pos, setPos] = useState<POHeader[]>(poCache.data ?? []);
+const [filteredPos, setFilteredPos] = useState<POHeader[]>(poCache.data ?? []);
+const [poToShow, setPoToShow] = useState<POHeader[]>(
+  poCache.data ? poCache.data.slice(0, PagingSize) : []
+);
   // State untuk Filtering
   const [kodePo, setKodePo] = useState<string>("");
   const [kodePr, setKodePr] = useState<string>("");
   const [status, setStatus] = useState<string>("");
 
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const userData = await getCurrentUser();
-        console.log("✅ User data loaded:", userData); // DEBUG
+const [user, setUser] = useState<UserComplete | null>(
+  userAuthCache.data
+);
+
+
+
+useEffect(() => {
+  async function fetchUser() {
+    try {
+      const userData = await getCurrentUser();
+      if (userData) {
+        userAuthCache.data = userData; // ⬅️ SIMPAN CACHE
         setUser(userData);
-      } catch (error) {
-        console.error("❌ Error fetching user:", error);
-        toast.error("Gagal mengambil data user");
       }
+    } catch {
+      toast.error("Gagal mengambil data user");
     }
-    fetchUser();
-  }, []);
+  }
 
-  useEffect(() => {
-    async function fetchAllPOs() {
-      try {
-        const poResult = await getPo();
-        setPos(poResult || []);
-        setFilteredPos(poResult || []);
-      } catch (error) {
-        setPos([]);
-        setFilteredPos([]);
-        toast.error(
-          `Gagal mengambil data PO: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
+  // ❗ kalau sudah ada cache, UI langsung jalan
+  fetchUser();
+}, []);
+
+useEffect(() => {
+  async function fetchAllPOs() {
+    try {
+      const poResult = await getPo();
+      if (poResult) {
+        poCache.data = poResult; // ⬅️ SIMPAN CACHE
+        setPos(poResult);
+        setFilteredPos(poResult);
       }
+    } catch (error) {
+      setPos([]);
+      setFilteredPos([]);
+      toast.error(
+        `Gagal mengambil data PO: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
+  }
 
-    fetchAllPOs();
-  }, [refresh]);
+  fetchAllPOs(); // background
+}, [refresh]);
+
 
   useEffect(() => {
     let filtered = pos;
@@ -225,12 +238,6 @@ function renderPoStatus(status: string) {
       );
   }
 }
-  // DEBUG: Log untuk melihat kondisi render
-  console.log("🔍 Render check:", {
-    userExists: !!user,
-    userRole: user?.role,
-    canCreate: user?.role === "warehouse" || user?.role === "purchasing"
-  });
 
   return (
     <WithSidebar>
@@ -289,7 +296,7 @@ function renderPoStatus(status: string) {
         <div className="space-y-2">
           <Label>Kode PR</Label>
           <Input
-            placeholder="Cari kode PR..."
+            placeholder="Pilih PR"
             value={kodePr}
             onChange={(e) => setKodePr(e.target.value)}
           />
@@ -386,7 +393,11 @@ function renderPoStatus(status: string) {
         className="border-sky-400 text-sky-600 hover:bg-sky-50"
         asChild
       >
-        <Link to={`/po/kode/${encodeURIComponent(po.kode)}`}>
+      <Link
+  to={`/po/kode/${encodeURIComponent(po.kode)}`}
+  state={{ po }}
+>
+
           <Info className="h-4 w-4" />
         </Link>
       </Button>
@@ -423,39 +434,29 @@ function renderPoStatus(status: string) {
         </SectionFooter>
       </SectionContainer>
             {/* Tambah PO - DENGAN ERROR HANDLING */}
-      {!user ? (
-        <SectionContainer span={12}>
-          <SectionHeader>Tambah PO Baru</SectionHeader>
-          <SectionBody className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 p-8 text-center text-muted-foreground">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p>Memuat informasi user...</p>
-            </div>
-          </SectionBody>
-        </SectionContainer>
-      ) : user.role === "purchasing" ? (
-        <SectionContainer span={12}>
-          <SectionHeader>Tambah PO Baru</SectionHeader>
-          <SectionBody className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 border border-border rounded-sm p-2">
-              <ErrorBoundary>
-                <CreatePOForm setRefresh={setRefresh} user={user} />
-              </ErrorBoundary>
-            </div>
-          </SectionBody>
-          <SectionFooter>
-          <Button
-  type="submit"
-  form="create-po-form"
-  className="w-full !bg-green-600 hover:!bg-green-700 !text-white"
-             
->
-  <ClipboardPlus className="h-4 w-4" />
-  <span>Tambah PO</span>
-</Button>
-          </SectionFooter>
-        </SectionContainer>
-      ) : null}
+   {user?.role === "purchasing" && (
+  <SectionContainer span={12}>
+    <SectionHeader>Tambah PO Baru</SectionHeader>
+    <SectionBody className="grid grid-cols-12 gap-2">
+      <div className="col-span-12 border border-border rounded-sm p-2">
+        <ErrorBoundary>
+          <CreatePOForm setRefresh={setRefresh} user={user} />
+        </ErrorBoundary>
+      </div>
+    </SectionBody>
+    <SectionFooter>
+      <Button
+        type="submit"
+        form="create-po-form"
+        className="w-full !bg-green-600 hover:!bg-green-700 !text-white"
+      >
+        <ClipboardPlus className="h-4 w-4" />
+        <span>Tambah PO</span>
+      </Button>
+    </SectionFooter>
+  </SectionContainer>
+)}
+
     </WithSidebar>
   );
 }

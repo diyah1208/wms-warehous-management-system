@@ -77,45 +77,45 @@ export default function SpbPage() {
   }, [refresh]);
 
 
-  function filterMrs() {
-    let filtered = mrs;
+  // function filterMrs() {
+  //   let filtered = mrs;
 
-    if (tanggalMr) {
-      filtered = filtered.filter(
-        (mr) =>
-          new Date(mr.spb_tanggal).toDateString() === tanggalMr.toDateString()
-      );
-    }
-    if (lokasi) {
-      filtered = filtered.filter((mr) =>
-        mr.spb_gudang?.toLowerCase().includes(lokasi.toLowerCase())
-      );
-    }
-    if (pic) {
-      filtered = filtered.filter((mr) =>
-        mr.spb_pic_gmi?.toLowerCase().includes(pic.toLowerCase())
-      );
-    }
-    if (status) {
-      filtered = filtered.filter((mr) =>
-        mr.spb_status?.toLowerCase().includes(status.toLowerCase())
-      );
-    }
+  //   if (tanggalMr) {
+  //     filtered = filtered.filter(
+  //       (mr) =>
+  //         new Date(mr.spb_tanggal).toDateString() === tanggalMr.toDateString()
+  //     );
+  //   }
+  //   if (lokasi) {
+  //     filtered = filtered.filter((mr) =>
+  //       mr.spb_gudang?.toLowerCase().includes(lokasi.toLowerCase())
+  //     );
+  //   }
+  //   if (pic) {
+  //     filtered = filtered.filter((mr) =>
+  //       mr.spb_pic_gmi?.toLowerCase().includes(pic.toLowerCase())
+  //     );
+  //   }
+  //   if (status) {
+  //     filtered = filtered.filter((mr) =>
+  //       mr.spb_status?.toLowerCase().includes(status.toLowerCase())
+  //     );
+  //   }
 
-    if (kode) {
-      filtered = filtered.filter((mr) =>
-        mr.spb_no.toLowerCase().includes(kode.toLowerCase())
-      );
-    }
-    setFilteredMrs(filtered);
-    setCurrentPage(1); // Reset to first page after filtering
-    setMrToShow(filtered.slice(0, PagingSize));
-    if (filtered.length === 0) {
-      toast.info("Tidak ada Material Request yang sesuai dengan filter.");
-    } else {
-      toast.success("Filter berhasil diterapkan.");
-    }
-  }
+  //   if (kode) {
+  //     filtered = filtered.filter((mr) =>
+  //       mr.spb_no.toLowerCase().includes(kode.toLowerCase())
+  //     );
+  //   }
+  //   setFilteredMrs(filtered);
+  //   setCurrentPage(1); // Reset to first page after filtering
+  //   setMrToShow(filtered.slice(0, PagingSize));
+  //   if (filtered.length === 0) {
+  //     toast.info("Tidak ada Material Request yang sesuai dengan filter.");
+  //   } else {
+  //     toast.success("Filter berhasil diterapkan.");
+  //   }
+  // }
 
   function resetFilters() {
     setTanggalMr(undefined);

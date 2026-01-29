@@ -1,6 +1,13 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { getCurrentUser } from "@/services/auth";
 import type { UserComplete } from "@/types";
+import { appCache } from "@/services/app-cache";
+
+import { getAllMr } from "@/services/material-request";
+import { getPr } from "@/services/purchase-request";
+import { getPo } from "@/services/purchase-order";
+import { getMasterVendors } from "@/services/vendor";
+import { getAllStocks } from "@/services/stock";
 
 interface AuthContextType {
   user: UserComplete | null;
@@ -11,27 +18,63 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>(null!);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserComplete | null>(null);
-  const [loading, setLoading] = useState(true);
+const [user, setUser] = useState<UserComplete | null>(
+    appCache.user // ⬅️ PAKAI CACHE
+  );
+  const [loading, setLoading] = useState(false); // ⬅️ TIDAK BLOCK UI
 
-useEffect(() => {
-  async function initAuth() {
-    try {
-      const user = await getCurrentUser();
-      setUser(user);
-    } catch {
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // ======================
+  // INIT AUTH
+  // ======================
+ useEffect(() => {
+    if (appCache.user) return;
 
-  initAuth();
-}, []);
+    getCurrentUser()
+      .then((u) => {
+        appCache.user = u;
+        setUser(u);
+      })
+      .catch(() => {
+        appCache.user = null;
+        setUser(null);
+      });
+  }, []);
+
+  // ======================
+  // 🔥 GLOBAL PRELOAD CACHE
+  // ======================
+  useEffect(() => {
+    if (!user) return;
+
+    // jangan blocking render
+    requestIdleCallback(async () => {
+      try {
+        if (!appCache.mrList) {
+          appCache.mrList = await getAllMr();
+        }
+
+        if (!appCache.prList) {
+          appCache.prList = await getPr();
+        }
+
+        // AuthContext.tsx
+if (!appCache.poList) {
+  appCache.poList = await getPo(); // getPo() → POHeader[]
+}
 
 
+        if (!appCache.vendorList) {
+          appCache.vendorList = await getMasterVendors();
+        }
 
-
+        if (!appCache.stockList) {
+          appCache.stockList = await getAllStocks();
+        }
+      } catch (e) {
+        console.warn("Global preload cache failed", e);
+      }
+    });
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, loading, setUser }}>

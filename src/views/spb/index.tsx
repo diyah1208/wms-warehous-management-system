@@ -3,7 +3,6 @@ import WithSidebar from "@/components/layout/WithSidebar";
 import SectionContainer, {
   SectionHeader,
   SectionBody,
-  SectionFooter,
 } from "@/components/content-container";
 
 import { Input } from "@/components/ui/input";
@@ -13,14 +12,11 @@ import { FileSpreadsheet, Search, X } from "lucide-react";
 import { downloadSpbExcel, getAllReport } from "@/services/spb";
 import type { SpbReport } from "@/types";
 import { formatTanggal } from "@/lib/utils";
-import { MyPagination } from "@/components/my-pagination";
-import { PagingSize } from "@/types/enum";
 import { toast } from "sonner";
 
 export default function ReportSpb() {
   const [data, setData] = useState<SpbReport[]>([]);
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
 
   useEffect(() => {
     getAllReport().then(setData);
@@ -42,12 +38,9 @@ export default function ReportSpb() {
     }
     return result;
   }, [data, search]);
-  const start = (page - 1) * PagingSize;
-  const pageData = filtered.slice(start, start + PagingSize);
 
   function resetFilter() {
     setSearch("");
-    setPage(1);
     toast.success("Filter direset");
   }
 
@@ -61,21 +54,13 @@ export default function ReportSpb() {
               <Input
                 placeholder="Cari SPB / Part / PO / DO / Invoice"
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pr-10 bg-transparent"
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={resetFilter}
-              title="Reset filter"
-            >
+            <Button variant="outline" size="icon" onClick={resetFilter}>
               <X className="w-4 h-4" />
             </Button>
 
@@ -83,7 +68,6 @@ export default function ReportSpb() {
               variant="outline"
               size="icon"
               onClick={downloadSpbExcel}
-              title="Export Excel"
               className="text-green-600 border-green-600 hover:bg-green-50"
             >
               <FileSpreadsheet className="w-4 h-4" />
@@ -91,6 +75,7 @@ export default function ReportSpb() {
           </div>
         </SectionBody>
       </SectionContainer>
+
       <div className="relative mt-4">
         <div className="absolute inset-x-0">
           <div className="px-4">
@@ -104,8 +89,8 @@ export default function ReportSpb() {
                 </p>
               </div>
 
-              {/* SCROLL AMAN */}
-              <div className="w-full overflow-x-auto">
+              {/* SCROLL */}
+              <div className="w-full overflow-x-auto overflow-y-auto max-h-[65vh]">
                 <table className="w-full min-w-[2200px] text-xs border">
                   <thead className="bg-gray-50">
                     <tr>
@@ -140,7 +125,7 @@ export default function ReportSpb() {
                       ].map((h) => (
                         <th
                           key={h}
-                          className="border px-3 py-2 text-left whitespace-nowrap text-muted-foreground"
+                          className="border px-3 py-2 text-left whitespace-nowrap"
                         >
                           {h}
                         </th>
@@ -149,10 +134,10 @@ export default function ReportSpb() {
                   </thead>
 
                   <tbody>
-                    {pageData.length > 0 ? (
-                      pageData.map((spb, i) => (
+                    {filtered.length > 0 ? (
+                      filtered.map((spb, i) => (
                         <tr key={i} className="border-b hover:bg-gray-50">
-                          <td className="border px-3 py-2">{start + i + 1}</td>
+                          <td className="border px-3 py-2">{i + 1}</td>
                           <td className="border px-3 py-2">
                             {formatTanggal(spb.created_at)}
                           </td>
@@ -199,9 +184,6 @@ export default function ReportSpb() {
                             {spb.spb_no_wo}
                           </td>
                           <td className="border px-3 py-2">
-                            {spb.created_at || "-"}
-                          </td>
-                          <td className="border px-3 py-2">
                             {spb.spb_status}
                           </td>
                           <td className="border px-3 py-2">
@@ -214,13 +196,7 @@ export default function ReportSpb() {
                             {spb.so_no ?? "-"}
                           </td>
                           <td className="border px-3 py-2">
-                            {spb.created_at ?? "-"}
-                          </td>
-                          <td className="border px-3 py-2">
                             {spb.do_no ?? "-"}
-                          </td>
-                          <td className="border px-3 py-2">
-                            {spb.created_at ?? "-"}
                           </td>
                           <td className="border px-3 py-2">
                             {spb.invoice_no ?? "-"}
@@ -235,10 +211,7 @@ export default function ReportSpb() {
                       ))
                     ) : (
                       <tr>
-                        <td
-                          colSpan={27}
-                          className="text-center py-10 text-muted-foreground"
-                        >
+                        <td colSpan={27} className="text-center py-10">
                           Tidak ada data
                         </td>
                       </tr>
@@ -250,20 +223,9 @@ export default function ReportSpb() {
           </div>
         </div>
 
-        {/* spacer biar pagination nggak ketimpa */}
+        {/* JANGAN DIHAPUS */}
         <div className="h-[420px]" />
       </div>
-      <SectionContainer span={12}>
-        <SectionFooter>
-          <MyPagination
-            data={filtered}
-            currentPage={page}
-            triggerNext={() => setPage((p) => p + 1)}
-            triggerPrevious={() => setPage((p) => (p > 1 ? p - 1 : 1))}
-            triggerPageChange={setPage}
-          />
-        </SectionFooter>
-      </SectionContainer>
     </WithSidebar>
   );
 }

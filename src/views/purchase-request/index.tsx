@@ -45,6 +45,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Clock, CheckCircle } from "lucide-react";
+import { prCache } from "@/services/pr-cache";
+
 
 // Fungsi untuk format tanggal ke bahasa Indonesia
 function formatTanggalIndonesia(tanggal: string | Date): string {
@@ -65,10 +67,12 @@ function formatTanggalIndonesia(tanggal: string | Date): string {
 export default function PurchaseRequest() {
   const [refresh, setRefresh] = useState<boolean>(false);
   const [user, setUser] = useState<UserComplete | null>(null);
-  const [prs, setPrs] = useState<PurchaseRequest[]>([]);
-  const [filteredPrs, setFilteredPrs] = useState<PurchaseRequest[]>([]);
-  const [prToShow, setPrToShow] = useState<PurchaseRequest[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
+const [prs, setPrs] = useState<PurchaseRequest[]>(prCache.data ?? []);
+const [filteredPrs, setFilteredPrs] = useState<PurchaseRequest[]>(prCache.data ?? []);
+const [prToShow, setPrToShow] = useState<PurchaseRequest[]>(
+  prCache.data ? prCache.data.slice(0, PagingSize) : []
+);
 
   // --- State untuk Filtering ---
   const [kode, setKode] = useState<string>("");
@@ -85,24 +89,26 @@ export default function PurchaseRequest() {
     fetchUser();
   }, []);
 
-  useEffect(() => {
-    async function fetchAllPRs() {
-      try {
-        const prResult = await getPr();
-        
+useEffect(() => {
+  async function fetchAllPRs() {
+    try {
+      const prResult = await getPr();
+      if (prResult) {
+        prCache.data = prResult; // ⬅️ SIMPAN CACHE
         setPrs(prResult);
-        console.log("getAllPr result:", prResult);
-      } catch (error) {
-        toast.error(
-          `Gagal mengambil data PR: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
       }
+    } catch (error) {
+      toast.error(
+        `Gagal mengambil data PR: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
+  }
 
-    fetchAllPRs();
-  }, [refresh]);
+  fetchAllPRs(); // background
+}, [refresh]);
+
 
   // --- useEffect untuk Filtering Otomatis ---
   useEffect(() => {
@@ -219,7 +225,7 @@ function renderPrStatus(status: string) {
       placeholder="Cari berdasarkan kode PR"
       value={kode}
       onChange={(e) => setKode(e.target.value)}
-      onKeyDown={(e) => e.key === "Enter" && resetFilters()}
+
     />
   </div>
 
@@ -351,7 +357,7 @@ function renderPrStatus(status: string) {
               <TableBody>
                 {prToShow.length > 0 ? (
                   prToShow.map((pr, index) => (
-                    <TableRow key={pr.pr_id}>
+                    <TableRow key={`${pr.pr_id}-${pr.pr_kode}`}>
                       <TableCell className="p-2 border">
                         {PagingSize * (currentPage - 1) + (index + 1)}
                       </TableCell>
@@ -375,7 +381,11 @@ function renderPrStatus(status: string) {
         className="border-sky-400 text-sky-600 hover:bg-sky-50"
         asChild
       >
-        <Link to={`/pr/kode/${encodeURIComponent(pr.pr_kode)}`}>
+       <Link
+  to={`/pr/kode/${encodeURIComponent(pr.pr_kode)}`}
+  state={{ pr }}
+>
+
           <Info className="h-4 w-4" />
         </Link>
       </Button>

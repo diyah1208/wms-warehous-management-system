@@ -47,6 +47,22 @@ interface CreatePOFormProps {
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }
 
+const CLOSING_DAY = 5;
+
+function isClosedDate(date?: Date) {
+  if (!date) return false;
+
+  const closingDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    CLOSING_DAY,
+    0, 0, 0
+  );
+
+  return date <= closingDate;
+}
+
+
 export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
   const [open, setOpen] = useState(false);
   const [, setPO] = useState<POReceive[]>([]);
@@ -55,10 +71,11 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
   const [selectedPR, setSelectedPR] = useState<PurchaseRequest>();
   const [tanggal, setTanggal] = useState<Date | undefined>(new Date());
 
-  // qty diterima (key = part_id string)
   const [receiveQty, setReceiveQty] = useState<Record<string, number>>({});
   const [openQtyDialog, setOpenQtyDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+
+  const closed = isClosedDate(tanggal);
 
   /* =======================
    * FETCH PR BY PO
@@ -70,8 +87,8 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
         if (!res) return;
         setSelectedPR(res);
         setReceiveQty({});
-      } catch (error) {
-        console.warn("Fetch PR gagal", error);
+      } catch {
+        toast.error("Gagal mengambil PR");
       }
     }
 
@@ -95,11 +112,24 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
     fetchPO();
   }, []);
 
+  function getQtyReceived(partId?: string) {
+    if (!selectedPO || !partId) return 0;
+    return (
+      selectedPO.details.find((d) => d.part_id === partId)
+        ?.dtl_qty_received ?? 0
+    );
+  }
+
   /* =======================
    * SUBMIT RI
    * ======================= */
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (closed) {
+      toast.error("Periode transaksi sudah ditutup");
+      return;
+    }
 
     if (!selectedPO || !selectedPR || !tanggal) {
       toast.error("Data belum lengkap");
@@ -115,17 +145,24 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
       toast.error("Kode & lokasi wajib diisi");
       return;
     }
+    
 
     const details = selectedPR.details.map((d) => {
       const partId = d.part_id ?? "";
+      const qty = receiveQty[partId];
 
+      if (!qty || qty <= 0) {
+        throw new Error(
+          `Qty receive untuk part ${d.dtl_pr_part_number} belum diisi`
+        );
+      }
       return {
         part_id: d.part_id,
         mr_id: d.mr_id,
         dtl_ri_part_number: d.dtl_pr_part_number,
         dtl_ri_part_name: d.dtl_pr_part_name,
         dtl_ri_satuan: d.dtl_pr_satuan,
-        dtl_ri_qty: receiveQty[partId] ?? 0,
+        dtl_ri_qty: qty,
       };
     });
 
@@ -138,7 +175,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
       ri_pic: user.nama,
       details,
     };
-
+    try{
     const success = await createRI(payload);
     if (!success) {
       toast.error("Gagal membuat Receive Item");
@@ -151,163 +188,197 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
     setSelectedPO(undefined);
     setSelectedPR(undefined);
     setReceiveQty({});
+    }catch (err: any) {
+        const message = err?.response?.data?.message;
+
+        if (message) {
+          toast.error(message);
+        } else {
+          console.error(err);
+        }
+      }
   }
 
-  /* =======================
-   * HELPER: QTY PO
-   * ======================= */
   function getQtyPo(partId?: string) {
     if (!selectedPO || !partId) return undefined;
-    const poDetail = selectedPO.details.find(
-      (d) => d.part_id === partId
-    );
-    return poDetail?.dtl_po_qty;
+    return selectedPO.details.find((d) => d.part_id === partId)?.dtl_po_qty;
   }
-
+  
   return (
-    <form id="create-ri-form" onSubmit={handleSubmit} className="grid grid-cols-12 gap-4">
-      {/* HEADER */}
-      <div className="col-span-12 lg:col-span-6 space-y-4">
-        <div>
-          <Label>Kode RI<span className="text-red-500">*</span></Label>
-          <Input name="kode" required />
+    <form
+      id="create-ri-form"
+      onSubmit={handleSubmit}
+      className="grid grid-cols-12 gap-4 relative"
+    >
+      {closed && (
+        <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black">
+          
+          {/* STRIPE */}
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" />
+
+          {/* CONTENT */}
+          <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
+            <div className="text-4xl font-black tracking-widest uppercase">
+              🚫 TRANSAKSI RI DITUTUP
+            </div>
+
+            <div className="text-lg font-semibold">
+              RECEIVE ITEM TERKUNCI OLEH SISTEM
+            </div>
+
+            <div className="text-sm opacity-90">
+              Periode RI sampai tanggal{" "}
+              <span className="font-bold underline">
+                {tanggal?.getDate()}
+              </span>{" "}
+              sudah ditutup
+            </div>
+          </div>
+        </div>
+      )}
+      <fieldset
+        disabled={closed}
+        className={`col-span-12 grid grid-cols-12 gap-4 ${
+          closed ? "opacity-50" : ""
+        }`}
+      >
+        {/* HEADER */}
+        <div className="col-span-12 lg:col-span-6 space-y-4">
+          <div>
+            <Label>Kode RI</Label>
+            <Input name="kode" required />
+          </div>
+
+          <div>
+            <Label>Receive dari PO</Label>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="justify-between w-full">
+                  {selectedPO?.po_kode ?? "Cari PO..."}
+                  <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0">
+                <Command>
+                  <CommandInput placeholder="Cari PO..." />
+                  <CommandList>
+                    <CommandEmpty>Tidak ada</CommandEmpty>
+                    <CommandGroup>
+                      {filteredPO.map((m) => (
+                        <CommandItem
+                          key={m.po_kode}
+                          onSelect={() => {
+                            setSelectedPO(m);
+                            setOpen(false);
+                          }}
+                        >
+                          <CheckIcon
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedPO?.po_kode === m.po_kode
+                                ? "opacity-100"
+                                : "opacity-0"
+                            )}
+                          />
+                          {m.po_kode}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
 
-        <div>
-          <Label>Receive dari PO<span className="text-red-500">*</span></Label>
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="justify-between w-full">
-                {selectedPO?.po_kode ?? "Cari PO..."}
-                <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0">
-              <Command>
-                <CommandInput placeholder="Cari PO..." />
-                <CommandList>
-                  <CommandEmpty>Tidak ada</CommandEmpty>
-                  <CommandGroup>
-                    {filteredPO.map((m) => (
-                      <CommandItem
-                        key={m.po_kode}
-                        onSelect={() => {
-                          setSelectedPO(m);
-                          setOpen(false);
+        {/* LOKASI & TANGGAL */}
+        <div className="col-span-12 lg:col-span-6 space-y-4">
+          <div>
+            <Label>Gudang</Label>
+            <Select name="penerima" required>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih gudang" />
+              </SelectTrigger>
+              <SelectContent>
+                {LokasiList.map((l) =>
+                  l.nama === "unassigned" ? null : (
+                    <SelectItem key={l.kode} value={l.nama}>
+                      {l.nama}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Tanggal RI</Label>
+            <DatePicker value={tanggal} onChange={setTanggal} />
+          </div>
+        </div>
+
+        {/* KETERANGAN */}
+        <div className="col-span-12">
+          <Label>Keterangan</Label>
+          <Textarea name="keterangan" />
+        </div>
+
+        {/* ================= TABLE ================= */}
+        <div className="col-span-12">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>No</TableHead>
+                <TableHead>Part Number</TableHead>
+                <TableHead>Part Name</TableHead>
+                <TableHead>Satuan</TableHead>
+                <TableHead className="text-center">Qty Dikirim (PO)</TableHead>
+                <TableHead className="text-center">Qty Diterima</TableHead>
+                <TableHead>MR</TableHead>
+                <TableHead>Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {selectedPR?.details.map((item, i) => {
+                const partId = item.part_id ?? "";
+                const qtyPo = getQtyPo(partId) ?? item.dtl_pr_qty;
+
+                return (
+                  <TableRow key={i}>
+                    <TableCell>{i + 1}</TableCell>
+                    <TableCell>{item.dtl_pr_part_number}</TableCell>
+                    <TableCell>{item.dtl_pr_part_name}</TableCell>
+                    <TableCell>{item.dtl_pr_satuan}</TableCell>
+                    <TableCell className="text-center">{qtyPo}</TableCell>
+                    <TableCell className="text-center">
+                      {getQtyReceived(partId) + (receiveQty[partId] ?? 0)}
+                    </TableCell>
+                    <TableCell>{item.mr?.mr_kode}</TableCell>
+                    <TableCell>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="edit"
+                        disabled={closed}
+                        className="text-orange-600 hover:text-orange-700"
+                        onClick={() => {
+                          if (closed) return;
+                          setSelectedItem(item);
+                          setOpenQtyDialog(true);
                         }}
                       >
-                        <CheckIcon
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedPO?.po_kode === m.po_kode
-                              ? "opacity-100"
-                              : "opacity-0"
-                          )}
-                        />
-                        {m.po_kode}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </div>
-      </div>
+      </fieldset>
 
-      {/* LOKASI & TANGGAL */}
-      <div className="col-span-12 lg:col-span-6 space-y-4">
-        <div>
-          <Label>Gudang<span className="text-red-500">*</span></Label>
-          <Select name="penerima" required>
-            <SelectTrigger>
-              <SelectValue placeholder="Pilih gudang" />
-            </SelectTrigger>
-            <SelectContent>
-              {LokasiList.map((l) =>
-                l.nama === "unassigned" ? null : (
-                  <SelectItem key={l.kode} value={l.nama}>
-                    {l.nama}
-                  </SelectItem>
-                )
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <Label>Tanggal RI<span className="text-red-500">*</span></Label>
-          <DatePicker value={tanggal} onChange={setTanggal} />
-        </div>
-      </div>
-
-      {/* KETERANGAN */}
-      <div className="col-span-12">
-        <Label>Keterangan</Label>
-        <Textarea name="keterangan" />
-      </div>
-
-      {/* TABLE */}
-      <div className="col-span-12">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>No</TableHead>
-              <TableHead>Part Number</TableHead>
-              <TableHead>Part Name</TableHead>
-              <TableHead>Satuan</TableHead>
-              <TableHead className="text-center">Qty Dikirim (PO)</TableHead>
-              <TableHead className="text-center">Qty Diterima</TableHead>
-              <TableHead>MR</TableHead>
-              <TableHead>Aksi</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {selectedPR?.details.map((item, i) => {
-              const partId = item.part_id ?? "";
-              const qtyPo = getQtyPo(partId) ?? item.dtl_pr_qty;
-
-              return (
-                <TableRow key={i}>
-                  <TableCell>{i + 1}</TableCell>
-                  <TableCell>{item.dtl_pr_part_number}</TableCell>
-                  <TableCell>{item.dtl_pr_part_name}</TableCell>
-                  <TableCell>{item.dtl_pr_satuan}</TableCell>
-
-                  {/* Qty Dikirim */}
-                  <TableCell className="text-center">
-                    {qtyPo}
-                  </TableCell>
-
-                  {/* Qty Diterima */}
-                  <TableCell className="text-center">
-                    {receiveQty[partId] ?? qtyPo}
-                  </TableCell>
-
-                  <TableCell>{item.mr?.mr_kode}</TableCell>
-
-                  <TableCell>
-                    <Button
-                      size="icon"
-                      variant="edit"
-                      className="text-orange-600 hover:text-orange-700"
-                      onClick={() => {
-                        setSelectedItem(item);
-                        setOpenQtyDialog(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* DIALOG */}
+      {/* ================= DIALOG EDIT QTY ================= */}
       <Dialog open={openQtyDialog} onOpenChange={setOpenQtyDialog}>
         <DialogContent>
           <DialogHeader>
@@ -339,6 +410,7 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
                     selectedItem.dtl_pr_qty)
                 }
                 onChange={(e) =>
+                  
                   setReceiveQty((prev) => ({
                     ...prev,
                     [selectedItem.part_id ?? ""]: Number(e.target.value),
@@ -347,8 +419,15 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
               />
             </>
           )}
+
           <div className="flex justify-end">
-            <Button className="!bg-green-600 hover:!bg-green-700 text-white" onClick={() => setOpenQtyDialog(false)}>Simpan</Button>
+            <Button
+              type="button"
+              className="!bg-green-600 hover:!bg-green-700 text-white"
+              onClick={() => setOpenQtyDialog(false)}
+            >
+              Simpan
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

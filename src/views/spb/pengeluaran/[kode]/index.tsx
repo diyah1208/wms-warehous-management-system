@@ -19,7 +19,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Printer } from "lucide-react";
 import { downloadSpbPdf, getSpbByKode } from "@/services/spb";
 
 export function SpbDetail() {

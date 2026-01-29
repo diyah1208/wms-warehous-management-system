@@ -37,15 +37,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle, Clock } from "lucide-react";
+import { mrCache } from "@/services/mr-cache";
 
 
 export default function MaterialRequest() {
   const {user} = useAuth()
-  const [mrs, setMrs] = useState<MRReceive[]>([]);
-  const [filteredMrs, setFilteredMrs] = useState<MRReceive[]>([]);
-  const [mrToShow, setMrToShow] = useState<MRReceive[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
+const [mrs, setMrs] = useState<MRReceive[]>(mrCache.data ?? []);
+const [filteredMrs, setFilteredMrs] = useState<MRReceive[]>(mrCache.data ?? []);
+const [mrToShow, setMrToShow] = useState<MRReceive[]>(
+  mrCache.data ? mrCache.data.slice(0, PagingSize) : []
+);
+
 
   // Filtering
   const [tanggalMr, setTanggalMr] = useState<Date>();
@@ -59,24 +63,24 @@ export default function MaterialRequest() {
   const [sampaiTanggal, setSampaiTanggal] = useState<Date>();
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  useEffect(() => {
-    async function fetchUserDataAndMRs() {
-      try {
-        const mrResult = await getAllMr();
+useEffect(() => {
+  async function fetchMr() {
+    try {
+      const mrResult = await getAllMr();
+      if (mrResult) {
+        mrCache.data = mrResult; // ⬅️ SIMPAN CACHE
         setMrs(mrResult);
         setFilteredMrs(mrResult);
         setMrToShow(mrResult.slice(0, PagingSize));
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data: ${error.message}`);
-        } else {
-          toast.error("Gagal mengambil data MR.");
-        }
       }
+    } catch (error) {
+      toast.error("Gagal mengambil data Material Request");
     }
+  }
 
-    fetchUserDataAndMRs();
-  }, [refresh]);
+  fetchMr(); // background
+}, [refresh]);
+
 
 function renderMrStatus(status: string) {
   const value = status?.toLowerCase();
@@ -406,7 +410,11 @@ function renderMrStatus(status: string) {
         className="border-sky-400 text-sky-600 hover:bg-sky-50"
         asChild
       >
-        <Link to={`/mr/kode/${encodeURIComponent(mr.mr_kode)}`}>
+       <Link
+  to={`/mr/kode/${encodeURIComponent(mr.mr_kode)}`}
+  state={{ mr }}   // ⬅️ KIRIM DATA MR
+>
+
           <Info className="h-4 w-4" />
         </Link>
       </Button>

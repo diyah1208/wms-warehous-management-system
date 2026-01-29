@@ -99,6 +99,7 @@ export async function createSpbDo(data: {
 export async function createSpbInvoice(
   data: {
     spb_id: number,
+    spb_do_id?: number,
     invoice_no: string;
     invoice_date?: string;
     invoice_email_date?: string;

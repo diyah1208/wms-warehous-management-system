@@ -10,8 +10,6 @@ export async function saveSignature(kode: string, signatureBase64: string) {
     throw error.response?.data || error;
   }
 }
-<<<<<<< HEAD
-=======
 
 export async function saveSignaturePR(kode: string, signatureBase64: string) {
   try {
@@ -24,4 +22,3 @@ export async function saveSignaturePR(kode: string, signatureBase64: string) {
     throw error.response?.data || error;
   }
 }
->>>>>>> 062c8a2318dc8547e0436ace8405f8eab2ed29f7

@@ -1,51 +1,3 @@
-// import { useParams } from "react-router-dom";
-// import { useState } from "react";
-// import SignaturePad from "@/components/signature-pad";
-// import { Button } from "@/components/ui/button";
-// import { submitSignature } from "@/services/material-request";
-
-// export default function MRSign() {
-//   const { kode } = useParams<{ kode: string }>();
-//   const [signature, setSignature] = useState<string | null>(null);
-//   const [loading, setLoading] = useState(false);
-
-// async function handleSubmit() {
-//   if (!signature || !kode) return;
-
-//   try {
-//     setLoading(true);
-//     await submitSignature(kode, signature);
-
-//     alert("Tanda tangan berhasil. Silakan kembali ke laptop.");
-//   } catch {
-//     alert("Gagal menyimpan tanda tangan");
-//   } finally {
-//     setLoading(false);
-//   }
-// }
-
-
-//   return (
-//     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-//       <div className="bg-white p-4 rounded-md w-full max-w-md space-y-4">
-//         <h1 className="text-center font-semibold text-lg">
-//           Tanda Tangan Material Request
-//         </h1>
-
-//         <SignaturePad onSave={setSignature} />
-
-//         <Button
-//           className="w-full"
-//           disabled={!signature || loading}
-//           onClick={handleSubmit}
-//         >
-//           {loading ? "Menyimpan..." : "Simpan Tanda Tangan"}
-//         </Button>
-//       </div>
-//     </div>
-//   );
-// }
-
 // pages/mr-sign/[kode].tsx
 import { useParams } from "react-router-dom";
 import { useState } from "react";
@@ -157,4 +109,3 @@ export default function MRSign() {
     </div>
   );
 }
-

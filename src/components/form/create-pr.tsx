@@ -53,7 +53,7 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   const [prItems, setPRItems] = useState<PRItemReceive[]>([]);
   const [, setMrIncluded] = useState<string[]>([]);
 const [kodePR, setKodePR] = useState<string>("");
-
+  const [qty, setQty] = useState<number>(1);
   // Pencarian master part
   const [open2, setOpen2] = useState<boolean>(false);
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
@@ -165,48 +165,71 @@ const availableParts: MasterPart[] = selectedMr
     }
   }
 
-function handleAddItem(part: MasterPart, qty: number) {
-  if (!selectedMr || !part?.part_id || qty <= 0) {
-    toast.error("MR, Part, dan Qty wajib diisi");
+function handleAddItem() {
+  if (!selectedMr || !selectedMr.details) {
+    toast.error("Pilih MR terlebih dahulu");
     return;
   }
 
-  const isDuplicate = prItems.some(
+  // 🔥 CEK: apakah MR ini sudah HABIS dipakai
+  const isMrExhausted = prItems.some(
     (item) =>
       item.mr_id === selectedMr.mr_id &&
-      item.part_id === part.part_id
+      (item.dtl_mr_qty_request ?? 0) > 0 &&
+      item.dtl_pr_qty >= (item.dtl_mr_qty_request ?? 0)
   );
 
-  if (isDuplicate) {
-    toast.error(
-      `Part ${part.part_number} dari MR ${selectedMr.mr_kode} sudah ditambahkan`
-    );
+  if (isMrExhausted) {
+    toast.error("MR ini sudah habis dan tidak bisa digunakan lagi");
     return;
   }
 
-  const mrDetail = selectedMr.details?.find(
-    (d) => d.part_id === part.part_id
-  );
+  const newItems: PRItemReceive[] = [];
 
-  const newItem: PRItemReceive = {
-    mr_id: selectedMr.mr_id,
-    part_id: part.part_id,
-    dtl_pr_part_number: part.part_number,
-    dtl_pr_part_name: part.part_name,
-    dtl_pr_satuan: part.part_satuan,
-    dtl_pr_qty: qty,
-    dtl_mr_qty_request: mrDetail?.dtl_mr_qty_request ?? 0,
-    mr: selectedMr,
-  };
+  selectedMr.details.forEach((detail) => {
+    const part = masterParts.find(
+      (p) => p.part_id === detail.part_id
+    );
+    if (!part) return;
 
-  setPRItems((prev) => [...prev, newItem]);
-  setSelectedPart(undefined);
+    // ❌ CEK DUPLIKAT PART DALAM MR YANG SAMA
+    const isDuplicate = prItems.some(
+      (item) =>
+        item.mr_id === selectedMr.mr_id &&
+        item.part_id === detail.part_id
+    );
 
-  toast.success("Item berhasil ditambahkan");
-  
-  // JANGAN reset selectedMr, biar bisa add part lain dari MR yang sama
-  // setSelectedMr(undefined); // HAPUS INI jika ada
+    if (isDuplicate) return;
+
+    newItems.push({
+      mr_id: selectedMr.mr_id,
+      part_id: detail.part_id,
+      dtl_pr_part_number: part.part_number,
+      dtl_pr_part_name: part.part_name,
+      dtl_pr_satuan: part.part_satuan,
+
+      // 🔥 DEFAULT JUMLAH = 0 (USER WAJIB ISI)
+      dtl_pr_qty: 0,
+
+      // REFERENSI QTY MR
+      dtl_mr_qty_request: detail.dtl_mr_qty_request,
+      mr: selectedMr,
+    });
+  });
+
+  if (newItems.length === 0) {
+    toast.warning("Semua item dari MR ini sudah ditambahkan");
+    return;
+  }
+
+  setPRItems((prev) => [...prev, ...newItems]);
+
+  // 🔥 RESET MR SETELAH DIPAKAI
+  setSelectedMr(undefined);
+
+  toast.success("Item MR berhasil ditambahkan ke PR");
 }
+
 
   function handleRemoveItem(index: number) {
     setPRItems((prevItems) => prevItems.filter((_, i) => i !== index));
@@ -293,13 +316,13 @@ function handleAddItem(part: MasterPart, qty: number) {
 
               {selectedMr
                 ? `${mr.find((m: MRReceive) => m.mr_kode === selectedMr?.mr_kode)?.mr_kode} | Part: ${selectedPart?.part_number || 'Loading...'}`
-                : "Cari kode material request"}
+                : "Pilih Material Request"}
               <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
             <Command>
-              <CommandInput placeholder="Cari kode mr..." />
+              <CommandInput placeholder="Pilih MR" />
               <CommandList>
                 <CommandEmpty>Tidak ada.</CommandEmpty>
                 <CommandGroup>
@@ -307,21 +330,21 @@ function handleAddItem(part: MasterPart, qty: number) {
                     <CommandItem
                       key={m.mr_kode}
                       value={m.mr_kode}
-                      onSelect={(currentValue) => {
-                        const selectedMrData = mr.find((mrItem) => mrItem.mr_kode === currentValue);
-                        setSelectedMr(selectedMrData);
-                        
-                        // Auto-set part berdasarkan MR
-                        if (selectedMrData && selectedMrData.details && selectedMrData.details.length > 0) {
-                          const partId = selectedMrData.details[0].part_id;
-                          const part = masterParts.find(p => p.part_id === partId);
-                          if (part) {
-                            setSelectedPart(part);
-                          }
-                        }
-                        
-                        setOpen2(false);
-                      }}
+onSelect={(currentValue) => {
+  const selectedMrData = mr.find(
+    (mrItem) => mrItem.mr_kode === currentValue
+  );
+
+  if (!selectedMrData) {
+    toast.error("MR tidak ditemukan");
+    return;
+  }
+
+  setSelectedMr(selectedMrData);
+  setOpen2(false);
+}}
+
+
                     >
                       <CheckIcon
                         className={cn(
@@ -340,23 +363,17 @@ function handleAddItem(part: MasterPart, qty: number) {
           </PopoverContent>
         </Popover>
 
-<AddItemPRDialog
-  parts={availableParts}
-  onAddItem={handleAddItem}
-  triggerButton={
-    <Button
-      type="button"
-      disabled={!kodePR.trim() || !selectedMr}
-      className="col-span-12 md:col-span-4
-                 !bg-green-600 hover:!bg-green-700 text-white
-                 disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      
-       <ClipboardPlus className="h-4 w-4" />
-      <span>Tambah Barang</span>
-    </Button>
-  }
-/>
+<Button
+  type="button"
+  disabled={!kodePR.trim() || !selectedMr}
+  onClick={handleAddItem}
+  className="col-span-12 md:col-span-4
+             !bg-green-600 hover:!bg-green-700 text-white"
+>
+  <ClipboardPlus className="h-4 w-4" />
+  <span>Tambah Barang</span>
+</Button>
+
 
       </div>
 
@@ -377,8 +394,11 @@ function handleAddItem(part: MasterPart, qty: number) {
               <TableHead className="font-semibold text-center">
                 Satuan
               </TableHead>
-              <TableHead className="font-semibold text-center">Qty PR</TableHead>
+              {/* <TableHead className="font-semibold text-center">Qty PR</TableHead> */}
               <TableHead className="font-semibold text-center">Qty MR</TableHead>
+              <TableHead className="font-semibold text-center">
+                QTY PR
+              </TableHead>
               <TableHead className="font-semibold text-center">
                 Berdasarkan MR
               </TableHead>
@@ -395,8 +415,41 @@ function handleAddItem(part: MasterPart, qty: number) {
                   </TableCell>
                   <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
                   <TableCell>{item.dtl_pr_satuan}</TableCell>
-                  <TableCell>{item.dtl_pr_qty}</TableCell>
+                  {/* <TableCell>{item.dtl_pr_qty}</TableCell> */}
                   <TableCell>{item.dtl_mr_qty_request}</TableCell>
+<TableCell className="text-center">
+  <Input
+    type="number"
+    min={1}
+    className="w-24 mx-auto text-center"
+    value={item.dtl_pr_qty}
+    onChange={(e) => {
+      const raw = e.target.value;
+      if (raw === "") return;
+
+      const value = Number(raw);
+      const mrQty = item.dtl_mr_qty_request ?? 0;
+
+      if (value < 1) return;
+
+      // 🔥 VALIDASI UTAMA
+      if (value > mrQty) {
+        toast.error("Qty PR tidak boleh melebihi Qty MR");
+        return;
+      }
+
+      setPRItems((prev) =>
+        prev.map((it, i) =>
+          i === index
+            ? { ...it, dtl_pr_qty: value }
+            : it
+        )
+      );
+    }}
+  />
+</TableCell>
+
+
                   <TableCell>{item.mr?.mr_kode}</TableCell>
                   <TableCell>
                    <Button

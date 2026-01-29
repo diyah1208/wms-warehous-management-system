@@ -1,94 +1,91 @@
 // pages/material-request/[kode].tsx
-import SectionContainer, {
-  SectionBody,
-  SectionFooter,
-  SectionHeader,
-} from "@/components/content-container";
+import SectionContainer, {SectionBody,SectionFooter,SectionHeader,} from "@/components/content-container";
 import WithSidebar from "@/components/layout/WithSidebar";
 import type { MRReceive, Stock } from "@/types";
 import { useEffect, useState, useRef } from "react";
-
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
 import { getMrByKode, clearSignature } from "@/services/material-request";
 import { getAllStocks } from "@/services/stock";
 import { Button } from "@/components/ui/button";
 import { Printer, PenTool } from "lucide-react";
-
 import { EditMRDetailDialog } from "@/components/dialog/edit-mr";
 import { useAuth } from "@/context/AuthContext";
-// import { Trash2 } from "lucide-react";
-// import { deleteMRDetail } from "@/services/material-request";
 import { QRCodeCanvas } from "qrcode.react";
 import { downloadMrPdf } from "@/services/material-request";
+import { mrDetailCache } from "@/services/mr-detail-cache";
+import { stockCache } from "@/services/stock-cache";
+import { useLocation } from "react-router-dom";
 
 export function MaterialRequestDetail() {
   const { kode } = useParams<{ kode: string }>();
+  const location = useLocation(); 
+ if (!kode) {
+    return (
+      <WithSidebar>
+        <SectionContainer span={12}>
+          <SectionHeader>Detail Material Request</SectionHeader>
+          <SectionBody className="p-8 text-center text-muted-foreground">
+            Kode Material Request tidak ditemukan.
+          </SectionBody>
+        </SectionContainer>
+      </WithSidebar>
+    );
+  }
+
+ const mrKode = kode; // 🔒 FIXED STRING
+const stateMr = (location.state as { mr?: MRReceive })?.mr;
   const { user } = useAuth();
-  const [mr, setMr] = useState<MRReceive | null>(null);
-  const [stocks, setStocks] = useState<Stock[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [refresh, setRefresh] = useState<boolean>(false);
   const [showSignature, setShowSignature] = useState(false);
-const [hasPrinted, setHasPrinted] = useState(false);
-const signatureToastShownRef = useRef(false);
-const [isPrinting, setIsPrinting] = useState(false);
+  const signatureToastShownRef = useRef(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+const [mr, setMr] = useState<MRReceive | null>(
+  mrDetailCache[mrKode] ?? stateMr ?? null
+);
 
-// const feBaseUrl = window.location.origin;
+const [stocks, setStocks] = useState<Stock[]>(
+  stockCache.data ?? []
+);
 
-
-
-  // 🔥 Fetch data MR & Stocks
-  useEffect(() => {
-    async function fetchData() {
-      if (!kode) {
-        toast.error("Kode Material Request tidak ditemukan di URL.");
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      try {
-        const resMr = await getMrByKode(kode);
-        if (resMr) {
-          setMr(resMr);
-        } else {
-          toast.error(`Material Request dengan kode ${kode} tidak ditemukan.`);
-          setMr(null);
-        }
-
-        const resStocks = await getAllStocks();
-        if (resStocks) {
-          setStocks(resStocks);
-        }
-      } catch (error) {
-        console.error("Gagal mengambil data:", error);
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data: ${error.message}`);
-        } else {
-          toast.error("Terjadi kesalahan saat mengambil data.");
-        }
-        setMr(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [kode, refresh]);
-
-  // 🔥 Polling untuk cek signature dari mobile
 useEffect(() => {
-  if (!showSignature || !kode) return;
+  if (stateMr && !mrDetailCache[mrKode]) {
+    mrDetailCache[mrKode] = stateMr;
+  }
+}, [stateMr, mrKode]);
+
+useEffect(() => {
+  async function fetchDetail() {
+    try {
+      const [mrRes, stockRes] = await Promise.all([
+        getMrByKode(mrKode),
+        stockCache.data
+          ? Promise.resolve(stockCache.data)
+          : getAllStocks(),
+      ]);
+
+      if (mrRes) {
+        mrDetailCache[mrKode] = mrRes;
+        setMr(mrRes);
+      }
+
+      if (Array.isArray(stockRes)) {
+        stockCache.data = stockRes;
+        setStocks(stockRes);
+      }
+    } catch {
+      toast.error("Gagal mengambil detail Material Request");
+    }
+  }
+
+  fetchDetail();
+}, [mrKode, refresh]);
+
+useEffect(() => {
+  if (!showSignature) return;
   if (signatureToastShownRef.current) return;
 
   const interval = setInterval(async () => {
@@ -130,7 +127,7 @@ useEffect(() => {
 
 
 const handleDownloadPdf = async () => {
-  if (!mr || !kode || isPrinting) return;
+  if (!mr || isPrinting) return;
 
   try {
     setIsPrinting(true);
@@ -147,53 +144,22 @@ const handleDownloadPdf = async () => {
 
 
 
-const handlePrintClick = async () => {
-  // 🔴 Sudah pernah print → WAJIB scan ulang
-  if (hasPrinted) {
-    setShowSignature(true);
-    return;
-  }
 
-  // 🔴 Belum ada TTD → QR
-  if (!mr?.signature_url) {
-    setShowSignature(true);
-    return;
-  }
 
-  // 🟢 Ada TTD & belum pernah print
-  window.print();
 
-  setHasPrinted(true);
-
-  // 🔥 reset FE
-  setMr(prev =>
-    prev ? { ...prev, signature_url: null, sign_at: null } : prev
+  if (!mr) {
+  return (
+    <WithSidebar>
+      <SectionContainer span={12}>
+        <SectionHeader>Detail Material Request</SectionHeader>
+        <SectionBody className="p-8 text-center text-muted-foreground">
+          Data belum tersedia.
+        </SectionBody>
+      </SectionContainer>
+    </WithSidebar>
   );
+}
 
-  // 🔥 clear backend
-  if (kode) {
-    await clearSignature(kode);
-  }
-};
-
-
-
-
-
-  if (isLoading) {
-    return (
-      <WithSidebar>
-        <SectionContainer span={12}>
-          <SectionHeader>Memuat Detail Material Request...</SectionHeader>
-          <SectionBody className="grid grid-cols-12 gap-2">
-            <div className="col-span-12 flex items-center justify-center border border-dashed border-border rounded-sm p-8 text-muted-foreground text-lg">
-              Memuat data...
-            </div>
-          </SectionBody>
-        </SectionContainer>
-      </WithSidebar>
-    );
-  }
 
   if (!mr) {
     return (
@@ -224,7 +190,7 @@ const handlePrintClick = async () => {
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
 
             <QRCodeCanvas
-              value={`http://10.10.6.175:5173/mr-sign/${encodeURIComponent(
+              value={`http://192.168.21.144:5173/mr-sign/${encodeURIComponent(
                 mr.mr_kode
               )}`}
               size={200}
@@ -447,7 +413,7 @@ const handlePrintClick = async () => {
                   <div className="text-center w-[220px]">
                     <p className="font-semibold mb-2">Tanda Tangan</p>
              <img
-  src={`http://10.10.6.175:8000/storage/${mr.signature_url}`}
+  src={`http://10.10.6.207:8000/storage/${mr.signature_url}`}
   alt="signature"
   className="h-28 mx-auto border-b-2 border-black"
 />

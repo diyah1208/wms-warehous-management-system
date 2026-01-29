@@ -293,21 +293,8 @@ export default function CreateSpbForm({
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
         <Label>Gudang<span className="text-red-500">*</span></Label>
-        <Select value={spbGudang} onValueChange={setSpbGudang}>
-          <SelectTrigger>
-            <SelectValue placeholder="Pilih Gudang" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectLabel>Daftar Gudang</SelectLabel>
-              {LokasiList.map((l) => (
-                <SelectItem key={l.kode} value={l.nama}>
-                  {l.nama}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <input type="hidden" name="spb_gedung" value={user.lokasi} />
+        <Input value={user!.lokasi} onChange={(e) => setSpbGudang(e.target.value)} disabled/>
       </div>
 
       {/* FORM HEADER LANJUTAN */}
@@ -344,53 +331,10 @@ export default function CreateSpbForm({
 
       <div className="col-span-12 lg:col-span-4 space-y-2">
         <Label>Brand<span className="text-red-500">*</span></Label>
-
-        <Popover open={openBrand} onOpenChange={setOpenBrand}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              className="w-full justify-between"
-            >
-              {selectedVendor
-                ? selectedVendor.vendor_name
-                : "Pilih brand..."}
-              <ChevronsUpDownIcon className="ml-2 h-4 w-4 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-
-          <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Cari brand..." />
-              <CommandList>
-                <CommandEmpty>Brand tidak ditemukan</CommandEmpty>
-                <CommandGroup>
-                  {vendors.map((vendor) => (
-                    <CommandItem
-                      key={vendor.vendor_id}
-                      value={vendor.vendor_name}
-                      onSelect={() => {
-                        setSelectedVendor(vendor);
-                        setSpbBrand(vendor.vendor_name); // ← INI YANG MASUK KE PAYLOAD
-                        setOpenBrand(false);
-                      }}
-                    >
-                      <CheckIcon
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedVendor?.vendor_id === vendor.vendor_id
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {vendor.vendor_name}
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+        <Input
+          value={spbBrand}
+          onChange={(e) => setSpbBrand(e.target.value)}
+        />
       </div>
 
       <div className="col-span-12 lg:col-span-4 space-y-2">

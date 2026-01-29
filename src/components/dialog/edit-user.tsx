@@ -133,6 +133,7 @@ export function EditUserDialog({
                     <SelectItem value="marketing">Marketing</SelectItem>
                     <SelectItem value="finance">Finance</SelectItem>
                     <SelectItem value="user">User</SelectItem>
+                    <SelectItem value="approver_mr">Approver MR</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

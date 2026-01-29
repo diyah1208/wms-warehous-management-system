@@ -4,6 +4,23 @@ import type { DeliveryReceive } from "@/types";
 const BASE_URL = "http://localhost:8000/api/deliveries"; 
 
 
+interface DeliveryParams {
+  page?: number;
+  kodeIt?: string;
+  kodeMr?: string;
+  status?: string;
+}
+
+// export function getAllDelivery(params: DeliveryParams = {}) {
+//   return api.get("/deliveries", {
+//     params: {
+//       page: params.page ?? 1,
+//       kodeIt: params.kodeIt,
+//       kodeMr: params.kodeMr,
+//       status: params.status,
+//     },
+//   });
+// }
 export async function getAllDelivery(): Promise<DeliveryReceive[]> {
   const res = await api.get("/deliveries");
   return res.data;
@@ -36,6 +53,7 @@ export async function createDelivery(data: DeliveryReceive) {
     dlv_status: data.dlv_status,
     dlv_pic: data.dlv_pic,
     dlv_no_resi: data.dlv_no_resi,
+    dlv_tanggal: data.dlv_tanggal,
     dlv_jumlah_koli: data.dlv_jumlah_koli,
     mr_id: data.mr_id,
     created_at: data.created_at,
@@ -154,11 +172,12 @@ export async function downloadDeliveryPdf(kode: string) {
     { responseType: "blob" }
   );
 
-  const blob = new Blob([res.data], { type: "application/pdf" });
-  const url = window.URL.createObjectURL(blob);
-
+  const url = URL.createObjectURL(res.data);
   window.open(url);
+
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
+
 
 export async function downloadDeliveryExcel() {
   const res = await api.get(`${BASE_URL}/export-excel`, {

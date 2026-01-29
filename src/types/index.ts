@@ -459,6 +459,7 @@ export interface DeliveryReceive {
   dlv_ke_gudang : string;
   dlv_ekspedisi: string;
   dlv_no_resi: string;
+  dlv_tanggal: string;
   dlv_jumlah_koli: number;
   dlv_status: string;
   dlv_pic: string;
@@ -477,6 +478,7 @@ export interface DeliveryReceive {
   signed_penerima_sign?: string | null;
   signed_penerima_at?: string | null;
   details: DeliveryDetail[];
+  mr_kode?: string | null;
   mr?: MRReceive;
 }
 /* ==========================
@@ -732,6 +734,31 @@ export interface SpbInvoice {
   created_at?: string;
   updated_at?: string;
   spb?:Spb;
+  do?: SpbDo;
 }
+
+export interface MRDropdown {
+  mr_id: number;
+  mr_kode: string;
+  mr_lokasi: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export type PivotStockRow = {
+  part_number: string;
+  part_name: string;
+  satuan: string;
+  stocks: Record<string, number>;
+};
+
 
 

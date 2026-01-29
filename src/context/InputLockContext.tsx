@@ -14,7 +14,7 @@ interface InputLockContextType {
 const InputLockContext = createContext<InputLockContextType | null>(null);
 
 interface InputLockProviderProps {
-  children: any; // 🔥 PALING AMAN
+  children: any; 
 }
 
 export function InputLockProvider(props: InputLockProviderProps) {

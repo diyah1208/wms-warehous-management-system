@@ -149,11 +149,11 @@ useEffect(() => {
     }
 
   const invalidDetail = poDetails.some(
-  (d) => d.qty_po <= 0 || d.harga <= 0 || !d.vendor_id
+  (d) => d.qty_po <= 0 || d.harga <= 0 
 );
 
 if (invalidDetail) {
-  toast.error("Qty PO, Harga, dan Vendor wajib diisi");
+  toast.error("Qty PO dan Harga wajib diisi");
   return;
 }
 
@@ -232,8 +232,75 @@ details: poDetails.map((d) => ({
             required 
           />
         </div>
+   <div className="flex flex-col gap-2">
+          <Label>Status Utama<span className="text-red-500">*</span></Label>
+          <Select 
+            name="status" 
+            required 
+            value={status} 
+            onValueChange={setStatus}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Pilih status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="purchased">Purchased</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="flex flex-col gap-2">
+  <Label>Vendor<span className="text-red-500">*</span></Label>
+
+  <Select
+    onValueChange={(val) => {
+      setPoDetails((prev) =>
+        prev.map((d) => ({
+          ...d,
+          vendor_id: val,
+        }))
+      );
+    }}
+  >
+    <SelectTrigger className="w-full">
+      <SelectValue placeholder="Pilih Vendor" />
+    </SelectTrigger>
+
+    <SelectContent>
+      <SelectGroup>
+        {vendorList
+          .filter(
+            (v): v is { vendor_id: string; vendor_name: string } =>
+              v.vendor_id !== undefined
+          )
+          .map((v) => (
+            <SelectItem key={v.vendor_id} value={v.vendor_id}>
+              {v.vendor_name}
+            </SelectItem>
+          ))}
+      </SelectGroup>
+    </SelectContent>
+  </Select>
+</div>
+
+    <div className="flex flex-col gap-2">
+          <Label>Tanggal Estimasi<span className="text-red-500">*</span></Label>
+          <DatePicker value={estimasi} onChange={setEstimasi} />
+        </div>
+      </div>
+
+
+    
+
+    
+
+      {/* KANAN */}
+      <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
+     
+    <div className="flex flex-col gap-2">
           <Label>Referensi PR<span className="text-red-500">*</span></Label>
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -249,7 +316,7 @@ details: poDetails.map((d) => ({
 
             <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
               <Command>
-                <CommandInput placeholder="Cari kode PR..." />
+                <CommandInput placeholder="Pilih PR" />
                 <CommandList>
                   <CommandEmpty>Tidak ada PR tersedia</CommandEmpty>
                   <CommandGroup>
@@ -309,34 +376,6 @@ details: poDetails.map((d) => ({
           </Popover>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Label>Tanggal Estimasi<span className="text-red-500">*</span></Label>
-          <DatePicker value={estimasi} onChange={setEstimasi} />
-        </div>
-      </div>
-
-      {/* KANAN */}
-      <div className="col-span-12 lg:col-span-6 flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <Label>Status Utama<span className="text-red-500">*</span></Label>
-          <Select 
-            name="status" 
-            required 
-            value={status} 
-            onValueChange={setStatus}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Pilih status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="purchased">Purchased</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-
         {/* Sub Status berdasarkan Status Utama */}
         {status && (
           <div className="flex flex-col gap-2">
@@ -377,18 +416,22 @@ details: poDetails.map((d) => ({
           <Label>Person in Charge</Label>
           <Input value={user.nama} disabled />
         </div>
+         <div className="flex flex-col gap-2">
+  <Label>Keterangan</Label>
+  <Textarea
+    name="keterangan"
+    placeholder="Keterangan"
+    value={keterangan}
+    onChange={(e) => setKeterangan(e.target.value)}
+    className="min-h-[10px] resize-none"
+  />
+</div>
       </div>
 
       {/* KETERANGAN */}
-      <div className="col-span-12">
-        <Label>Keterangan</Label>
-        <Textarea 
-          name="keterangan" 
-          placeholder="Keterangan (opsional)..."
-          value={keterangan}
-          onChange={(e) => setKeterangan(e.target.value)}
-        />
-      </div>
+
+
+
 
       {/* TABLE ITEM PR */}
       <div className="col-span-12">
@@ -406,7 +449,7 @@ details: poDetails.map((d) => ({
                 <TableHead className="font-semibold text-center">Qty PR</TableHead>
                   <TableHead className="font-semibold text-center">Qty PO</TableHead>
                   <TableHead className="font-semibold text-center">Input Harga</TableHead>
-                  <TableHead className="font-semibold text-center">Vendor</TableHead>
+                  {/* <TableHead className="font-semibold text-center">Vendor</TableHead> */}
 
               </TableRow>
             </TableHeader>
@@ -463,7 +506,7 @@ details: poDetails.map((d) => ({
 />
 
 </TableCell>
-<TableCell className="text-center">
+{/* <TableCell className="text-center">
   <Select
     value={item.vendor_id}
     onValueChange={(val) => {
@@ -492,7 +535,7 @@ details: poDetails.map((d) => ({
       </SelectGroup>
     </SelectContent>
   </Select>
-</TableCell>
+</TableCell> */}
 
 
                   </TableRow>

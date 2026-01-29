@@ -86,18 +86,24 @@ export async function createPR(data: PurchaseRequest) {
 
 
 
-export async function submitSignature(kode: string, signatureBase64: string) {
+export async function submitSignature(
+  kode: string,
+  signatureBase64: string
+) {
   const res = await api.post("/pr/sign", {
-    kode,
+    kode, // 🔥 HARUS "kode", BUKAN pr_kode
     signature: signatureBase64,
   });
+
   return res.data;
 }
+
 
 // services/purchase-request.ts
 export async function clearSignature(kode: string) {
   return api.delete(`/pr/${encodeURIComponent(kode)}/signature`);
 }
+
 
 export function downloadPrPdf(kode: string) {
   api

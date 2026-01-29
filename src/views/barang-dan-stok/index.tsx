@@ -23,7 +23,7 @@ import { getAllStocks,downloadStockExcel } from "@/services/stock";
 import type { MasterPart, Stock } from "@/types";
 import { PagingSize } from "@/types/enum";
 import { HousePlus, FileSpreadsheet, QrCode, X, Filter, Search } from "lucide-react";
-import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction,useRef  } from "react";
 import { toast } from "sonner";
 import QRCode from "qrcode";
 import {
@@ -32,6 +32,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Upload } from "lucide-react";
+import { importStockExcel } from "@/services/stock";
+import { importMasterPartExcel } from "@/services/master-part";
+
+
 
 
 export default function BarangDanStok() {
@@ -268,6 +273,8 @@ function DataMasterPartSection({
   // Pagination
   const pageSize = PagingSize;
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const importPartRef = useRef<HTMLInputElement>(null);
+
 
   useEffect(() => {
     setFilteredMasterParts(masterParts);
@@ -336,13 +343,6 @@ function DataMasterPartSection({
 
           <div className="flex items-center gap-2">
             {/* Search by kode */}
-            {/* <div className="col-span-12 md:col-span-4 lg:col-span-5">
-              <Input
-                placeholder="Cari berdasarkan part number"
-                value={pn}
-                onChange={(e) => setPn(e.target.value)}
-              />
-            </div> */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -358,45 +358,7 @@ function DataMasterPartSection({
                   </Tooltip>
                 </TooltipProvider>
 
-            {/* Search button */}
-            {/* <div className="col-span-12 md:col-span-4 lg:col-span-2">
-              <Button className="w-full" onClick={filterMP}>
-                Cari
-              </Button>
-            </div> */}
-
-            {/* Filter popover */}
-            {/* <div className="col-span-12 md:col-span-4 lg:col-span-3">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full">
-                    Filter Tambahan
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Part Name
-                    </label>
-                    <Input
-                      placeholder="part name"
-                      value={pnm}
-                      onChange={(e) => setPnm(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Satuan
-                    </label>
-                    <Input
-                      placeholder="Uom"
-                      value={uom}
-                      onChange={(e) => setUom(e.target.value)}
-                    />
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div> */}
+            
           <Popover>
             <PopoverTrigger asChild>
               <TooltipProvider>
@@ -442,14 +404,6 @@ function DataMasterPartSection({
               </TooltipProvider>
             </PopoverTrigger>
               <PopoverContent className="w-80 space-y-4">
-                {/* <div className="space-y-2">
-                  <label className="text-sm font-medium">Nama Customer</label>
-                  <Input
-                    placeholder="Cari nama customer"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                  />
-                </div> */}
 
                 {/* ACTION */}
                 <div className="flex justify-end gap-2 pt-2">
@@ -515,6 +469,39 @@ function DataMasterPartSection({
                     <TooltipContent>Export Excel</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => importPartRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4 text-blue-600" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Import Master Part</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <input
+                  ref={importPartRef}
+                  type="file"
+                  hidden
+                  accept=".xlsx,.xls"
+                  onChange={async (e) => {
+                    if (!e.target.files?.length) return;
+
+                    try {
+                      await importMasterPartExcel(e.target.files[0]);
+                      toast.success("Import master part berhasil");
+                      setRefresh((prev) => !prev);
+                    } catch {
+                      toast.error("Gagal import master part");
+                    } finally {
+                      e.target.value = "";
+                    }
+                  }}
+                />
               </div>
             </div>
           </div>
@@ -549,6 +536,8 @@ function DataStokSection({
 }) {
   const { user } = useAuth();
   const lokasiUser = user?.lokasi;
+  const importStockRef = useRef<HTMLInputElement>(null);
+
 
   type PivotStockRow = {
     part_number: string;
@@ -643,8 +632,7 @@ function DataStokSection({
   function findStock(partNumber: string): Stock | undefined {
     return stocks.find(
       (s) =>
-        s.barang?.part_number === partNumber &&
-        s.stk_location === lokasiUser
+        s.barang?.part_number === partNumber 
     );
   }
 
@@ -748,7 +736,40 @@ function DataStokSection({
               <TooltipContent>Export Excel</TooltipContent>
             </Tooltip>
           </TooltipProvider>
+          {/* IMPORT STOCK */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => importStockRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 text-blue-600" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Import Stock</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <input
+            ref={importStockRef}
+            type="file"
+            hidden
+            accept=".xlsx,.xls"
+            onChange={async (e) => {
+              if (!e.target.files?.length) return;
 
+              try {
+                await importStockExcel(e.target.files[0]);
+                toast.success("Import stock berhasil");
+                setRefresh((prev) => !prev);
+              } catch (err) {
+                toast.error("Gagal import stock");
+              } finally {
+                e.target.value = "";
+              }
+            }}
+          />
         </div>
           <QuickTable
             data={tableStocks}

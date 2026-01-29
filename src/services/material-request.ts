@@ -1,4 +1,3 @@
-
 import api from "@/lib/axios";
 // import axios from "axios";
 
@@ -29,27 +28,7 @@ export async function getOpenMR() {
   return res.data;
 }
 
-/* =====================================================
- * CREATE MR
- * ===================================================== */
-// export async function createMR(data: MRReceive) {
-//   const payload = {
-//     mr_tanggal: data.mr_tanggal,
-//     mr_due_date: data.mr_due_date,
-//     mr_lokasi: data.mr_lokasi,
-//     mr_pic: data.mr_pic,
-//     details: data.details.map((d) => ({
-//       part_id: d.part_id,
-//       dtl_mr_part_number: d.dtl_mr_part_number,
-//       dtl_mr_part_name: d.dtl_mr_part_name,
-//       dtl_mr_satuan: d.dtl_mr_satuan,
-//       dtl_mr_prioritas: d.dtl_mr_prioritas,
-//       dtl_mr_qty_request: d.dtl_mr_qty_request ?? 0,
-//     })),
-//   };
 
-//   return api.post(`${BASE_URL}`, payload);
-// }
 export async function createMR(data: MRReceive) {
   const payload = {
     mr_tanggal: data.mr_tanggal,
@@ -130,6 +109,7 @@ export async function clearSignature(kode: string) {
   );
   return res.data;
 }
+
 
 export function downloadMrPdf(kode: string) {
   api
