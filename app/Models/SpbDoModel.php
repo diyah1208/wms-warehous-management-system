@@ -21,4 +21,8 @@ class SpbDoModel extends Model
     {
         return $this->belongsTo(SpbModel::class, 'spb_id', 'spb_id');
     }
+    public function invoice()
+    {
+        return $this->hasMany(SpbInvoice::class, 'spb_do_detail', 'spb_do_detail');
+    }
 }

@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
-
+use Barryvdh\DomPDF\Facade\Pdf;
 class PurchaseOrderController extends Controller
 {
     public function getPrOpen(Request $request)
@@ -68,7 +68,7 @@ class PurchaseOrderController extends Controller
             'details.*.part_id' => 'required',
             'details.*.dtl_po_qty' => 'required|numeric|min:1',
             'details.*.dtl_po_harga' => 'required|numeric|min:1',
-'details.*.vendor_id'   => 'required|exists:vendors,id',
+// 'details.*.vendor_id'   => 'required|exists:vendors,id',
 
         ]);
 
@@ -119,10 +119,15 @@ foreach ($request->details as $item) {
         ], 201);
     }
 
- public function showKode($kode)
+public function showKode($kode)
 {
+    $kode = urldecode($kode);
+
     $po = PurchaseOrderModel::with([
         'purchaseRequest',
+        'purchaseRequest.details',
+        'purchaseRequest.details.mr',
+        'details',
         'details.vendor',
     ])
     ->where('po_kode', $kode)
@@ -130,7 +135,6 @@ foreach ($request->details as $item) {
 
     return response()->json($po);
 }
-
 
     public function show($id)
     {
@@ -196,6 +200,27 @@ foreach ($request->details as $item) {
             ]
         ]);
     }
+public function exportPdf(string $kode)
+{
+    $kode = urldecode($kode);
+
+    $po = PurchaseOrderModel::with([
+        'details',
+        'purchaseRequest'   // 🔥 WAJIB
+    ])
+    ->where('po_kode', $kode)
+    ->firstOrFail();
+
+    $pdf = Pdf::loadView(
+        'exports.po-pdf',
+        compact('po')
+    )->setPaper('A4', 'portrait');
+
+    return $pdf->download(
+        'PO_' . str_replace('/', '_', $po->po_kode) . '.pdf'
+    );
+}
+
 
     public function destroy($id)
     {
@@ -208,7 +233,7 @@ foreach ($request->details as $item) {
         ]);
     }
 
-        public function sign(Request $request): JsonResponse
+public function sign(Request $request): JsonResponse
 {
     try {
         $request->validate([
@@ -216,8 +241,9 @@ foreach ($request->details as $item) {
             'signature' => 'required|string',
         ]);
 
-        $po = PurchaseOrderModel::where('po_kode', $request->kode)->first();
+        $kode = urldecode($request->kode);
 
+        $po = PurchaseOrderModel::where('po_kode', $kode)->first();
         if (!$po) {
             return response()->json([
                 'success' => false,
@@ -225,20 +251,13 @@ foreach ($request->details as $item) {
             ], 404);
         }
 
-        if (!empty($po->signature_url)) {
-            $oldPath = str_replace('/storage/', '', $po->signature_url);
-            if (Storage::disk('public')->exists($oldPath)) {
-                Storage::disk('public')->delete($oldPath);
-            }
-        }
-
         $signatureData = preg_replace(
             '#^data:image/\w+;base64,#i',
             '',
             $request->signature
         );
-        $signatureData = str_replace(' ', '+', $signatureData);
 
+        $signatureData = str_replace(' ', '+', $signatureData);
         $decodedImage = base64_decode($signatureData);
 
         if ($decodedImage === false) {
@@ -249,13 +268,12 @@ foreach ($request->details as $item) {
         }
 
         $safeKode = str_replace('/', '_', $po->po_kode);
-        $filename = 'signature_' . $safeKode . '.png';
-        $relativePath = 'signatures/' . $filename;
+        $path = 'signatures/signature_' . $safeKode . '.png';
 
-        Storage::disk('public')->put($relativePath, $decodedImage);
+        Storage::disk('public')->put($path, $decodedImage);
 
         $po->update([
-            'signature_url' => $relativePath, 
+            'signature_url' => $path,
             'sign_at' => now(),
         ]);
 
@@ -265,7 +283,7 @@ foreach ($request->details as $item) {
         ]);
 
     } catch (\Throwable $e) {
-        Log::error('SIGN ERROR', [
+        Log::error('PO SIGN ERROR', [
             'message' => $e->getMessage(),
             'line' => $e->getLine(),
             'file' => $e->getFile(),
@@ -273,14 +291,18 @@ foreach ($request->details as $item) {
 
         return response()->json([
             'success' => false,
-            'message' => 'Gagal menyimpan tanda tangan'
+            'message' => $e->getMessage()
         ], 500);
     }
 }
 
+
 public function clearSignature(string $kode): JsonResponse
 {
     try {
+        // 🔑 WAJIB: samakan dengan PR
+        $kode = urldecode($kode);
+
         $po = PurchaseOrderModel::where('po_kode', $kode)->first();
 
         if (!$po) {
@@ -290,13 +312,12 @@ public function clearSignature(string $kode): JsonResponse
             ], 404);
         }
 
-        if (!empty($po->signature_url)) {
-            $path = $po->signature_url; 
-            if (Storage::disk('public')->exists($path)) {
-                Storage::disk('public')->delete($path);
-            }
+        // 🗑️ hapus file signature jika ada
+        if ($po->signature_url && Storage::disk('public')->exists($po->signature_url)) {
+            Storage::disk('public')->delete($po->signature_url);
         }
 
+        // 🔄 reset kolom signature
         $po->update([
             'signature_url' => null,
             'sign_at' => null,
@@ -306,9 +327,12 @@ public function clearSignature(string $kode): JsonResponse
             'success' => true,
             'message' => 'Signature berhasil direset'
         ]);
+
     } catch (\Throwable $e) {
-        Log::error('CLEAR SIGNATURE ERROR', [
+        Log::error('PO CLEAR SIGNATURE ERROR', [
             'message' => $e->getMessage(),
+            'line' => $e->getLine(),
+            'file' => $e->getFile(),
         ]);
 
         return response()->json([
@@ -317,4 +341,5 @@ public function clearSignature(string $kode): JsonResponse
         ], 500);
     }
 }
+
 }

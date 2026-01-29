@@ -11,6 +11,7 @@ class SpbInvoiceModel extends Model
 
     protected $fillable = [
         'spb_id',
+        'spb_do_id',
         'invoice_no',
         'invoice_date',
         'invoice_email_date',
@@ -20,5 +21,9 @@ class SpbInvoiceModel extends Model
     public function spb()
     {
         return $this->belongsTo(SpbModel::class, 'spb_id', 'spb_id');
+    }
+    public function do()
+    {
+        return $this->belongsTo(SpbDoModel::class, 'spb_do_id', 'spb_do_id');
     }
 }

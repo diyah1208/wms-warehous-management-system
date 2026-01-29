@@ -15,6 +15,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\ReceiveListExport;
 use Illuminate\Support\Facades\Storage;
+use App\Helpers\ClosingBook;
 
 
 class ReceiveController extends Controller
@@ -26,7 +27,6 @@ class ReceiveController extends Controller
                 'details',          
                 'purchaseRequest.details.mr'  
             ])
-            ->where('po_status', 'purchased')
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -61,19 +61,13 @@ class ReceiveController extends Controller
 
     public function store(Request $request)
     {
+        ClosingBook::check($request->ri_tanggal);
         $request->validate([
             "ri_kode" => "required|unique:tb_receive_item,ri_kode",
             "po_id"   => "required|exists:tb_purchase_order,po_id",
             "ri_lokasi" => "required",
             "ri_tanggal" => "required|date",
             "details" => "required|array|min:1",
-
-            "details.*.part_id" => "required|exists:tb_barang,part_id",
-            "details.*.mr_id"   => "required|exists:tb_material_request,mr_id",
-            "details.*.dtl_ri_part_number" => "required",
-            "details.*.dtl_ri_part_name" => "required",
-            "details.*.dtl_ri_satuan" => "required",
-            "details.*.dtl_ri_qty" => "required|integer|min:1",
         ]);
 
         $receive = null;

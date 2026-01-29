@@ -33,16 +33,16 @@ class SpbModel extends Model
 
     public function po()
     {
-        return $this->hasOne(SpbPoModel::class, 'spb_id', 'spb_id');
+        return $this->hasMany(SpbPoModel::class, 'spb_id', 'spb_id');
     }
 
     public function do()
     {
-        return $this->hasOne(SpbDo::class, 'spb_id', 'spb_id');
+        return $this->hasMany(SpbDo::class, 'spb_id', 'spb_id');
     }
 
     public function invoice()
     {
-        return $this->hasOne(SpbInvoice::class, 'spb_id', 'spb_id');
+        return $this->hasMany(SpbInvoice::class, 'spb_id', 'spb_id');
     }
 }

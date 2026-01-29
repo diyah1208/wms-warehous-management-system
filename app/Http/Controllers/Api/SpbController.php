@@ -18,6 +18,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\DeliveryListExport;
 use App\Exports\SpbListExport;
+use App\Helpers\ClosingBook;
 
 use Carbon\Carbon;
 
@@ -65,6 +66,7 @@ class SpbController extends Controller
 
     public function store(Request $request)
     {
+        ClosingBook::check($request->spb_tanggal);
         $request->validate([
             'spb_tanggal' => 'required|date',
             'spb_no'      => 'required',

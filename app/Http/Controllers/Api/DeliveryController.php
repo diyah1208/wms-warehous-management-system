@@ -14,14 +14,36 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Helpers\ClosingBook;
 
 class DeliveryController extends Controller
 {
-    /* =======================================================
-     * LIST & DETAIL
-     * ======================================================= */
+    // public function index(Request $request)
+    // {
+    //     return response()->json(
+    //         DB::table('tb_delivery')
+    //             ->leftJoin(
+    //                 'tb_material_request',
+    //                 'tb_delivery.mr_id',
+    //                 '=',
+    //                 'tb_material_request.mr_id'
+    //             )
+    //             ->select(
+    //                 'tb_delivery.dlv_id',
+    //                 'tb_delivery.dlv_kode',
+    //                 'tb_delivery.dlv_status',
+    //                 'tb_delivery.dlv_dari_gudang',
+    //                 'tb_delivery.dlv_ke_gudang',
+    //                 'tb_delivery.dlv_ekspedisi',
+    //                 'tb_delivery.created_at',
+    //                 'tb_material_request.mr_kode as mr_kode'
 
-    public function index()
+    //             )
+    //             ->orderByDesc('tb_delivery.created_at')
+    //             ->paginate(5)
+    //     );
+    // }
+     public function index()
     {
         return response()->json(
             DeliveryModel::with(['details', 'mr'])
@@ -29,6 +51,7 @@ class DeliveryController extends Controller
                 ->get()
         );
     }
+
 
     public function showKode($kode)
     {
@@ -39,18 +62,16 @@ class DeliveryController extends Controller
         );
     }
 
-    /* =======================================================
-     * CREATE DELIVERY
-     * ======================================================= */
-
     public function store(Request $request)
     {
+        ClosingBook::check($request->dlv_tanggal);
         $request->validate([
             'dlv_kode'        => 'required|unique:tb_delivery,dlv_kode',
             'mr_id'           => 'required|exists:tb_material_request,mr_id',
             'dlv_dari_gudang' => 'required',
             'dlv_ke_gudang'   => 'required',
             'dlv_ekspedisi'   => 'required',
+            'dlv_tanggal'   => 'required',
             'dlv_pic'         => 'required',
             'details'         => 'required|array|min:1',
             'details.*.part_id' => 'required|exists:tb_barang,part_id',
@@ -65,6 +86,7 @@ class DeliveryController extends Controller
                 'dlv_dari_gudang' => $request->dlv_dari_gudang,
                 'dlv_ke_gudang'   => $request->dlv_ke_gudang,
                 'dlv_ekspedisi'   => $request->dlv_ekspedisi,
+                'dlv_tanggal'   => $request->dlv_tanggal,
                 'dlv_pic'         => $request->dlv_pic,
                 'dlv_status'      => 'pending',
             ]);
@@ -177,9 +199,6 @@ class DeliveryController extends Controller
         });
     }
 
-    /* =======================================================
-     * RECEIVE DELIVERY (NORMAL & HAND CARRY)
-     * ======================================================= */
 
     public function receive(Request $request, $kode)
     {
@@ -221,13 +240,25 @@ class DeliveryController extends Controller
                         "Qty diterima melebihi qty dikirim ({$detail->dtl_dlv_part_number})"
                     );
                 }
+                $qtyKirim    = $detail->qty_on_delivery; // SUMBER KEBENARAN
+                $qtyReceived = $input['qty_received'];
+
+                if ($qtyReceived > $qtyKirim) {
+                    throw new Exception(
+                        "Qty diterima melebihi qty dikirim ({$detail->dtl_dlv_part_number})"
+                    );
+                }
+
+                $qtyRejected = $qtyKirim - $qtyReceived;
 
                 $detail->update([
-                    'qty_delivered'   => $input['qty_received'],
-                    'qty_pending'     => $detail->qty_on_delivery - $input['qty_received'],
+                    'qty_delivered'   => $qtyReceived,
+                    'qty_rejected'    => $qtyRejected,
+                    'qty_pending'     => 0,
                     'qty_on_delivery' => 0,
                     'receive_note'    => $input['receive_note'],
                 ]);
+
 
                 $stock = StockModel::firstOrCreate(
                     [
@@ -329,6 +360,20 @@ class DeliveryController extends Controller
             'DELIVERY_' . $delivery->dlv_kode . '.pdf'
         );
     }
+
+    public function testPdf()
+{
+    set_time_limit(0);
+
+    $path = storage_path('app/tmp/test.pdf');
+
+    Browsershot::html('<h1>TEST OK</h1>')
+        ->timeout(120)
+        ->save($path);
+
+    return response()->file($path);
+}
+
 
     public function exportDeliveryHeader()
     {

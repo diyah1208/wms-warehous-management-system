@@ -2,6 +2,12 @@
 use Illuminate\Support\Facades\Mail;
 
 use Illuminate\Support\Facades\Route;
+use Barryvdh\Snappy\Facades\SnappyPdf;
+
+Route::get('/test-snappy', function () {
+    return SnappyPdf::loadHTML('<h1>SNAPPY WORKS</h1>')
+        ->download('test.pdf');
+});
 
 Route::get('/', function () {
     return view('welcome');

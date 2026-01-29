@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Import\StockImport;
 use App\Exports\StockListExport;
 use App\Models\StockModel;
 use App\Models\BarangModel;
@@ -36,7 +37,6 @@ class StockController extends Controller
             'stk_max'      => 'required|integer|min:0',
         ]);
 
-        // Cek stok berdasarkan kombinasi lokasi + part
         $stock = StockModel::where('part_id', $data['part_id'])
             ->where('stk_location', $data['stk_location'])
             ->first();
@@ -73,6 +73,19 @@ class StockController extends Controller
             new StockListExport($deliveries), 
             'DAFTAR_STOCK.xlsx'
         );
+    }
+    public function importStock(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls'
+        ]);
+
+        Excel::import(new StockImport, $request->file('file'));
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Import stock berhasil'
+        ]);
     }
 
 }

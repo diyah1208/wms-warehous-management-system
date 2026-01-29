@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB; 
 use Maatwebsite\Excel\Facades\Excel;
+use App\Import\BarangImport;
 use App\Models\BarangModel;
 use App\Models\StockModel;
 use App\Exports\BarangListExport;
@@ -13,7 +14,7 @@ use App\Exports\BarangListExport;
 class BarangController extends Controller
 {
     private const LOKASI_LIST = [
-        ['nama' => 'JAKARTA', 'kode' => 'JKT'],
+        ['nama' => 'JAKARTA', 'kode' => 'HO'],
         ['nama' => 'MUARA ENIM', 'kode' => 'ENIM'],
         ['nama' => 'BALIKPAPAN', 'kode' => 'BPN'],
         ['nama' => 'SITE BA', 'kode' => 'BA'],
@@ -22,7 +23,7 @@ class BarangController extends Controller
         ['nama' => 'SITE MIFA', 'kode' => 'MIFA'],
         ['nama' => 'SITE BIB', 'kode' => 'BIB'],
         ['nama' => 'SITE AMI', 'kode' => 'AMI'],
-        ['nama' => 'SITE TABANG', 'kode' => 'TAB'],
+        ['nama' => 'SITE TABANG', 'kode' => 'TABANG'],
     ];
 
     public function index(Request $request)
@@ -123,4 +124,17 @@ class BarangController extends Controller
             'DAFTAR_BARANG.xlsx'
         );
     }
+    public function importBarang(Request $request)
+    {
+        Excel::queueImport(
+            new BarangImport,
+            $request->file('file')
+        );
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Import master part sedang diproses'
+        ]);
+    }
+
 }

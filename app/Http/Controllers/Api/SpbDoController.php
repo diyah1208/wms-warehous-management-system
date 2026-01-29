@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SpbModel;
 use App\Models\SpbDoMOdel;
 use Illuminate\Http\Request;
+use App\Helpers\ClosingBook;
 
 class SpbDoController extends Controller
 {
@@ -22,6 +23,7 @@ class SpbDoController extends Controller
 
     public function store(Request $request)
     {
+        ClosingBook::check($request->do_date);
         $request->validate([
             'do_no' => 'required',
             'do_date' => 'required',

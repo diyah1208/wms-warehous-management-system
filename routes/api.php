@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Middleware\CheckInputOpen;
 
+
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC ROUTES
@@ -89,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // BARANG
     Route::get('/barang', [BarangController::class, 'index']);
     Route::get('/barang/{id}', [BarangController::class, 'show']);
+    Route::post('/barang/import', [BarangController::class, 'importBarang']);
     Route::get('/barang/export-excel', [BarangController::class, 'exportBarang']);
 
     // STOCK
@@ -177,6 +180,7 @@ Route::middleware(['auth:sanctum', CheckInputOpen::class])->group(function () {
 
     // STOCK
     Route::post('/stock', [StockController::class, 'store']);
+    Route::post('/stock/import', [StockController::class, 'importStock']);
 
     // MR
     Route::post('/mr', [MaterialRequestController::class, 'store']);

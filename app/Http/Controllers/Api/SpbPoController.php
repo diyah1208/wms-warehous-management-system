@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SpbModel;
 use App\Models\SpbPoModel;
 use Illuminate\Http\Request;
+use App\Helpers\ClosingBook;
 
 class SpbPoController extends Controller
 {
@@ -24,6 +25,7 @@ class SpbPoController extends Controller
 
     public function store(Request $request)
     {
+        ClosingBook::check($request->so_date);
         $request->validate([
             'po_no' => 'required',
             'so_no' => 'nullable',

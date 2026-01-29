@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -23,20 +24,62 @@ class PurchaseRequestController extends Controller
         ]); 
         return response()->json($data->get());
     }
+// public function index(Request $request)
+// {
+//     $query = PurchaseRequestModel::query()
+//         ->select(
+//             'pr_id',
+//             'pr_kode',
+//             'pr_tanggal',
+//             'pr_status',
+//             'pr_lokasi',
+//             'pr_pic'
+//         );
 
-    public function showKode($kode)
-    {
-        $kode = urldecode($kode);
-        $pr = PurchaseRequestModel::with([
-            'details',
-            'details.mr',
-        ])
-        ->where('pr_kode', $kode)
-        ->firstOrFail();
+//     // 🔎 FILTER
+//     if ($request->filled('kode')) {
+//         $query->where('pr_kode', 'like', '%' . $request->kode . '%');
+//     }
 
-        return response()->json($pr);
-    }
+//     if ($request->filled('status')) {
+//         $query->where('pr_status', $request->status);
+//     }
 
+//     if ($request->filled('lokasi')) {
+//         $query->where('pr_lokasi', 'like', '%' . $request->lokasi . '%');
+//     }
+
+//     if ($request->filled('pic')) {
+//         $query->where('pr_pic', 'like', '%' . $request->pic . '%');
+//     }
+
+//     return response()->json(
+//         $query->orderByDesc('pr_tanggal')->paginate(10)
+//     );
+// }
+
+    // public function showKode($kode)
+    // {
+    //     $kode = urldecode($kode);
+    //     $pr = PurchaseRequestModel::with([
+    //         'details',
+    //         'details.mr',
+    //     ])
+    //     ->where('pr_kode', $kode)
+    //     ->firstOrFail();
+
+    //     return response()->json($pr);
+    // }
+
+public function showKode($kode)
+{
+    return PurchaseRequestModel::with([
+        'details',
+        'details.mr',
+    ])
+    ->where('pr_kode', urldecode($kode))
+    ->firstOrFail();
+}
 
     public function show($id)
     {
@@ -85,7 +128,7 @@ class PurchaseRequestController extends Controller
         return response()->json(['message' => 'Purchase Request created']);
     }
 
-    public function sign(Request $request): JsonResponse
+public function sign(Request $request): JsonResponse
 {
     try {
         $request->validate([
@@ -102,20 +145,13 @@ class PurchaseRequestController extends Controller
             ], 404);
         }
 
-        if (!empty($pr->signature_url)) {
-            $oldPath = str_replace('/storage/', '', $pr->signature_url);
-            if (Storage::disk('public')->exists($oldPath)) {
-                Storage::disk('public')->delete($oldPath);
-            }
-        }
-
         $signatureData = preg_replace(
             '#^data:image/\w+;base64,#i',
             '',
             $request->signature
         );
-        $signatureData = str_replace(' ', '+', $signatureData);
 
+        $signatureData = str_replace(' ', '+', $signatureData);
         $decodedImage = base64_decode($signatureData);
 
         if ($decodedImage === false) {
@@ -126,14 +162,13 @@ class PurchaseRequestController extends Controller
         }
 
         $safeKode = str_replace('/', '_', $pr->pr_kode);
-        $filename = 'signature_' . $safeKode . '.png';
-        $relativePath = 'signatures/' . $filename;
+        $path = 'signatures/signature_' . $safeKode . '.png';
 
-        Storage::disk('public')->put($relativePath, $decodedImage);
+        Storage::disk('public')->put($path, $decodedImage);
 
         $pr->update([
-            'signature_url' => $relativePath, 
-            'sign_at' => now(),
+            'signature_url' => $path,
+            'signed_at' => now(),
         ]);
 
         return response()->json([
@@ -150,14 +185,34 @@ class PurchaseRequestController extends Controller
 
         return response()->json([
             'success' => false,
-            'message' => 'Gagal menyimpan tanda tangan'
+            'message' => $e->getMessage()
         ], 500);
     }
+}
+
+public function exportPdf(string $kode)
+{
+    $kode = urldecode($kode);
+
+    $pr = PurchaseRequestModel::with(['details'])
+        ->where('pr_kode', $kode)
+        ->firstOrFail();
+
+    $pdf = Pdf::loadView(
+        'exports.pr-pdf',
+        compact('pr')
+    )->setPaper('A4', 'portrait');
+
+    return $pdf->download(
+        'PR_' . str_replace('/', '_', $pr->pr_kode) . '.pdf'
+    );
 }
 
 public function clearSignature(string $kode): JsonResponse
 {
     try {
+        $kode = urldecode($kode);
+
         $pr = PurchaseRequestModel::where('pr_kode', $kode)->first();
 
         if (!$pr) {
@@ -167,16 +222,13 @@ public function clearSignature(string $kode): JsonResponse
             ], 404);
         }
 
-        if (!empty($pr->signature_url)) {
-            $path = $pr->signature_url; 
-            if (Storage::disk('public')->exists($path)) {
-                Storage::disk('public')->delete($path);
-            }
+        if ($pr->signature_url && Storage::disk('public')->exists($pr->signature_url)) {
+            Storage::disk('public')->delete($pr->signature_url);
         }
 
         $pr->update([
             'signature_url' => null,
-            'sign_at' => null,
+            'signed_at' => null,
         ]);
 
         return response()->json([
@@ -195,19 +247,5 @@ public function clearSignature(string $kode): JsonResponse
     }
 }
 
-public function exportPdf(string $kode)
-{
-    $pr = PurchaseRequestModel::with(['details'])
-        ->where('pr_kode', $kode)
-        ->firstOrFail();
 
-    $pdf = Pdf::loadView(
-        'exports.pr-pdf',
-        compact('pr')
-    )->setPaper('A4', 'portrait');
-
-    return $pdf->download(
-        'PR_' . str_replace('/', '_', $pr->pr_kode) . '.pdf'
-    );
-}
 }

@@ -43,7 +43,10 @@
 <table>
     <tr>
         <td>
-            <img src="{{ public_path('images/Logo Garuda Mart Indonesia.png') }}" style="height:50px;">
+            <img
+                src="{{ public_path('images/logo_gmi_600.png') }}"
+                width="240"
+            >
             <div style="font-size:12px; margin-top:4px; line-height:1.4;">
                 <strong>PT. Garuda Mart Indonesia</strong><br>
                 RT.002/RW.012, Jatiasih, Kec. Jatiasih<br>
@@ -53,8 +56,8 @@
         </td>
         <td width="30%" align="right" valign="top">
             <img
-                src="{{ public_path('images/Logo-Lourdes.png') }}"
-                style="height:45px;"
+                src="{{ public_path('images/logo_lourdes_small.png') }}"
+                width="160"
             >
         </td>
     </tr>
@@ -82,11 +85,6 @@
         <td><strong>Tanggal Penerimaan</strong></td>
         <td>:</td>
         <td>{{ \Carbon\Carbon::parse($receive->ri_tanggal)->format('d-m-Y') }}</td>
-    </tr>
-    <tr>
-        <td><strong>Keterangan</strong></td>
-        <td>:</td>
-        <td>{{ $receive->ri_keterangan ?? '-' }}</td>
     </tr>
     <tr>
         <td><strong>Penanggung Jawab</strong></td>
@@ -125,6 +123,23 @@
     </tbody>
 </table>
 
+{{-- ================= KETERANGAN ================= --}}
+@if (!empty($receive->ri_keterangan))
+<table width="100%" style="margin-top:18px; border-collapse:collapse;">
+    <tr>
+        <td style="
+            border:1px solid #000;
+            padding:8px 10px;
+            font-size:11px;
+            line-height:1.5;
+        ">
+            <strong>Keterangan :</strong><br>
+            {!! nl2br(e($receive->ri_keterangan)) !!}
+        </td>
+    </tr>
+</table>
+@endif
+
 {{-- ================= TANDA TANGAN ================= --}}
 <table class="sign">
     <tr>
@@ -148,5 +163,6 @@
         </td>
     </tr>
 </table>
+
 </body>
 </html>

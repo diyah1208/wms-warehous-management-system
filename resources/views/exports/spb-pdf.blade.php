@@ -17,9 +17,9 @@
 <table class="no-border">
     <tr>
         <td>
-            <img
-                src="{{ public_path('images/Logo Garuda Mart Indonesia.png') }}"
-                style="height:50px; display:block;"
+             <img
+                src="{{ public_path('images/logo_gmi_600.png') }}"
+                width="240"
             >
             <div style="font-size:12px; margin-top:4px; line-height:1.4;">
                 <strong>PT. Garuda Mart Indonesia</strong><br>
