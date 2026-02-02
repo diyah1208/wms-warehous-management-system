@@ -42,7 +42,6 @@ const Satuan = [
 export default function CreateMasterPartForm({
   setRefresh,
 }: CreateMRFormProps) {
-  // ✅ STATE HARUS DI SINI
   const [qrCode, setQrCode] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -52,8 +51,9 @@ export default function CreateMasterPartForm({
     const partNumber = formData.get("part_number") as string;
     const partName = formData.get("part_name") as string;
     const satuan = formData.get("part_satuan") as string;
+    const desk = formData.get("part_description") as string;
 
-    if (!partNumber || !partName || !satuan) {
+    if (!partNumber || !partName || !satuan || !desk) {
       toast.warning("Semua field harus diisi!");
       return;
     }
@@ -63,6 +63,7 @@ export default function CreateMasterPartForm({
         part_name: partName,
         part_number: partNumber,
         part_satuan: satuan,
+        part_description: desk,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       } satisfies MasterPart;
@@ -132,6 +133,15 @@ export default function CreateMasterPartForm({
             ))}
           </SelectContent>
         </Select>
+      </div>
+      {/* Part Desk */}
+      <div className="col-span-12 md:col-span-5 flex flex-col gap-1">
+        <Label>Part Desc</Label>
+        <Input
+          name="part_description"
+          placeholder="Input part description"
+          required
+        />
       </div>
     </form>
 

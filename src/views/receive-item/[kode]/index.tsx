@@ -194,6 +194,7 @@ export function ReceiveDetail() {
         </SectionBody>
         <SectionFooter>
           {ri.ri_lokasi == user!.lokasi &&
+          user?.nama == "Hitler Warren Chr Tambunan" &&
           !ri.signed_penerima_sign &&(
             <Button
                 variant="outline"

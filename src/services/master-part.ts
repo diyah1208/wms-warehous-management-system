@@ -13,6 +13,7 @@ export async function createMasterPart(
     part_number: data.part_number,
     part_name: data.part_name,
     part_satuan: data.part_satuan,
+    part_description: data.part_description,
     lokasi: user?.lokasi,
   };
 
@@ -29,6 +30,7 @@ export async function getMasterParts(): Promise<MasterPart[]> {
     part_number: item.part_number,
     part_name: item.part_name,
     part_satuan: item.part_satuan,
+    part_description: item.part_description,
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
@@ -42,6 +44,7 @@ export async function getParts(): Promise<Part[]> {
     part_number: item.part_number,
     part_name: item.part_name,
     part_satuan: item.part_satuan,
+    part_description: item.part_description,
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
@@ -53,6 +56,7 @@ export async function updateMasterPart(
     part_number: string;
     part_name: string;
     part_satuan: string;
+    part_description: string,
   }
 ) {
   const res = await api.put(`/barang/${part_id}`, payload);

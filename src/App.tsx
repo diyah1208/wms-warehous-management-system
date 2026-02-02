@@ -37,6 +37,8 @@ import PRSign from "@/views/pr-sign";
 import POSign from "@/views/po-sign";
 import InputLockedBanner from "./components/InputLockedBanner.tsx";
 import { InputLockProvider } from "./context/InputLockContext.tsx";
+import PeminjamanIndex from "./views/peminjaman/index.tsx";
+import PeminjamanDetailPage from "./views/peminjaman/[kode]/index.tsx";
 
 
 export default function App() {
@@ -70,6 +72,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+               <Route
+            path="/peminjaman"
+            element={
+              <ProtectedRoute>
+                <PeminjamanIndex />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/peminjaman/kode/:kode"
+            element={
+              <ProtectedRoute>
+                <PeminjamanDetailPage />
               </ProtectedRoute>
             }
           />

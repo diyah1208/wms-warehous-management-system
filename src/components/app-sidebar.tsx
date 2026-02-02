@@ -19,6 +19,7 @@ import {
   PackageCheck,
   Building2,
   User,
+  Repeat,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -88,6 +89,11 @@ const data = {
       title: "Delivery",
       url: "/delivery",
       icon: Truck,
+    },
+     {
+      title: "Peminjaman",
+      url: "/peminjaman",
+      icon: Repeat ,
     },
     {
       title: "Stock Out",

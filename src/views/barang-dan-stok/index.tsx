@@ -121,6 +121,10 @@ function MasterPartCollumnsGenerator(
       accessorKey: "part_satuan",
     },
     {
+      header: "Deskripsi",
+      accessorKey: "part_description",
+    },
+    {
       header: "Created At",
       accessorKey: "created_at",
       cell: (value: any) => formatTanggal(value),
@@ -142,7 +146,7 @@ function MasterPartCollumnsGenerator(
             className="text-orange-600 hover:text-orange-700"
             onClick={async () => {
             const qr = await QRCode.toDataURL(
-              `${row.part_number}|${row.part_name}`
+              `${row.part_number}|${row.part_name}|${row.part_description}`
             );
 
             const win = window.open("", "_blank");
@@ -220,10 +224,11 @@ function MasterPartCollumnsGenerator(
                     .part-name {
                       font-size: 8px;
                     }
-
+                    .part-description {
+                      font-size: 8px;
+                    }
                   </style>
                 </head>
-
                 <body onload="window.print();window.close();">
                 <div class="label">
                   <!-- HEADER -->
@@ -231,8 +236,6 @@ function MasterPartCollumnsGenerator(
                     <div class="brand">LOURDES AUTOPART</div>
                     <img src="/Logo-Lourdes.png" class="logo" />
                   </div>
-
-                  <!-- ISI -->
                   <div class="content">
                     <img src="${qr}" class="qr" />
                     <div class="text-area">
@@ -241,6 +244,9 @@ function MasterPartCollumnsGenerator(
                       </div>
                       <div class="box part-name">
                         ${row.part_name}
+                      </div>
+                      <div class="box part-description">
+                        ${row.part_description}
                       </div>
                     </div>
                   </div>
@@ -469,7 +475,7 @@ function DataMasterPartSection({
                     <TooltipContent>Export Excel</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <TooltipProvider>
+                {/* <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -501,7 +507,7 @@ function DataMasterPartSection({
                       e.target.value = "";
                     }
                   }}
-                />
+                /> */}
               </div>
             </div>
           </div>
@@ -555,9 +561,6 @@ function DataStokSection({
   const [uom, setUom] = useState("");
   const [lokasiFilter, setLokasiFilter] = useState("");
 
-  /* =====================
-   * PAGINATION
-   * ===================== */
   useEffect(() => {
     const start = (currentPage - 1) * PagingSize;
     const end = start + PagingSize;
@@ -737,7 +740,7 @@ function DataStokSection({
             </Tooltip>
           </TooltipProvider>
           {/* IMPORT STOCK */}
-          <TooltipProvider>
+          {/* <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -769,7 +772,7 @@ function DataStokSection({
                 e.target.value = "";
               }
             }}
-          />
+          /> */}
         </div>
           <QuickTable
             data={tableStocks}

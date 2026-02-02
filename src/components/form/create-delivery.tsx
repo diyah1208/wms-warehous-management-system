@@ -195,7 +195,20 @@ export default function CreateDeliveryForm({
       } else {
         toast.error("Gagal membuat Delivery.");
       }
-    } catch {
+    } catch (err: any) {
+      const response = err?.response?.data;
+      if (response?.errors) {
+        Object.values(response.errors).forEach((messages: any) => {
+          messages.forEach((msg: string) => {
+            toast.error(msg);
+          });
+        });
+        return;
+      }
+      if (response?.message) {
+        toast.error(response.message);
+        return;
+      }
       toast.error("Kesalahan server.");
     }
   }
@@ -253,7 +266,6 @@ export default function CreateDeliveryForm({
     toast.error("Qty melebihi sisa permintaan MR.");
     return;
   }
-
 
     const newItem: DeliveryDetail = {
       part_id: mr_item.part_id,

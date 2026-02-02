@@ -179,10 +179,14 @@ export async function downloadDeliveryPdf(kode: string) {
 }
 
 
-export async function downloadDeliveryExcel() {
+export async function downloadDeliveryExcel(filters: any) {
   const res = await api.get(`${BASE_URL}/export-excel`, {
+    params: filters,
     responseType: "blob",
   });
+
+  const today = new Date().toISOString().split("T")[0]; 
+  // contoh: 2026-01-29
 
   const blob = new Blob([res.data], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -192,13 +196,14 @@ export async function downloadDeliveryExcel() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "DELIVERY.xlsx";
+  a.download = `Delivery_${today}.xlsx`;
   document.body.appendChild(a);
   a.click();
 
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
 
 export async function submitDeliverySignature(
   kode: string,

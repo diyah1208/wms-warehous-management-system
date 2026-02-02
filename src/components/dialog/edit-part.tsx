@@ -61,6 +61,7 @@ export function EditPartDialog({ part, refresh }: MyDialogProps) {
       part_number: formData.get("part_number") as string,
       part_name: formData.get("part_name") as string,
       part_satuan: formData.get("part_satuan") as string,
+      part_description: formData.get("part_description") as string,
     };
 
     if (!part.part_id) {
@@ -123,6 +124,15 @@ export function EditPartDialog({ part, refresh }: MyDialogProps) {
                 id="part_name"
                 name="part_name"
                 defaultValue={part.part_name}
+              />
+            </div>
+            {/* Part Name */}
+            <div className="grid gap-3">
+              <Label htmlFor="part_description">Part Deskripsi</Label>
+              <Input
+                id="part_description"
+                name="part_description"
+                defaultValue={part.part_description}
               />
             </div>
 

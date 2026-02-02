@@ -38,9 +38,9 @@ export async function createRI(data: any): Promise<boolean> {
 
   const res = await api.post("/receive", payload);
   return res.data.status === true;
-} catch (err: any) {
-    throw err; // lempar ke component
-}
+  } catch (err: any) {
+      throw err; 
+  }
 }
 
 
@@ -54,10 +54,14 @@ export async function confirmReceiveItem(payload: {
   return res.data.status === true;
 }
 
-export async function downloadReceiveExcel() {
-  const res = await api.get("/receive/export-excel", {
+export async function downloadReceiveExcel(filters: any) {
+    const res = await api.get("/receive/export-excel", {
+    params: filters,
     responseType: "blob",
   });
+
+  const today = new Date().toISOString().split("T")[0]; 
+  // contoh: 2026-01-29
 
   const blob = new Blob([res.data], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -67,13 +71,35 @@ export async function downloadReceiveExcel() {
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "RECEIVE.xlsx";
+  a.download = `Receive${today}.xlsx`;
   document.body.appendChild(a);
   a.click();
 
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
+// export async function downloadReceiveExcel(filters:any) {
+//   const res = await api.get("/receive/export-excel", {
+//     params:filters,
+//     responseType: "blob",
+//   });
+
+//   const blob = new Blob([res.data], {
+//     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+//   });
+
+//   const url = window.URL.createObjectURL(blob);
+
+//   const a = document.createElement("a");
+//   a.href = url;
+//   a.download = "RECEIVE.xlsx";
+//   document.body.appendChild(a);
+//   a.click();
+
+//   document.body.removeChild(a);
+//   window.URL.revokeObjectURL(url);
+// }
 
 export async function submitReceiveSignature(
   kode: string,

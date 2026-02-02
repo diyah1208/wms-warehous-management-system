@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DatePicker } from "@/components/date-picker";
 
 export default function ReceiveItem() {
   const {user} = useAuth();
@@ -57,6 +58,16 @@ export default function ReceiveItem() {
   const [kodePoRi, setKodePoRi] = useState<string>(""); 
   const [gudang, setGudang] = useState<string>("");
   const [picRi, setPicRi] = useState<string>("");
+  const [tanggal, setTanggal] = useState<Date | undefined>(undefined);
+  const filters = {
+  kodeRi,
+  kodePoRi,
+  gudang,
+  picRi,
+  tanggal: tanggal
+    ? tanggal.toISOString().split("T")[0]
+    : null,
+};
 
 
   useEffect(() => {
@@ -94,9 +105,13 @@ export default function ReceiveItem() {
     if (statusPo) {
       filtered = filtered.filter((p) => p.po_status === statusPo);
     }
+    
+
     setFilteredPos(filtered);
     setCurrentPagePo(1);
   }, [pos, kodePo, kodePr, statusPo]);
+
+
 
   useEffect(() => {
     const startIndex = (currentPagePo - 1) * PagingSize;
@@ -107,6 +122,17 @@ export default function ReceiveItem() {
 
   useEffect(() => {
     let filtered = ris;
+
+    // if (user?.lokasi) {
+    //   const userLokasi = user.lokasi.toLowerCase();
+
+    //   filtered = filtered.filter((d) => {
+    //     const lokasi = d.ri_lokasi?.toLowerCase();
+
+    //     return lokasi === userLokasi;
+    //   });
+    // }
+
     if (kodeRi) {
       filtered = filtered.filter((r) =>
         r.ri_kode.toLowerCase().includes(kodeRi.toLowerCase())
@@ -127,9 +153,24 @@ export default function ReceiveItem() {
         r.ri_pic?.toLowerCase().includes(picRi.toLowerCase())
       );
     }
+    
+    if (tanggal) {
+      filtered = filtered.filter((r) => {
+        if (!r.ri_tanggal && !r.created_at) return false;
+
+        const itemDate = new Date(r.ri_tanggal ?? r.created_at);
+
+        return (
+          itemDate.getFullYear() === tanggal.getFullYear() &&
+          itemDate.getMonth() === tanggal.getMonth() &&
+          itemDate.getDate() === tanggal.getDate()
+        );
+      });
+    }
+
     setFilteredRis(filtered);
     setCurrentPageRi(1);
-  }, [ris, kodeRi, kodePoRi, gudang, picRi]);
+  }, [ris, kodeRi, kodePoRi, gudang, picRi, tanggal]);
 
   // --- useEffect untuk paginasi Tabel RI ---
   useEffect(() => {
@@ -175,7 +216,6 @@ export default function ReceiveItem() {
 
   return (
     <WithSidebar>
-      {/* ==================== BAGIAN TABEL PO ==================== */}
       <SectionContainer span={12}>
         <SectionHeader>Daftar PO Purchased (Siap Diterima)</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -206,7 +246,7 @@ export default function ReceiveItem() {
                 <div className="space-y-2">
                   <h4 className="font-medium leading-none">Filter PO</h4>
                   <p className="text-sm text-muted-foreground">
-                    Saring PO berdasarkan kriteria.
+                    Searching PO berdasarkan kriteria.
                   </p>
                 </div>
 
@@ -312,7 +352,6 @@ export default function ReceiveItem() {
         </SectionFooter>
       </SectionContainer>
 
-      {/* ==================== BAGIAN FORM BUAT RI ==================== */}
       <SectionContainer span={12}>
         <SectionHeader>Buat Receive Item (RI) Baru</SectionHeader>
         <SectionBody>
@@ -379,6 +418,11 @@ export default function ReceiveItem() {
                   </div>
 
                   <div className="grid gap-2">
+                    <Label>Tanggal</Label>
+                    <DatePicker value={tanggal} onChange={setTanggal} />
+                  </div>
+
+                  <div className="grid gap-2">
                     <Label>Gudang Penerima</Label>
                     <Input
                       placeholder="Cari gudang..."
@@ -423,7 +467,7 @@ export default function ReceiveItem() {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={downloadReceiveExcel}
+                     onClick={() => downloadReceiveExcel(filters)}
                   >
                     <FileSpreadsheet className="h-4 w-4 text-green-600" />
                   </Button>

@@ -43,6 +43,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DatePicker } from "@/components/date-picker";
 
 export default function DeliveryPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
@@ -59,6 +60,20 @@ export default function DeliveryPage() {
   const [dariGudang, setDariGudang] = useState<string>("");
   const [keGudang, setKeGudang] = useState<string>("");
   const [resi, setResi] = useState<string>("");
+  const [tanggal, setTanggal] = useState<Date | undefined>(undefined);
+  const filters = {
+  kode_it: kodeIt,
+  kode_mr: kodeMr,
+  status,
+  dari_gudang: dariGudang,
+  ke_gudang: keGudang,
+  resi,
+  tanggal: tanggal
+    ? tanggal.toISOString().split("T")[0]
+    : null,
+};
+
+
 
   useEffect(() => {
     async function fetchAllDeliveries() {
@@ -80,6 +95,17 @@ export default function DeliveryPage() {
   // --- useEffect untuk Filtering Otomatis ---
   useEffect(() => {
     let filtered = deliveries;
+    
+    if (user?.lokasi) {
+      const userLokasi = user.lokasi.toLowerCase();
+
+      filtered = filtered.filter((d) => {
+        const dari = d.dlv_dari_gudang?.toLowerCase();
+        const ke = d.dlv_ke_gudang?.toLowerCase();
+
+        return dari === userLokasi || ke === userLokasi;
+      });
+    }
 
     if (kodeIt) {
       filtered = filtered.filter((d) =>
@@ -110,9 +136,23 @@ export default function DeliveryPage() {
       );
     }
 
+    if (tanggal) {
+      filtered = filtered.filter((r) => {
+        if (!r.dlv_tanggal && !r.created_at) return false;
+
+        const itemDate = new Date(r.dlv_tanggal ?? r.created_at);
+
+        return (
+          itemDate.getFullYear() === tanggal.getFullYear() &&
+          itemDate.getMonth() === tanggal.getMonth() &&
+          itemDate.getDate() === tanggal.getDate()
+        );
+      });
+    }
+
     setFilteredDeliveries(filtered);
     setCurrentPage(1);
-  }, [deliveries, kodeIt, kodeMr, status, dariGudang, keGudang, resi]);
+  }, [deliveries, kodeIt, kodeMr, status, dariGudang, keGudang, resi,tanggal]);
 
   // --- useEffect untuk Mengatur Paginasi ---
   useEffect(() => {
@@ -244,6 +284,10 @@ export default function DeliveryPage() {
                       onChange={(e) => setKodeMr(e.target.value)}
                     />
                   </div>
+                  <div className="grid gap-2">
+                      <Label>Tanggal</Label>
+                      <DatePicker value={tanggal} onChange={setTanggal} />
+                    </div>                  
 
                   <div className="grid gap-1">
                     <Label htmlFor="filter-resi">No. Resi Pengiriman</Label>
@@ -317,7 +361,7 @@ export default function DeliveryPage() {
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={downloadDeliveryExcel}
+                    onClick={() => downloadDeliveryExcel(filters)}
                   >
                     <FileSpreadsheet className="h-4 w-4 text-green-600" />
                   </Button>

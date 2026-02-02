@@ -109,18 +109,6 @@ export default function CreateSpbForm({
     fetchKodeSpbWithToast();
   }, []);
 
-  useEffect(() => {
-    async function fetchVendors() {
-      try {
-        const data = await getMasterVendors();
-        setVendors(data);
-      } catch {
-        toast.error("Gagal mengambil data vendor");
-      }
-    }
-
-    fetchVendors();
-  }, []);
 
 
    useEffect(() => {

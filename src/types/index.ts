@@ -258,6 +258,7 @@ export interface Part {
   part_number: string;
   part_name: string;
   part_satuan: string;
+  part_description: string;
   created_at: string;
   updated_at: string;
 }
@@ -538,6 +539,7 @@ export interface MasterPart {
   part_number: string;
   part_name: string;
   part_satuan: string;
+  part_description: string;
   created_at: string;
   updated_at: string;
 }
@@ -759,6 +761,35 @@ export type PivotStockRow = {
   satuan: string;
   stocks: Record<string, number>;
 };
+export interface PeminjamanDetail {
+  dtl_pmj_id: number;          
+  part_id?: string;               
+  dtl_pmj_part_number: string;   
+  dtl_pmj_part_name: string;    
+  dtl_pmj_part_satuan: string;    
+  dtl_pmj_qty_borrowed: number;
+  dtl_pmj_qty_returned: number;  
+  created_at?: string;
+  updated_at?: string; 
+
+  returnQty?: number;           
+  checked?: boolean;              
+}
+
+export interface Peminjaman
+{
+  pmj_id: number;
+  pmj_kode: string;
+  pmj_tanggal: string;          
+  pmj_status: 'Borrowed' | 'Returned';
+  pmj_lokasi: string;
+  pmj_peminjam: string;
+  pmj_keterangan?: string;
+  created_at?: string;
+  updated_at?: string;
+
+  details: PeminjamanDetail[];
+}
 
 
 

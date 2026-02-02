@@ -1,24 +1,29 @@
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 
-
 interface PrintQrLabelProps {
   partNumber: string;
   partName: string;
+  partDescription: string;
 }
 
 export default function PrintQrLabel({
   partNumber,
   partName,
+  partDescription,
 }: PrintQrLabelProps) {
   const [qr, setQr] = useState<string>("");
 
   useEffect(() => {
-    QRCode.toDataURL(`${partNumber}|${partName}`, {
-      width: 120,
-      margin: 1,
-    }).then(setQr);
-  }, [partNumber, partName]);
+    // QR berisi semua info penting
+    QRCode.toDataURL(
+      `${partNumber}|${partName}|${partDescription}`,
+      {
+        width: 120,
+        margin: 1,
+      }
+    ).then(setQr);
+  }, [partNumber, partName, partDescription]);
 
   function handlePrint() {
     window.print();
@@ -39,10 +44,12 @@ export default function PrintQrLabel({
         <div className="row">
           {/* LOGO */}
           <img src="/Logo-Lourdes.png" alt="Logo" className="logo" />
-          {/* TEXT TENGAH */}
+
+          {/* TEXT */}
           <div className="center">
             <div className="part-no">{partNumber}</div>
             <div className="part-name">{partName}</div>
+            <div className="part-description">{partDescription}</div>
           </div>
 
           {/* QR */}
@@ -56,7 +63,6 @@ export default function PrintQrLabel({
           body {
             margin: 0;
           }
-
           .label {
             page-break-inside: avoid;
           }
@@ -96,6 +102,11 @@ export default function PrintQrLabel({
 
         .part-name {
           font-size: 9px;
+        }
+
+        .part-description {
+          font-size: 8px;
+          opacity: 0.85;
         }
 
         .qr {

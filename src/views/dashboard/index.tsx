@@ -18,10 +18,13 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import { Label } from "@/components/ui/label";
+
 
 import { Input } from "@/components/ui/input";
 import { MyPagination } from "@/components/my-pagination";
 import { AlertCircle, Archive, CheckCircle, CircleDashed, Clock, Package, Truck } from "lucide-react";
+import { DatePicker } from "@/components/date-picker";
 
 const STATUS_COLOR: Record<string, string> = {
   mr: "#facc15",
@@ -228,6 +231,8 @@ function DashboardTable({
 export default function Dashboard() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [lokasi, setLokasi] = useState("SEMUA");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     getDashboardData().then(setDashboard);
@@ -246,16 +251,45 @@ export default function Dashboard() {
       ? data
       : data.filter(
           (d) => d[key]?.toLowerCase() === lokasi.toLowerCase()
-        );
+   );
 
-  const mrData = filterLokasi(dashboard.details.latest_mr, "mr_lokasi");
-  const deliveryData = filterLokasi(
-    dashboard.details.latest_delivery,
-    "dlv_ke_gudang"
+   const filterByDate = (data: any[], key: string) => {
+    if (!startDate && !endDate) return data;
+
+    return data.filter((d) => {
+      if (!d[key]) return false;
+
+      const itemDate = new Date(d[key]);
+
+      if (startDate && endDate) {
+        return itemDate >= startDate && itemDate <= endDate;
+      }
+
+      if (startDate) {
+        return itemDate >= startDate;
+      }
+
+      if (endDate) {
+        return itemDate <= endDate;
+      }
+
+      return true;
+    });
+  };
+
+  const mrData = filterByDate(
+    filterLokasi(dashboard.details.latest_mr, "mr_lokasi"),
+    "tanggal"
   );
-  const receiveData = filterLokasi(
-    dashboard.details.latest_receive,
-    "ri_lokasi"
+
+  const deliveryData = filterByDate(
+    filterLokasi(dashboard.details.latest_delivery, "dlv_ke_gudang"),
+    "tanggal"
+  );
+
+  const receiveData = filterByDate(
+    filterLokasi(dashboard.details.latest_receive, "ri_lokasi"),
+    "tanggal"
   );
 
   const chartData = [
@@ -270,18 +304,34 @@ export default function Dashboard() {
       <SectionContainer span={12}>
         <SectionHeader>Dashboard Gudang — {lokasi}</SectionHeader>
         <SectionBody>
-          <select
-            className="border rounded-md px-3 py-2"
-            value={lokasi}
-            onChange={(e) => setLokasi(e.target.value)}
-          >
-            <option value="SEMUA">Semua Lokasi</option>
-            {LokasiList.map((l) => (
-              <option key={l.kode} value={l.nama}>
-                {l.nama}
-              </option>
-            ))}
-          </select>
+          <div className="flex flex-wrap items-end gap-4">
+            {/* Lokasi */}
+            <div className="flex flex-col gap-1">
+              <Label>Lokasi</Label>
+              <select
+                className="border rounded-md px-3 py-2 w-48"
+                value={lokasi}
+                onChange={(e) => setLokasi(e.target.value)}
+              >
+                <option value="SEMUA">Semua Lokasi</option>
+                {LokasiList.map((l) => (
+                  <option key={l.kode} value={l.nama}>
+                    {l.nama}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Start Date */}
+            <div className="flex flex-col gap-1">
+              <Label>Start Date</Label>
+              <DatePicker value={startDate} onChange={setStartDate} />
+            </div>
+            {/* End Date */}
+            <div className="flex flex-col gap-1">
+              <Label>End Date</Label>
+              <DatePicker value={endDate} onChange={setEndDate} />
+            </div>
+          </div>
         </SectionBody>
       </SectionContainer>
 

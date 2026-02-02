@@ -257,7 +257,8 @@ export function DeliveryDetail() {
           {user?.role === "warehouse" &&
             dlvry.dlv_status === "delivered" &&
             dlvry.dlv_ke_gudang === user.lokasi &&
-            !dlvry.signed_penerima_sign && (
+            !dlvry.signed_penerima_sign &&
+            user?.nama == "Hitler Warren Chr Tambunan" && (
               <Button variant="outline" onClick={() => setShowSignature(true)}>
                 Tanda Tangan
               </Button>
