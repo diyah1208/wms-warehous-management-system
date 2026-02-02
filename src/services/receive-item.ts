@@ -61,7 +61,6 @@ export async function downloadReceiveExcel(filters: any) {
   });
 
   const today = new Date().toISOString().split("T")[0]; 
-  // contoh: 2026-01-29
 
   const blob = new Blob([res.data], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -123,16 +123,6 @@ export default function ReceiveItem() {
   useEffect(() => {
     let filtered = ris;
 
-    // if (user?.lokasi) {
-    //   const userLokasi = user.lokasi.toLowerCase();
-
-    //   filtered = filtered.filter((d) => {
-    //     const lokasi = d.ri_lokasi?.toLowerCase();
-
-    //     return lokasi === userLokasi;
-    //   });
-    // }
-
     if (kodeRi) {
       filtered = filtered.filter((r) =>
         r.ri_kode.toLowerCase().includes(kodeRi.toLowerCase())
