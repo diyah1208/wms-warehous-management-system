@@ -175,7 +175,7 @@ export function DeliveryDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`http://192.168.21.144:5173/delivery/sign/${encodeURIComponent(
+              value={`${import.meta.env.VITE_APP_URL}/delivery/sign/${encodeURIComponent(
                 dlvry.dlv_kode
               )}`}
               size={200}

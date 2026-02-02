@@ -110,7 +110,7 @@ export function ReceiveDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`http://192.168.21.144:5173/receive/sign/${encodeURIComponent(
+              value={`${import.meta.env.VITE_APP_URL}/receive/sign/${encodeURIComponent(
                 ri.ri_kode
               )}`}
               size={200}
