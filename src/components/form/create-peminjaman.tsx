@@ -58,15 +58,16 @@ export default function CreatePeminjamanForm({
   const [pmjPeminjam] = useState(user.nama ?? "");
   const [pmjKeterangan, setPmjKeterangan] = useState("");
 
-  /** ================= DETAIL ================= */
   const [items, setItems] = useState<PeminjamanDetail[]>([]);
 
   const [open, setOpen] = useState(false);
   const [parts, setParts] = useState<MasterPart[]>([]);
   const [selectedPart, setSelectedPart] = useState<MasterPart>();
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [loadingKode, setLoadingKode] = useState(false);
 
-  /** ================= INIT ================= */
+
+
   useEffect(() => {
     (async () => {
       try {
@@ -79,7 +80,19 @@ export default function CreatePeminjamanForm({
     })();
   }, []);
 
-  /** ================= ADD ITEM ================= */
+  async function handleRefreshKode() {
+  try {
+    setLoadingKode(true);
+    const newKode = await generatePmj();
+    setPmjKode(newKode);
+    toast.success("Kode peminjaman diperbarui");
+  } catch {
+    toast.error("Gagal refresh kode peminjaman");
+  } finally {
+    setLoadingKode(false);
+  }
+}
+
   function handleAddItem(part: MasterPart, qty: number) {
     if (!part || qty <= 0) {
       toast.error("Part & qty tidak valid");
@@ -110,7 +123,6 @@ export default function CreatePeminjamanForm({
     setItems((prev) => prev.filter((_, i) => i !== index));
   }
 
-  /** ================= SUBMIT ================= */
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -152,14 +164,24 @@ export default function CreatePeminjamanForm({
       onSubmit={handleSubmit}
       className="grid grid-cols-12 gap-6"
     >
-      {/* ================= HEADER GRID ================= */}
 
       <div className="col-span-12 grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <div className="space-y-2">
           <Label>Kode Peminjaman</Label>
-          <Input value={pmjKode} disabled className="h-11" />
+
+          <div className="flex gap-2">
+            <Input
+              value={pmjKode}
+              disabled
+              className="h-11 flex-1"
+            />
+            <Button variant="outline" type="button" disabled={loadingKode} onClick={handleRefreshKode}>
+              Refresh
+            </Button>
+          </div>
         </div>
+
 
         <div className="space-y-2">
           <Label>Tanggal</Label>
@@ -180,7 +202,6 @@ export default function CreatePeminjamanForm({
 
       </div>
 
-      {/* ================= KETERANGAN ================= */}
 
       <div className="col-span-12 space-y-2">
         <Label>Keterangan</Label>
@@ -190,8 +211,6 @@ export default function CreatePeminjamanForm({
           onChange={(e) => setPmjKeterangan(e.target.value)}
         />
       </div>
-
-      {/* ================= PART PICKER ================= */}
 
       <div className="col-span-12 flex gap-3 items-center">
         <Popover open={open} onOpenChange={setOpen}>
