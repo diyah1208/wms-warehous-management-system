@@ -1,7 +1,7 @@
 import api from "@/lib/axios";
 import type { PO, POHeader, POReceive, UpdatePOPayload } from "@/types";
 
-const BASE_URL = "https://wms-lourdes.my.id/api/po";
+//const BASE_URL = "http://localhost:8000/api/po";
 
 /**
  * ROLE
@@ -56,7 +56,7 @@ export async function getPoByKode(
 
 export async function getPoById(po_id: number): Promise<PO | null> {
   try {
-    const res = await api.get(`${BASE_URL}/${po_id}`);
+    const res = await api.get(`/po/${po_id}`);
     return res.data ?? null;
   } catch (error: any) {
     if (error.response?.status === 404) return null;
