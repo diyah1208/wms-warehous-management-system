@@ -1,7 +1,7 @@
 import api from "@/lib/axios";
 import type { DeliveryReceive } from "@/types"; 
 
-const BASE_URL = "http://localhost:8000/api/deliveries"; 
+//const BASE_URL = "http://localhost:8000/api/deliveries"; 
 
 
 interface DeliveryParams {
@@ -29,7 +29,7 @@ export async function getAllDelivery(): Promise<DeliveryReceive[]> {
 export async function getDeliveryByKode(dlv_kode: string): Promise<DeliveryReceive | null> {
   try {
     const res = await api.get(
-      `${BASE_URL}/kode/${encodeURIComponent(dlv_kode)}`
+      `/deliveries/kode/${encodeURIComponent(dlv_kode)}`
     );
 
     return res.data ?? null;
@@ -115,7 +115,7 @@ export async function update(
   }
 ) {
   const res = await api.put(
-    `${BASE_URL}/kode/${encodeURIComponent(dlv_kode)}`
+    `/deliveries/kode/${encodeURIComponent(dlv_kode)}`
     , payload);
   return res.data;
 }
@@ -128,7 +128,7 @@ export async function updatePickupPlan(
 ): Promise<boolean> {
   try {
     await api.patch(
-      `${BASE_URL}/kode/${encodeURIComponent(dlv_kode)}/pickup-plan`,
+      `/deliveries/kode/${encodeURIComponent(dlv_kode)}/pickup-plan`,
       payload
     );
     return true;
@@ -154,7 +154,7 @@ export async function deliveryReceive(
 ): Promise<boolean> {
   try {
     await api.post(
-      `${BASE_URL}/${encodeURIComponent(dlv_kode)}/receive`,
+      `/deliveries/${encodeURIComponent(dlv_kode)}/receive`,
       payload
     );
     return true;
@@ -168,7 +168,7 @@ export async function deliveryReceive(
 
 export async function downloadDeliveryPdf(kode: string) {
   const res = await api.get(
-    `${BASE_URL}/${encodeURIComponent(kode)}/export/pdf`,
+    `/deliveries/${encodeURIComponent(kode)}/export/pdf`,
     { responseType: "blob" }
   );
 
@@ -180,7 +180,7 @@ export async function downloadDeliveryPdf(kode: string) {
 
 
 export async function downloadDeliveryExcel(filters: any) {
-  const res = await api.get(`${BASE_URL}/export-excel`, {
+  const res = await api.get(`/deliveries/export-excel`, {
     params: filters,
     responseType: "blob",
   });
