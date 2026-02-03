@@ -7,6 +7,7 @@ import type {
   SpbReport,
   SpbCreate,
 } from "@/types";
+import { encodeSafe } from "@/lib/utils";
 
 
 export async function getAllSpb(): Promise<Spb[]> {
@@ -109,21 +110,10 @@ export async function createSpbInvoice(
   return res.data.data ?? res.data;
 }
 
-export async function getSpbByKode(spb_no: string): Promise<Spb | null> {
-  try {
-    const res = await api.get(
-      `/spb/kode/${encodeURIComponent(spb_no)}`
-    );
-
-    return res.data ?? null;
-
-  } catch (error: any) {
-
-    if (error.response?.status === 404) return null;
-
-    console.error("Error fetching spb by kode:", error);
-    throw new Error("Failed to fetch spb by kode");
-  }
+export async function getSpbByKode(kode: string) {
+  const safeKode = encodeSafe(kode);
+  const res = await api.get(`/spb/kode/${safeKode}`);
+  return res.data;
 }
 
 export async function downloadSpbExcel() {
