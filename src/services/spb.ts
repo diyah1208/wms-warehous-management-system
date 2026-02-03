@@ -138,10 +138,8 @@ export async function downloadSpbExcel() {
 }
 
 export function downloadSpbPdf(kode: string) {
-  const safeKode = encodeSafe(kode);
-
   api
-    .get(`/spb/${safeKode}/export/pdf`, {
+    .get(`/spb/print/${encodeSafe(kode)}`, {
       responseType: "blob",
     })
     .then((res) => {
@@ -158,6 +156,8 @@ export function downloadSpbPdf(kode: string) {
       window.URL.revokeObjectURL(url);
     });
 }
+
+
 
 
 
