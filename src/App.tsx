@@ -1,3 +1,4 @@
+import DeliverySign from "@/views/dlv-sign";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -11,7 +12,6 @@ import { MaterialRequestDetail } from "@/views/material-request/[kode]";
 import ReceiveItem from "@/views/receive-item";
 import { ReceiveDetail } from "@/views/receive-item/[kode]";
 import DeliveryPage from "@/views/delivery";
-import DeliverySignPage from "@/views/delivery";
 import { DeliveryDetail } from "@/views/delivery/[kode]";
 import PurchaseRequest from "@/views/purchase-request";
 import PurchaseOrder from "@/views/purchase-order";
