@@ -110,7 +110,7 @@ export function ReceiveDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`https://wms-warehouse-management-system.vercel.app/receive/sign/${encodeURIComponent(
+              value={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/receive/sign/${encodeURIComponent(
                 ri.ri_kode
               )}`}
               size={200}
