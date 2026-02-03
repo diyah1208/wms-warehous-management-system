@@ -1,4 +1,3 @@
-import DeliverySign from "@/views/dlv-sign";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -256,7 +255,7 @@ export default function App() {
           />
           <Route
             path="/sign/delivery/:kode"
-            element={<DeliverySignPage />}
+            element={<DeliverySign />}
           />
 
           <Route path="/po-sign/:kode" element={<POSign />} />
