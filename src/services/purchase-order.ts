@@ -1,7 +1,7 @@
 import api from "@/lib/axios";
 import type { PO, POHeader, POReceive, UpdatePOPayload } from "@/types";
 
-const BASE_URL = "http://localhost:8000/api/po";
+const BASE_URL = "https://wms-lourdes.my.id/api/po";
 
 /**
  * ROLE
