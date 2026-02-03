@@ -1,6 +1,6 @@
 import api from "@/lib/axios";
 import type { PurchaseRequest } from "@/types";
-const BASE_URL = "https://wms-lourdes.my.id/api/pr";
+//const BASE_URL = "http://localhost:8000/api/pr";
 
 /**
  * ROLE
@@ -16,7 +16,7 @@ export async function getAllPr(): Promise<PurchaseRequest[]> {
 }
 
 export async function getOpenPr() {
-  const res = await api.get( `${BASE_URL}/open`);
+  const res = await api.get( `/pr/open`);
   return res.data.data;
 }
 
@@ -52,7 +52,7 @@ export async function getPrByKode(
 ): Promise<PurchaseRequest | null> {
   try {
     const res = await api.get(
-      `${BASE_URL}/kode/${encodeURIComponent(pr_kode)}`
+      `/pr/kode/${encodeURIComponent(pr_kode)}`
     );
 
     return res.data ?? null;
