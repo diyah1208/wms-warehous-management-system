@@ -175,7 +175,7 @@ export function DeliveryDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`${import.meta.env.VITE_APP_URL}/delivery/sign/${encodeURIComponent(
+              value={`https://wms-warehouse-management-system.vercel.app/delivery/sign/${encodeURIComponent(
                 dlvry.dlv_kode
               )}`}
               size={200}
