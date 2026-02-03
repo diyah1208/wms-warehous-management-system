@@ -62,18 +62,14 @@ export async function getAllMr(): Promise<MRReceive[]> {
 /* =====================================================
  * GET MR BY KODE
  * ===================================================== */
-export async function getMrByKode(
-  mr_kode: string
-): Promise<MRReceive | null> {
+export async function getMrByKode(kode: string): Promise<MRReceive | null> {
+  const safe = encodeSafe(kode);
   try {
-    const res = await api.get(
-      `${BASE_URL}/kode/${encodeURIComponent(mr_kode)}`
-    );
+    const res = await api.get(`/mr/kode/${safe}`);
     return res.data ?? null;
-  } catch (error: any) {
-    if (error.response?.status === 404) return null;
-    console.error("Error fetching MR by kode:", error);
-    throw new Error("Failed to fetch MR by kode");
+  } catch (err: any) {
+    if (err.response?.status === 404) return null;
+    throw err;
   }
 }
 
