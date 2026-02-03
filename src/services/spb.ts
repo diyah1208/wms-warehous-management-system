@@ -137,15 +137,27 @@ export async function downloadSpbExcel() {
   window.URL.revokeObjectURL(url);
 }
 
+export function downloadSpbPdf(kode: string) {
+  const safeKode = encodeSafe(kode);
 
-export async function downloadSpbPdf(kode: string) {
-  const res = await api.get(
-    `/spb/print/${encodeURIComponent(kode)}`,
-    { responseType: "blob" }
-  );
+  api
+    .get(`/spb/${safeKode}/export/pdf`, {
+      responseType: "blob",
+    })
+    .then((res) => {
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
-  const blob = new Blob([res.data], { type: "application/pdf" });
-  const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `SPB_${kode.replace(/\//g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
 
-  window.open(url);
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    });
 }
+
+
+
