@@ -59,17 +59,18 @@ function toMysqlDatetime(date: Date) {
 }
 const CLOSING_DAY = 5;
 
-function isClosedDate(date?: Date) {
-  if (!date) return false;
+function isClosedDate(trxDate?: Date) {
+  if (!trxDate) return false;
 
+  const today = new Date();
   const closingDate = new Date(
-    date.getFullYear(),
-    date.getMonth(),
+    trxDate.getFullYear(),
+    trxDate.getMonth() + 1,
     CLOSING_DAY,
-    0, 0, 0
+    23, 59, 59
   );
 
-  return date <= closingDate;
+  return today > closingDate;
 }
 
 export default function CreateDeliveryForm({
