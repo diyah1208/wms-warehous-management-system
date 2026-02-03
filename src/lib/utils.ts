@@ -85,3 +85,10 @@ export const tooltipVariants = {
   edit: "!bg-orange-500 !text-white !border-orange-500",
   danger: "!bg-red-600 !text-white !border-red-600",
 };
+
+export function encodeSafe(value: string): string {
+  return btoa(value)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
