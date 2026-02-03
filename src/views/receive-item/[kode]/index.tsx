@@ -110,12 +110,13 @@ export function ReceiveDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`${import.meta.env.VITE_APP_URL}/receive/sign/${encodeURIComponent(
+              value={`https://wms-warehouse-management-system.vercel.app/receive/sign/${encodeURIComponent(
                 ri.ri_kode
               )}`}
               size={200}
               className="mx-auto"
             />
+
 
             <p className="text-sm text-muted-foreground">
               Scan QR ini menggunakan HP
