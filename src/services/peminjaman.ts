@@ -1,4 +1,5 @@
 import api from "@/lib/axios";
+import { encodeSafe } from "@/lib/utils";
 import type { Peminjaman } from "@/types";
 
 export async function getAllPeminjaman(): Promise<Peminjaman[]> {
@@ -6,9 +7,18 @@ export async function getAllPeminjaman(): Promise<Peminjaman[]> {
   return res.data;
 }
 
-export async function getPeminjamanByKode(kode: string): Promise<Peminjaman> {
-  const res = await api.get(`/peminjaman/kode/${encodeURIComponent(kode)}`);
-  return res.data;
+export async function getPeminjamanByKode(
+  kode: string
+): Promise<Peminjaman | null> {
+  const safe = encodeSafe(kode);
+
+  try {
+    const res = await api.get(`/peminjaman/kode/${safe}`);
+    return res.data ?? null;
+  } catch (err: any) {
+    if (err.response?.status === 404) return null;
+    throw err;
+  }
 }
 
 export async function createPeminjaman(data: any): Promise<boolean> {
