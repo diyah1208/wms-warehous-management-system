@@ -632,12 +632,15 @@ function DataStokSection({
     setCurrentPage(1);
   }, [stocks, pn, pnm, uom, lokasiFilter]);
 
-  function findStock(partNumber: string): Stock | undefined {
-    return stocks.find(
-      (s) =>
-        s.barang?.part_number === partNumber 
-    );
-  }
+    function findStock(
+  partNumber: string,
+): Stock | undefined {
+  return stocks.find(
+    (s) =>
+      s.barang?.part_number === partNumber &&
+      s.stk_location === user?.lokasi
+  );
+}
 
   function StockColumnsGenerator() {
     const lokasiList = getUniqueLokasi(stocks);
