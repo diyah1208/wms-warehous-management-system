@@ -110,6 +110,9 @@ const availableParts: MasterPart[] = selectedMr
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+     console.log("SELECTED MR:", selectedMr);
+  console.log("MR DETAILS:", selectedMr?.details);
+  console.log("PR ITEMS (SEBELUM):", prItems);
     event.preventDefault();
     if (prItems.length === 0) {
       toast.error("Belum ada item untuk PR ini.");
