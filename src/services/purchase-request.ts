@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type { PurchaseRequest } from "@/types";
+import { encodeSafe } from "@/lib/utils";
 //const BASE_URL = "http://localhost:8000/api/pr";
 
 /**
@@ -47,19 +48,29 @@ export async function getPrById(
   }
 }
 
-export async function getPrByKode(
-  pr_kode: string
-): Promise<PurchaseRequest | null> {
-  try {
-    const res = await api.get(
-      `/pr/kode/${encodeURIComponent(pr_kode)}`
-    );
+// export async function getPrByKode(
+//   pr_kode: string
+// ): Promise<PurchaseRequest | null> {
+//   try {
+//     const res = await api.get(
+//       `/pr/kode/${encodeURIComponent(pr_kode)}`
+//     );
 
+//     return res.data ?? null;
+//   } catch (error: any) {
+//     if (error.response?.status === 404) return null;
+//     console.error("Error fetching PR by kode:", error);
+//     throw new Error("Failed to fetch PR by kode");
+//   }
+// }
+export async function getPrByKode(kode: string): Promise<PurchaseRequest | null> {
+  const safe = encodeSafe(kode);
+  try {
+    const res = await api.get(`/pr/kode/${safe}`);
     return res.data ?? null;
-  } catch (error: any) {
-    if (error.response?.status === 404) return null;
-    console.error("Error fetching PR by kode:", error);
-    throw new Error("Failed to fetch PR by kode");
+  } catch (err: any) {
+    if (err.response?.status === 404) return null;
+    throw err;
   }
 }
 
