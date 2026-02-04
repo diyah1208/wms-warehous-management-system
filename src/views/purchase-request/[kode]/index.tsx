@@ -172,7 +172,7 @@ if (!pr) {
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
 
             <QRCodeCanvas
-              value={`https://wms-warehouse-management-system.vercel.app/pr-sign/${encodeURIComponent(
+              value={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/pr-sign/${encodeURIComponent(
                 pr.pr_kode
               )}`}
               size={200}
@@ -329,7 +329,7 @@ if (!pr) {
                   <div className="text-center w-[220px]">
                     <p className="font-semibold mb-2">Tanda Tangan</p>
              <img
-  src={`https://wms-warehouse-management-system.vercel.app/storage/${pr.signature_url}`}
+  src={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/storage/${pr.signature_url}`}
   alt="signature"
   className="h-28 mx-auto border-b-2 border-black"
 />
