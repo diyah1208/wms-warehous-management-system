@@ -160,7 +160,7 @@ if (!po) {
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
 
             <QRCodeCanvas
-              value={`http://10.10.6.70:5173/po-sign/${encodeURIComponent(
+              value={`https://wms-warehouse-management-system.vercel.app/po-sign/${encodeURIComponent(
                 po.po_kode
               )}`}
               size={200}
@@ -364,7 +364,7 @@ if (!po) {
                   <div className="text-center w-[220px]">
                     <p className="font-semibold mb-2">Tanda Tangan</p>
              <img
-  src={`http://10.10.6.70:8000/storage/${po.signature_url}`}
+  src={`https://wms-warehouse-management-system.vercel.app/storage/${po.signature_url}`}
   alt="signature"
   className="h-28 mx-auto border-b-2 border-black"
 />
