@@ -607,20 +607,17 @@ export interface UpdatePOPayload {
 }
 
 export interface SpbReport {
-  spb_id: number;
+  spb_id: string;
+
+  // ===== SPB =====
   spb_no: string;
   spb_tanggal: string;
+  spb_created_at?: string;
 
   spb_no_wo?: string;
   spb_section?: string;
   spb_pic_gmi?: string;
   spb_pic_ppa?: string;
-
-  part_id: string;
-  dtl_spb_part_satuan: string;
-  dtl_spb_part_name : string;
-  dtl_spb_part_number : string;
-  dtl_spb_qty : number;
 
   spb_kode_unit?: string;
   spb_tipe_unit?: string;
@@ -629,21 +626,30 @@ export interface SpbReport {
   spb_problem_remark?: string;
 
   spb_status: string;
-  created_at?: string;
 
+  // ===== DETAIL =====
+  spb_dtl_id?: string;
+  dtl_spb_part_number: string;
+  dtl_spb_part_name: string;
+  dtl_spb_qty: number;
+  dtl_spb_part_satuan: string;
+
+  // ===== PO =====
   po_no?: string | null;
   so_no?: string | null;
   po_created_at?: string | null;
 
+  // ===== DO =====
   do_no?: string | null;
-  do_status_part?: string | null;
   do_created_at?: string | null;
 
+  // ===== INVOICE =====
   invoice_no?: string | null;
   invoice_date?: string | null;
   invoice_email_date?: string | null;
   invoice_created_at?: string | null;
 }
+
 
 export interface SpbCreate {
   spb_no: string;
