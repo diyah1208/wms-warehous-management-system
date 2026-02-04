@@ -190,7 +190,7 @@ const handleDownloadPdf = async () => {
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
 
             <QRCodeCanvas
-              value={`https://wms-warehouse-management-system.vercel.app/mr-sign/${encodeURIComponent(
+              value={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/mr-sign/${encodeURIComponent(
                 mr.mr_kode
               )}`}
               size={200}
@@ -413,7 +413,7 @@ const handleDownloadPdf = async () => {
                   <div className="text-center w-[220px]">
                     <p className="font-semibold mb-2">Tanda Tangan</p>
              <img
-  src={`https://wms-warehouse-management-system.vercel.app/storage/${mr.signature_url}`}
+  src={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/storage/${mr.signature_url}`}
   alt="signature"
   className="h-28 mx-auto border-b-2 border-black"
 />
