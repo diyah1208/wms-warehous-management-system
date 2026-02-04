@@ -217,10 +217,10 @@ function handleAddItem() {
     });
   });
 
-  // if (newItems.length === 0) {
-  //   toast.warning("Semua item dari MR ini sudah ditambahkan");
-  //   return;
-  // }
+  if (newItems.length === 0) {
+    toast.warning("Semua item dari MR ini sudah ditambahkan");
+    return;
+  }
 
   setPRItems((prev) => [...prev, ...newItems]);
 
