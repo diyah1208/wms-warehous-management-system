@@ -3,7 +3,14 @@ import { toast } from "sonner";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { getAllMr } from "@/services/material-request";
-import type { MasterPart, MRReceive, PRItemReceive, PurchaseRequest, UserComplete, UserDb } from "@/types";
+import type {
+  MasterPart,
+  MRReceive,
+  PRItemReceive,
+  PurchaseRequest,
+  UserComplete,
+  UserDb,
+} from "@/types";
 import { DatePicker } from "../date-picker";
 import {
   Select,
@@ -36,7 +43,6 @@ import {
 } from "../ui/command";
 import { cn } from "@/lib/utils";
 import { getMasterParts } from "@/services/master-part";
-import { AddItemPRDialog } from "../dialog/add-item-pr";
 import { createPR } from "@/services/purchase-request";
 
 interface CreatePRFormProps {
@@ -44,87 +50,55 @@ interface CreatePRFormProps {
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }
 
+const sameId = (a: any, b: any) => String(a) === String(b);
+
 function toMysqlDatetime(date: Date) {
   return date.toISOString().slice(0, 19).replace("T", " ");
 }
 
 export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
+  const [kodePR, setKodePR] = useState("");
   const [prItems, setPRItems] = useState<PRItemReceive[]>([]);
   const [, setMrIncluded] = useState<string[]>([]);
-const [kodePR, setKodePR] = useState<string>("");
-  const [qty, setQty] = useState<number>(1);
-  // Pencarian master part
-  const [open2, setOpen2] = useState<boolean>(false);
+
+  const [open2, setOpen2] = useState(false);
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
   const [mr, setMR] = useState<MRReceive[]>([]);
   const [filteredMr, setFilteredMR] = useState<MRReceive[]>([]);
-  const [selectedPart, setSelectedPart] = useState<MasterPart>();
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
-// PART YANG TERSEDIA BERDASARKAN MR
-const availableParts: MasterPart[] = selectedMr
-  ? masterParts.filter(
-      (part) =>
-        part.part_id !== undefined &&
-        selectedMr.details?.some(
-          (d) => d.part_id === part.part_id
-        )
-    )
-  : [];
 
-  // Fetch master parts
+  // ================= FETCH =================
   useEffect(() => {
-    async function fetchMasterParts() {
-      try {
-        const parts = await getMasterParts();
-        setMasterParts(parts);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data master part: ${error.message}`);
-        } else {
-          toast.error("Terjadi kesalahan saat mengambil data master part.");
-        }
-      }
-    }
-
-    fetchMasterParts();
+    getMasterParts()
+      .then(setMasterParts)
+      .catch(() =>
+        toast.error("Gagal mengambil data master part")
+      );
   }, []);
 
-  // Fetch Mr
   useEffect(() => {
-    async function fetchMR() {
-      try {
-        const mr = await getAllMr();
-        setMR(mr);
-        setFilteredMR(mr);
-      } catch (error) {
-        if (error instanceof Error) {
-          toast.error(`Gagal mengambil data MR: ${error.message}`);
-        } else {
-          toast.error("Terjadi kesalahan saat mengambil data MR.");
-        }
-      }
-    }
-
-    fetchMR();
+    getAllMr()
+      .then((res) => {
+        setMR(res);
+        setFilteredMR(res);
+      })
+      .catch(() => toast.error("Gagal mengambil data MR"));
   }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-     console.log("SELECTED MR:", selectedMr);
-  console.log("MR DETAILS:", selectedMr?.details);
-  console.log("PR ITEMS (SEBELUM):", prItems);
-    event.preventDefault();
-    if (prItems.length === 0) {
-      toast.error("Belum ada item untuk PR ini.");
-      return;
-    }
+  // ================= SUBMIT =================
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
     if (!tanggalPR) {
       toast.error("Tanggal PR wajib diisi");
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
-    const kodePR = formData.get("kodePR") as string;
+    if (prItems.length === 0) {
+      toast.error("Belum ada item untuk PR ini");
+      return;
+    }
 
     const data: PurchaseRequest = {
       pr_kode: kodePR,
@@ -132,232 +106,159 @@ const availableParts: MasterPart[] = selectedMr
       pr_lokasi: user.lokasi,
       pr_pic: user.nama,
       pr_tanggal: toMysqlDatetime(tanggalPR),
-
       details: prItems.map((item) => ({
-        part_id: item.part_id,
-        mr_id: item.mr_id,  
-
+        part_id: String(item.part_id),
+        mr_id: String(item.mr_id),
         dtl_pr_part_number: item.dtl_pr_part_number,
         dtl_pr_part_name: item.dtl_pr_part_name,
         dtl_pr_satuan: item.dtl_pr_satuan,
         dtl_pr_qty: Number(item.dtl_pr_qty),
       })),
-
       created_at: toMysqlDatetime(new Date()),
       updated_at: toMysqlDatetime(new Date()),
     };
 
     try {
-      const res = await createPR(data);
-      if (res) {
-        toast.success("Purchase Request berhasil dibuat.");
-        setMrIncluded([]);
-        setRefresh((prev) => !prev);
-        setPRItems([]);
-        setTanggalPR(new Date());
-      } else {
-        toast.error("Gagal membuat Purchase Request. Silakan coba lagi.");
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(`Gagal membuat PR! Kode PR tidak boleh sama.`);
-      } else {
-        toast.error("Terjadi kesalahan saat membuat PR.");
-      }
-      return;
+      await createPR(data);
+      toast.success("Purchase Request berhasil dibuat");
+      setPRItems([]);
+      setMrIncluded([]);
+      setTanggalPR(new Date());
+      setRefresh((p) => !p);
+    } catch {
+      toast.error("Gagal membuat PR (kode PR mungkin duplikat)");
     }
   }
 
-function handleAddItem() {
-  if (!selectedMr || !selectedMr.details) {
-    toast.error("Pilih MR terlebih dahulu");
-    return;
-  }
+  // ================= ADD ITEM =================
+  function handleAddItem() {
+    if (!selectedMr || !selectedMr.details?.length) {
+      toast.error("Pilih MR terlebih dahulu");
+      return;
+    }
 
-  // 🔥 CEK: apakah MR ini sudah HABIS dipakai
-  const isMrExhausted = prItems.some(
-    (item) =>
-      item.mr_id === selectedMr.mr_id &&
-      (item.dtl_mr_qty_request ?? 0) > 0 &&
-      item.dtl_pr_qty >= (item.dtl_mr_qty_request ?? 0)
-  );
-
-  if (isMrExhausted) {
-    toast.error("MR ini sudah habis dan tidak bisa digunakan lagi");
-    return;
-  }
-
-  const newItems: PRItemReceive[] = [];
-
-  selectedMr.details.forEach((detail) => {
-    const part = masterParts.find(
-      (p) => p.part_id === detail.part_id
-    );
-    if (!part) return;
-
-    // ❌ CEK DUPLIKAT PART DALAM MR YANG SAMA
-    const isDuplicate = prItems.some(
+    const isMrExhausted = prItems.some(
       (item) =>
-        item.mr_id === selectedMr.mr_id &&
-        item.part_id === detail.part_id
+        sameId(item.mr_id, selectedMr.mr_id) &&
+        item.dtl_pr_qty >= (item.dtl_mr_qty_request ?? 0)
     );
 
-    if (isDuplicate) return;
+    if (isMrExhausted) {
+      toast.error("MR ini sudah habis");
+      return;
+    }
 
-    newItems.push({
-      mr_id: selectedMr.mr_id,
-      part_id: detail.part_id,
-      dtl_pr_part_number: part.part_number,
-      dtl_pr_part_name: part.part_name,
-      dtl_pr_satuan: part.part_satuan,
+    const newItems: PRItemReceive[] = [];
 
-      // 🔥 DEFAULT JUMLAH = 0 (USER WAJIB ISI)
-      dtl_pr_qty: 0,
+    selectedMr.details.forEach((detail) => {
+      const part = masterParts.find((p) =>
+        sameId(p.part_id, detail.part_id)
+      );
+      if (!part) return;
 
-      // REFERENSI QTY MR
-      dtl_mr_qty_request: detail.dtl_mr_qty_request,
-      mr: selectedMr,
+      const isDuplicate = prItems.some(
+        (item) =>
+          sameId(item.mr_id, selectedMr.mr_id) &&
+          sameId(item.part_id, detail.part_id)
+      );
+
+      if (isDuplicate) return;
+
+      newItems.push({
+        mr_id: String(selectedMr.mr_id),
+        part_id: String(detail.part_id),
+        dtl_pr_part_number: part.part_number,
+        dtl_pr_part_name: part.part_name,
+        dtl_pr_satuan: part.part_satuan,
+        dtl_pr_qty: 0,
+        dtl_mr_qty_request: detail.dtl_mr_qty_request,
+        mr: selectedMr,
+      });
     });
-  });
 
-  if (newItems.length === 0) {
-    toast.warning("Semua item dari MR ini sudah ditambahkan");
-    return;
+    if (newItems.length === 0) {
+      toast.warning("Semua item dari MR ini sudah ditambahkan");
+      return;
+    }
+
+    setPRItems((prev) => [...prev, ...newItems]);
+    setSelectedMr(undefined);
+    toast.success("Item MR berhasil ditambahkan");
   }
 
-  setPRItems((prev) => [...prev, ...newItems]);
-
-  // 🔥 RESET MR SETELAH DIPAKAI
-  setSelectedMr(undefined);
-
-  toast.success("Item MR berhasil ditambahkan ke PR");
-}
-
-
+  // ================= REMOVE =================
   function handleRemoveItem(index: number) {
-    setPRItems((prevItems) => prevItems.filter((_, i) => i !== index));
-    toast.success("Item berhasil dihapus dari daftar.");
+    setPRItems((prev) => prev.filter((_, i) => i !== index));
+    toast.success("Item berhasil dihapus");
   }
 
+  // ================= UI =================
   return (
-    <form
-      onSubmit={handleSubmit}
-      id="create-pr-form"
-      className="grid grid-cols-12 gap-4"
-    >
-      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-        {/* Kode PR */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="kodePR">Kode PR<span className="text-red-500">*</span></Label>
-          <Input
-  name="kodePR"
-  placeholder="Input Kode PR"
-  className="lg:tracking-wider"
-  value={kodePR}
-  onChange={(e) => setKodePR(e.target.value)}
-  required
-/>
-
+    <form onSubmit={handleSubmit} className="grid grid-cols-12 gap-4">
+      {/* FORM HEADER */}
+      <div className="col-span-6 space-y-4">
+        <div>
+          <Label>Kode PR *</Label>
+          <Input value={kodePR} onChange={(e) => setKodePR(e.target.value)} required />
         </div>
 
-        {/* Tanggal PR */}
-        <div className="flex flex-col gap-2">
-          <Label>Tanggal PR<span className="text-red-500">*</span></Label>
-          <div className="flex items-center">
-            <DatePicker value={tanggalPR} onChange={setTanggalPR} />
-          </div>
+        <div>
+          <Label>Tanggal PR *</Label>
+          <DatePicker value={tanggalPR} onChange={setTanggalPR} />
         </div>
       </div>
 
-      <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
-        {/* PIC */}
-        <div className="flex flex-col gap-2">
+      <div className="col-span-6 space-y-4">
+        <div>
           <Label>Person in Charge</Label>
-          <div className="flex items-center">
-            <Input value={user.nama} name="pic" disabled />
-          </div>
+          <Input value={user.nama} disabled />
         </div>
 
-        {/* Lokasi */}
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="lokasi">Lokasi</Label>
-          <div className="flex items-center">
-            <Select required name="lokasi" value={user.lokasi} disabled>
-              <SelectTrigger className="w-full" name="lokasi" id="lokasi">
-                <SelectValue
-                  placeholder={user.lokasi}
-                  defaultValue={user.lokasi}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Daftar Lokasi</SelectLabel>
-                  {LokasiList?.map((lokasi) => (
-                    <SelectItem key={lokasi.kode} value={lokasi.nama}>
-                      {lokasi.nama}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
+        <div>
+          <Label>Lokasi</Label>
+          <Select value={user.lokasi} disabled>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                {LokasiList.map((l) => (
+                  <SelectItem key={l.kode} value={l.nama}>
+                    {l.nama}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Tambah Item PR */}
-      <div className="col-span-12 grid grid-cols-12 gap-4">
-        {/* Combobox Referensi MR */}
+      {/* MR PICKER */}
+      <div className="col-span-8">
         <Popover open={open2} onOpenChange={setOpen2}>
           <PopoverTrigger asChild>
-            <Button
-  variant="outline"
-  role="combobox"
-  aria-expanded={open2}
-  disabled={!kodePR.trim()}   // ⬅️ KUNCI UTAMA
-  className={cn("col-span-12 lg:col-span-8 justify-between")}
->
-
-              {selectedMr
-                ? `${mr.find((m: MRReceive) => m.mr_kode === selectedMr?.mr_kode)?.mr_kode} | Part: ${selectedPart?.part_number || 'Loading...'}`
-                : "Pilih Material Request"}
-              <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            <Button variant="outline" disabled={!kodePR}>
+              {selectedMr?.mr_kode ?? "Pilih Material Request"}
+              <ChevronsUpDownIcon className="ml-2 h-4 w-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-(--radix-popover-trigger-width) p-0">
+          <PopoverContent className="p-0">
             <Command>
-              <CommandInput placeholder="Pilih MR" />
+              <CommandInput placeholder="Cari MR" />
               <CommandList>
-                <CommandEmpty>Tidak ada.</CommandEmpty>
+                <CommandEmpty>Tidak ada</CommandEmpty>
                 <CommandGroup>
-                  {filteredMr?.map((m) => (
+                  {filteredMr.map((m) => (
                     <CommandItem
                       key={m.mr_kode}
                       value={m.mr_kode}
-onSelect={(currentValue) => {
-  const selectedMrData = mr.find(
-    (mrItem) => mrItem.mr_kode === currentValue
-  );
-
-  if (!selectedMrData) {
-    toast.error("MR tidak ditemukan");
-    return;
-  }
-
-  setSelectedMr(selectedMrData);
-  setOpen2(false);
-}}
-
-
+                      onSelect={() => {
+                        setSelectedMr(m);
+                        setOpen2(false);
+                      }}
                     >
-                      <CheckIcon
-                        className={cn(
-                          "mr-2 h-4 w-4",
-                          selectedMr?.mr_kode === m.mr_kode
-                            ? "opacity-100"
-                            : "opacity-0"
-                        )}
-                      />
-                      {`${m.mr_kode}`}
+                      <CheckIcon className="mr-2 h-4 w-4" />
+                      {m.mr_kode}
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -365,120 +266,82 @@ onSelect={(currentValue) => {
             </Command>
           </PopoverContent>
         </Popover>
-
-<Button
-  type="button"
-  disabled={!kodePR.trim() || !selectedMr}
-  onClick={handleAddItem}
-  className="col-span-12 md:col-span-4
-             !bg-green-600 hover:!bg-green-700 text-white"
->
-  <ClipboardPlus className="h-4 w-4" />
-  <span>Tambah Barang</span>
-</Button>
-
-
       </div>
 
-      {/* Item yang masuk PR */}
+      <div className="col-span-4">
+        <Button type="button" onClick={handleAddItem} disabled={!selectedMr}>
+          <ClipboardPlus className="mr-2 h-4 w-4" /> Tambah Barang
+        </Button>
+      </div>
+
+      {/* TABLE */}
       <div className="col-span-12">
         <Table>
           <TableHeader>
-            <TableRow className="border [&>*]:border">
-              <TableHead className="w-[50px] font-semibold text-center">
-                No
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Part Number
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Part Name
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Satuan
-              </TableHead>
-              {/* <TableHead className="font-semibold text-center">Qty PR</TableHead> */}
-              <TableHead className="font-semibold text-center">Qty MR</TableHead>
-              <TableHead className="font-semibold text-center">
-                QTY PR
-              </TableHead>
-              <TableHead className="font-semibold text-center">
-                Berdasarkan MR
-              </TableHead>
-              <TableHead className="font-semibold text-center">Aksi</TableHead>
+            <TableRow>
+              <TableHead>No</TableHead>
+              <TableHead>Part Number</TableHead>
+              <TableHead>Part Name</TableHead>
+              <TableHead>Satuan</TableHead>
+              <TableHead>Qty MR</TableHead>
+              <TableHead>Qty PR</TableHead>
+              <TableHead>Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {prItems.length > 0 ? (
-              prItems?.map((item, index) => (
-                <TableRow key={index} className="border [&>*]:border">
-                  <TableCell className="w-[50px]">{index + 1}</TableCell>
-                  <TableCell className="text-start">
-                    {item.dtl_pr_part_number}
-                  </TableCell>
-                  <TableCell className="text-start">{item.dtl_pr_part_name}</TableCell>
+            {prItems.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center">
+                  Tidak ada item MR
+                </TableCell>
+              </TableRow>
+            ) : (
+              prItems.map((item, i) => (
+                <TableRow key={i}>
+                  <TableCell>{i + 1}</TableCell>
+                  <TableCell>{item.dtl_pr_part_number}</TableCell>
+                  <TableCell>{item.dtl_pr_part_name}</TableCell>
                   <TableCell>{item.dtl_pr_satuan}</TableCell>
-                  {/* <TableCell>{item.dtl_pr_qty}</TableCell> */}
                   <TableCell>{item.dtl_mr_qty_request}</TableCell>
-<TableCell className="text-center">
-  <Input
-    type="number"
-    min={1}
-    className="w-24 mx-auto text-center"
-    value={item.dtl_pr_qty}
-    onChange={(e) => {
-      const raw = e.target.value;
-      if (raw === "") return;
-
-      const value = Number(raw);
-      const mrQty = item.dtl_mr_qty_request ?? 0;
-
-      if (value < 1) return;
-
-      // 🔥 VALIDASI UTAMA
-      if (value > mrQty) {
-        toast.error("Qty PR tidak boleh melebihi Qty MR");
-        return;
-      }
-
-      setPRItems((prev) =>
-        prev.map((it, i) =>
-          i === index
-            ? { ...it, dtl_pr_qty: value }
-            : it
-        )
-      );
-    }}
-  />
-</TableCell>
-
-
-                  <TableCell>{item.mr?.mr_kode}</TableCell>
                   <TableCell>
-                   <Button
-  type="button"
-  size="sm"
-  variant="delete"
-  onClick={() => handleRemoveItem(index)}
-  className="flex items-center gap-2"
->
-  <Trash2/>
-</Button>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={item.dtl_pr_qty}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (val > (item.dtl_mr_qty_request ?? 0)) {
+                          toast.error("Qty PR melebihi Qty MR");
+                          return;
+                        }
+                        setPRItems((prev) =>
+                          prev.map((it, idx) =>
+                            idx === i ? { ...it, dtl_pr_qty: val } : it
+                          )
+                        );
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleRemoveItem(i)}
+                    >
+                      <Trash2 />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={5}
-                  className="text-center text-muted-foreground"
-                >
-                  Tidak ada item MR.
-                </TableCell>
-              </TableRow>
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="col-span-12">
+        <Button type="submit" className="w-full bg-green-600">
+          Tambah PR
+        </Button>
       </div>
     </form>
   );
