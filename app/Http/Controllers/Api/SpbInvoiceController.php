@@ -30,6 +30,19 @@ class SpbInvoiceController extends Controller
             'invoice_no' => 'required',
         ]);
 
+        // $exists = SpbInvoiceModel::where('spb_id', $request->spb_id)->exists();
+        // if ($exists) {
+        //     return response()->json([
+        //         'message' => 'SPB ini sudah memiliki Invoice'
+        //     ], 422);
+        // }
+        // $existsInv = SpbInvoiceModel::where('spb_do_id', $request->spb_do_id)->exists();
+        // if ($existsInv) {
+        //     return response()->json([
+        //         'message' => 'DO dalam SPB ini sudah memiliki Invoice'
+        //     ], 422);
+        // }
+
         $invoice = SpbInvoiceModel::create([
             'spb_id' => $request->spb_id,
             'spb_do_id' => $request->spb_do_id,

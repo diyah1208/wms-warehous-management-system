@@ -24,6 +24,7 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        // Cek email & password
         if (!Auth::attempt($request->only('email', 'password'))) {
             return response()->json([
                 'message' => 'Email atau password salah'
@@ -31,6 +32,26 @@ class AuthController extends Controller
         }
 
         $user = Auth::user();
+
+        /**
+         * 🔥 CEK APPROVAL DULU
+         */
+        if ($user->approval_status !== 'approved') {
+            return response()->json([
+                'message' => 'Akun belum disetujui admin'
+            ], 403);
+        }
+
+        /**
+         * 🔥 CEK AKTIF / NONAKTIF
+         */
+        if (!$user->is_active) {
+            return response()->json([
+                'message' => 'Akun sedang dinonaktifkan'
+            ], 403);
+        }
+
+        // Generate token Sanctum
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -44,29 +65,31 @@ class AuthController extends Controller
      * REGISTER
      * ======================
      */
- public function register(Request $request)
+    public function register(Request $request)
     {
         $request->validate([
             'nama'     => 'required|string',
             'email'    => 'required|email|unique:users,email',
             'password' => 'required|min:6',
-            'lokasi' => 'required|string',
-
+            'lokasi'   => 'required|string',
         ]);
 
         $user = UserModel::create([
-            'nama'     => $request->nama,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-'role'     => 'user',      // ✅ DEFAULT
-        'lokasi'   => $request->lokasi,    // ✅ DEFAULT (sesuaikan)
+            'nama'            => $request->nama,
+            'email'           => $request->email,
+            'password'        => Hash::make($request->password),
+            'role'            => 'user',
+            'lokasi'          => $request->lokasi,
+
+            // 🔥 DEFAULT BARU
+            'approval_status' => 'pending',
+            'is_active'       => 0,
         ]);
 
         return response()->json([
-            'message' => 'Pendaftaran berhasil. Silakan login.'
-        ]);
+            'message' => 'Pendaftaran berhasil. Menunggu persetujuan admin.'
+        ], 201);
     }
-
 
     /**
      * ======================
@@ -126,16 +149,21 @@ class AuthController extends Controller
     private function formatUser(UserModel $user): array
     {
         return [
-            'id'             => (string) $user->id,
-            'nama'           => $user->nama,
-            'email'          => $user->email,
-            'role'           => $user->role,
-            'lokasi'         => $user->lokasi,
-            'email_verified' => !is_null($user->email_verified_at),
-            'auth_provider'  => 'local',
-            'image_url'      => $user->image_url ?? null,
-            'created_at'     => $user->created_at,
-            'updated_at'     => $user->updated_at,
+            'id'              => (string) $user->id,
+            'nama'            => $user->nama,
+            'email'           => $user->email,
+            'role'            => $user->role,
+            'lokasi'          => $user->lokasi,
+
+            // 🔥 KIRIM DUA STATUS
+            'approval_status' => $user->approval_status,
+            'is_active'       => (bool) $user->is_active,
+
+            'email_verified'  => !is_null($user->email_verified_at),
+            'auth_provider'   => 'local',
+            'image_url'       => $user->image_url ?? null,
+            'created_at'      => $user->created_at,
+            'updated_at'      => $user->updated_at,
         ];
     }
 }

@@ -31,14 +31,27 @@ class SpbController extends Controller
         );
     }
 
-    public function showKode($kode)
+    public function showKode(string $kode)
     {
-        return response()->json(
-            SpbModel::with(['details'])
-                ->where('spb_no', $kode)
-                ->firstOrFail()
-        );
+        // ðŸ”¥ decode base64 URL-safe (SAMA PERSIS DENGAN MR)
+        $decodedKode = base64_decode(strtr($kode, '-_', '+/'));
+    
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode SPB tidak valid'
+            ], 400);
+        }
+    
+        $spb = SpbModel::with(['details'])
+            ->where('spb_no', $decodedKode)
+            ->firstOrFail();
+    
+        return response()->json($spb);
     }
+// public function view(Request $request)
+// {
+//     return response()->json(['ok' => true]);
+// }
 
     public function view(Request $request)
     {
@@ -59,7 +72,7 @@ class SpbController extends Controller
         }
 
         return response()->json(
-            $query->orderBy('created_at', 'desc')
+            $query->orderBy('spb_created_at', 'desc')
                   ->paginate($limit)
         );
     }
@@ -91,8 +104,8 @@ class SpbController extends Controller
                 'spb_hm'             => $request->spb_hm,
                 'spb_problem_remark' => $request->spb_problem_remark,
                 'spb_status'         => 'DONE QUOT',
-                'spb_gudang'  => $request->spb_gudang,
-                'spb_pic'  => $request->spb_pic,
+                'spb_gudang'         => $request->spb_gudang,
+                'spb_pic'            => $request->spb_pic,
             ]);
             foreach ($request->details as $item) {
 
@@ -127,6 +140,32 @@ class SpbController extends Controller
             'data' => $spb->load('details')
         ], 201);
     }
+    public function update(Request $request, $id)
+    {
+        $spb = SpbModel::find($id);
+
+        if (!$spb) {
+            return response()->json([
+                'status' => false,
+                'message' => 'SPB tidak ditemukan'
+            ], 404);
+        }
+
+        $request->validate([
+            'spb_no_wo' => 'nullable|string|max:100',
+        ]);
+
+        $spb->update([
+            'spb_no_wo' => $request->spb_no_wo,
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'SPB berhasil diupdate',
+            'data' => $spb
+        ]);
+    }
+
 
 
     public function generateKodeSpb()
@@ -147,7 +186,7 @@ class SpbController extends Controller
     public function exportSpbExcel()
     {
         $data = DB::table('v_spb_report')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('spb_created_at', 'desc')
             ->get();
 
         return Excel::download(
@@ -155,19 +194,26 @@ class SpbController extends Controller
             'DAFTAR_SPB.xlsx'
         );
     }
-
-    public function printSpb($kode)
+    public function printSpb(string $kode)
     {
-        $spb = SpbModel::with('details')
-            ->where('spb_no', $kode)
+        // 🔥 decode base64 URL-safe
+        $decodedKode = base64_decode(strtr($kode, '-_', '+/'));
+    
+        if (!$decodedKode) {
+            abort(400, 'Kode SPB tidak valid');
+        }
+    
+        $spb = SpbModel::with(['details'])
+            ->where('spb_no', $decodedKode) // ⚠️ pakai kolom yang BENAR
             ->firstOrFail();
-
-        $pdf = Pdf::loadView('exports.spb-pdf', [
-            'spb' => $spb
-        ])->setPaper('A4', 'potrait');
-
-        $filename = 'SPB-' . str_replace('/', '-', $spb->spb_no) . '.pdf';
-
-        return $pdf->stream($filename);
+    
+        $pdf = Pdf::loadView(
+            'exports.spb-pdf',
+            compact('spb')
+        )->setPaper('A4', 'portrait');
+    
+        return $pdf->download(
+            'SPB_' . str_replace('/', '_', $spb->spb_no) . '.pdf'
+        );
     }
 }

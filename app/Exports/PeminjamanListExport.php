@@ -10,17 +10,17 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
-class ReceiveListExport implements 
+class PeminjamanListExport implements
     FromCollection,
     WithHeadings,
     WithStyles,
     ShouldAutoSize
 {
-    protected $receives;
+    protected $peminjaman;
 
-    public function __construct($receive)
+    public function __construct($peminjaman)
     {
-        $this->receives = $receive;
+        $this->peminjaman = $peminjaman;
     }
 
     public function collection()
@@ -28,19 +28,23 @@ class ReceiveListExport implements
         $rows = collect();
         $no = 1;
 
-        foreach ($this->receives as $receive) {
-            foreach ($receive->details as $detail) {
+        foreach ($this->peminjaman as $pmj) {
+            foreach ($pmj->details as $detail) {
                 $rows->push([
-                    'no'              => $no++,
-                    'ri_kode'         => $receive->ri_kode,
-                    'po_kode'         => $receive->purchaseOrder?->po_kode ?? '-',
-                    'tanggal'         => $receive->ri_tanggal,
-                    'lokasi'          => $receive->ri_lokasi,
-                    'part_number'     => $detail->dtl_ri_part_number,
-                    'part_name'       => $detail->dtl_ri_part_name,
-                    'part_satuan'     => $detail->dtl_ri_satuan,
-                    'qty_diterima'    => $detail->dtl_ri_qty,
-                    'pic'             => $receive->ri_pic,
+                    'no'        => $no++,
+                    'kode'      => $pmj->pmj_kode,
+                    'tanggal'   => $pmj->pmj_tanggal,
+                    'lokasi'    => $pmj->pmj_lokasi,
+                    'peminjam'  => $pmj->pmj_peminjam,
+
+                    // DETAIL
+                    'part'      => $detail->dtl_pmj_part_number,
+                    'nama'      => $detail->dtl_pmj_part_name,
+                    'satuan'    => $detail->dtl_pmj_part_satuan,
+                    'qty_pinjam'=> $detail->dtl_pmj_qty_borrowed,
+                    'qty_kembali'=> $detail->dtl_pmj_qty_returned,
+
+                    'status'    => strtoupper($pmj->pmj_status),
                 ]);
             }
         }
@@ -48,23 +52,22 @@ class ReceiveListExport implements
         return $rows;
     }
 
-
     public function headings(): array
     {
         return [
             'No',
-            'Kode Receive Item',
-            'Kode Purchase Order',
-            'Tanggal Receive',
-            'Gudang Penerima',
-            'Part Number',
-            'Part Name',
-            'Part Satuan',
-            'Qty Diterima',
-            'PIC',
+            'Kode Peminjaman',
+            'Tanggal',
+            'Lokasi',
+            'Peminjam',
+            'Part',
+            'Nama',
+            'Satuan',
+            'Qty Dipinjam',
+            'Qty Dikembalikan',
+            'Status',
         ];
     }
-
 
     public function styles(Worksheet $sheet)
     {
@@ -72,11 +75,8 @@ class ReceiveListExport implements
         $lastColumn = $sheet->getHighestColumn();
 
         return [
-            // HEADER
             1 => [
-                'font' => [
-                    'bold' => true,
-                ],
+                'font' => ['bold' => true],
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                     'vertical'   => Alignment::VERTICAL_CENTER,
@@ -88,7 +88,6 @@ class ReceiveListExport implements
                 ],
             ],
 
-            // BODY
             "A2:{$lastColumn}{$lastRow}" => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
@@ -100,8 +99,7 @@ class ReceiveListExport implements
                 ],
             ],
 
-            // TANGGAL RATA TENGAH
-            "D2:D{$lastRow}" => [
+            "A2:A{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                 ],

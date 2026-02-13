@@ -31,33 +31,45 @@ class SpbListExport implements
     {
         return $this->data->values()->map(function ($d, $i) {
             return [
-                $i + 1,                                
-                $d->created_at,                        
-                $d->spb_no,                             
-                $d->dtl_spb_part_number,                
-                $d->dtl_spb_part_name,                  
-                $d->dtl_spb_qty,                        
-                $d->dtl_spb_part_satuan,                
-                $d->spb_kode_unit,                      
-                $d->spb_tipe_unit,                      
-                $d->spb_brand,                          
-                $d->spb_hm,                             
-                $d->spb_problem_remark,                 
-                $d->spb_section,                        
-                $d->spb_pic_gmi,                        
-                $d->spb_pic_ppa,                        
-                $d->spb_no_wo,                          
-                $d->created_at,                      
-                $d->spb_status,                         
-                $d->spb_tanggal,                        
-                $d->po_no,                              
-                $d->so_no,                              
-                $d->so_date,                      
-                $d->do_no,                             
-                $d->do_date,                      
-                $d->invoice_no,                         
-                $d->invoice_date,                      
-                $d->invoice_email_date,                
+                $i + 1,
+                $d->spb_tanggal,
+                $d->spb_no,
+                $d->dtl_spb_part_number,
+                $d->dtl_spb_part_name,
+                $d->dtl_spb_qty,
+                $d->dtl_spb_part_satuan,
+                $d->spb_kode_unit,
+                $d->spb_tipe_unit,
+                $d->spb_brand,
+                $d->spb_hm,
+                $d->spb_problem_remark,
+                $d->spb_section,
+                $d->spb_pic_gmi,
+                $d->spb_pic_ppa,
+                $d->spb_no_wo,
+
+                // DATE INPUT SPB
+                $d->spb_created_at,
+
+                $d->spb_status,
+
+                // TGL SPB to PO
+                $d->spb_tanggal,
+
+                $d->po_no,
+                $d->so_no,
+
+                // DATE INPUT PO
+                $d->po_created_at,
+
+                $d->do_no,
+
+                // DATE INPUT DO
+                $d->do_created_at,
+
+                $d->invoice_no,
+                $d->invoice_date,
+                $d->invoice_email_date,
             ];
         });
     }
@@ -81,17 +93,17 @@ class SpbListExport implements
             'PIC GMI',
             'PIC PPA',
             'NO WO',
-            'DATE INPUT WO',
-            'STATUS WO',
-            'TANGGAL SPB to PO',
+            'DATE INPUT',
+            'STATUS',
+            'TGL SPB to PO',
             'NO PO',
             'NO SO',
             'DATE INPUT PO',
             'NO DO',
             'DATE INPUT DO',
             'NO INVOICE',
-            'TANGGAL INVOICE',
-            'TANGGAL KIRIM EMAIL',
+            'TGL INVOICE',
+            'TGL EMAIL',
         ];
     }
 
@@ -101,11 +113,11 @@ class SpbListExport implements
             1 => [
                 'font' => [
                     'bold' => true,
-                    'color' => ['rgb' => 'FFFFFF'], 
+                    'color' => ['rgb' => 'FFFFFF'],
                 ],
                 'fill' => [
                     'fillType' => 'solid',
-                    'startColor' => ['rgb' => '000000'], 
+                    'startColor' => ['rgb' => '000000'],
                 ],
                 'alignment' => [
                     'horizontal' => 'center',
@@ -118,15 +130,13 @@ class SpbListExport implements
     public function columnFormats(): array
     {
         return [
-            'B'  => NumberFormat::FORMAT_DATE_DDMMYYYY,
-            'G'  => NumberFormat::FORMAT_NUMBER,
-            'K'  => NumberFormat::FORMAT_NUMBER,
-            'Q'  => NumberFormat::FORMAT_DATE_DDMMYYYY,
-            'S'  => NumberFormat::FORMAT_DATE_DDMMYYYY,
-            'V'  => NumberFormat::FORMAT_DATE_DDMMYYYY,
-            'X'  => NumberFormat::FORMAT_DATE_DDMMYYYY,
-            'Y'  => NumberFormat::FORMAT_DATE_DDMMYYYY,
-            'Z'  => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'B' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'Q' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'S' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'V' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'X' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'Y' => NumberFormat::FORMAT_DATE_DDMMYYYY,
+            'Z' => NumberFormat::FORMAT_DATE_DDMMYYYY,
         ];
     }
 

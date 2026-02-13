@@ -12,6 +12,9 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\PoListExport;
+use Maatwebsite\Excel\Facades\Excel;
+
 class PurchaseOrderController extends Controller
 {
     public function getPrOpen(Request $request)
@@ -63,6 +66,7 @@ class PurchaseOrderController extends Controller
             'po_estimasi'    => 'nullable|date',
             'po_keterangan'  => 'nullable|string',
             'po_pic'         => 'required|string',
+            'po_payment_term' => 'required|in:CASH,COD,NET_7,NET_14,NET_30',
             'po_status'      => 'required|in:pending,purchased',
             'details'        => 'required|array',
             'details.*.part_id' => 'required',
@@ -88,6 +92,7 @@ foreach ($request->details as $item) {
                 'pr_id' => $request->pr_id,
                 'po_tanggal' => $request->po_tanggal,
                 'po_estimasi' => $request->po_estimasi,
+                'po_payment_term' => $request->po_payment_term,
                 'po_status' => $request->po_status,
                 'po_detail_status' =>  $request->po_detail_status,
                 'po_keterangan' => $request->po_keterangan,
@@ -147,6 +152,9 @@ public function showKode($kode)
             'kode_pr' => $po->purchaseRequest->pr_kode ?? null,
             'tanggal' => $po->po_tanggal,
             'tanggal_estimasi' => $po->po_estimasi,
+            'po_payment_term' => $request->po_payment_term,
+'payment_term' => $po->po_payment_term,
+
             'status' => strtolower($po->po_status),
             'po_detail_status' => $po->po_detail_status, 
             'pic' => $po->po_pic,
@@ -340,6 +348,15 @@ public function clearSignature(string $kode): JsonResponse
             'message' => 'Gagal reset signature'
         ], 500);
     }
+}
+public function exportPo()
+{
+    $pos = PurchaseOrderModel::orderBy('created_at', 'desc')->get();
+
+    return Excel::download(
+        new PoListExport($pos),
+        'DAFTAR_PURCHASE_ORDER.xlsx'
+    );
 }
 
 }

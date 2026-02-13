@@ -7,12 +7,20 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
+        'http://10.10.6.37:5173',
+        'http://10.192.146.235:5173',
         'http://localhost:5173',
-        'http://192.168.21.144:5173',
-        'http://localhost:5173',
-        'http://10.10.6.175:5173',
-        'http://10.10.6.207:5173',
-        'http://localhost:4173',
+        'http://192.168.1.125:5173'
+        // 'http://10.10.6.125:5173',
+        //  'http://localhost:5173',
+        // 'http://103.75.26.210:5173',
+        // 'http://localhost:5173',
+        // 'http://192.168.21.144:5173',
+        // 'http://localhost:5173',
+        // 'http://10.10.6.175:5173',
+        // 'http://10.10.6.207:5173',
+        // 'http://localhost:4173',
+        // 'https://wms-warehouse-management-system.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],

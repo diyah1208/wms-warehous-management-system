@@ -119,7 +119,6 @@ class ReceiveController extends Controller
                         'dtl_qty_received' => $poDetail->dtl_qty_received + $item['dtl_ri_qty']
                     ]);
 
-                /* === UPDATE STOCK === */
                 $stock = StockModel::firstOrCreate(
                     [
                         "part_id" => $item['part_id'],
@@ -184,13 +183,55 @@ class ReceiveController extends Controller
     }
 
 
-    public function exportReceive()
+    // public function exportReceive()
+    // {
+    //     $receive = ReceiveModel::with('purchaseOrder')->get();
+
+    //     return Excel::download(
+    //         new ReceiveListExport($receive), 
+    //         'DAFTAR_RECEIVE.xlsx'
+    //     );
+    // }
+    public function exportReceive(Request $request)
     {
-        $receive = ReceiveModel::with('purchaseOrder')->get();
+        $query = ReceiveModel::with(['purchaseOrder', 'details']);
+
+        if ($request->filled('kodeRi')) {
+            $query->where('ri_kode', 'like', "%{$request->kodeRi}%");
+        }
+
+        if ($request->filled('gudang')) {
+            $query->where('ri_lokasi', 'like', "%{$request->gudang}%");
+        }
+
+         if ($request->filled('kodePoRi')) {
+            $query->whereHas('purchaseOrder', function ($q) use ($request) {
+                $q->where('po_kode', 'like', "%{$request->kodePoRi}%");
+            });
+        }
+
+        if ($request->filled('picRi')) {
+            $query->where('ri_pic', 'like', "%{$request->picRi}%");
+        }
+
+        if ($request->filled('tanggal')) {
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('ri_tanggal', $request->tanggal)
+                ->orWhereDate('created_at', $request->tanggal);
+            });
+        }
+
+        $receive = $query
+            ->orderByDesc('ri_kode')
+            ->get();
+            
+    // dd($receive->count());
+
+        $tanggalFile = $request->tanggal ?? now()->format('Y-m-d');
 
         return Excel::download(
-            new ReceiveListExport($receive), 
-            'DAFTAR_RECEIVE.xlsx'
+            new ReceiveListExport($receive),
+            "Receive_{$tanggalFile}.xlsx"
         );
     }
 
@@ -198,6 +239,7 @@ class ReceiveController extends Controller
     {
         $request->validate([
             'signature' => 'required|string',
+            'signed_penerima_name' => 'required|string',
         ]);
 
         $receive = ReceiveModel::with('details')
@@ -209,6 +251,7 @@ class ReceiveController extends Controller
         $receive->update([
             'signed_penerima_sign' => $path,
             'signed_penerima_at'   => now(),
+            'signed_penerima_name' => $request->signed_penerima_name,
             'ri_status'           => 'received',
         ]);
 

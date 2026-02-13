@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MrListExport;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -357,6 +359,15 @@ public function clearSignature(string $kode): JsonResponse
             'message' => 'Gagal reset signature'
         ], 500);
     }
+}
+public function exportMr()
+{
+    $mrs = MaterialRequestModel::with('details')->get();
+
+    return Excel::download(
+        new MrListExport($mrs), // ✅ PAKAI CLASS YANG BENAR
+        'DAFTAR_MATERIAL_REQUEST.xlsx'
+    );
 }
 
     /* =====================================================

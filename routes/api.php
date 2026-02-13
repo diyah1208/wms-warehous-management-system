@@ -20,6 +20,8 @@ use App\Http\Controllers\Api\SpbDoController;
 use App\Http\Controllers\Api\SpbInvoiceController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\Api\PeminjamanController;
+use App\Http\Controllers\Api\JobCostingController;
 use App\Http\Middleware\CheckInputOpen;
 
 
@@ -66,17 +68,13 @@ Route::delete(
     [PurchaseRequestController::class, 'clearSignature']
 )->where('kode', '.*');
 
+
 Route::middleware('api')->post('/po/sign', [PurchaseOrderController::class, 'sign']);
 Route::delete(
     '/po/{kode}/signature',
     [PurchaseOrderController::class, 'clearSignature']
 )->where('kode', '.*');
 
-/*
-|--------------------------------------------------------------------------
-| READ ONLY (GET) — SELALU BOLEH
-|--------------------------------------------------------------------------
-*/
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -88,11 +86,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{id}', [UserController::class, 'show']);
 
+    Route::put('/users/{id}/approve', [UserController::class, 'approve']);
+    Route::put('/users/{id}/reject', [UserController::class, 'reject']);
+    Route::put('/users/{id}/activate', [UserController::class, 'activate']);
+    Route::put('/users/{id}/deactivate', [UserController::class, 'deactivate']);
+
     // BARANG
     Route::get('/barang', [BarangController::class, 'index']);
+    Route::get('/barang/export-excel', [BarangController::class, 'exportBarang']);
     Route::get('/barang/{id}', [BarangController::class, 'show']);
     Route::post('/barang/import', [BarangController::class, 'importBarang']);
-    Route::get('/barang/export-excel', [BarangController::class, 'exportBarang']);
+    
 
     // STOCK
     Route::get('/stock', [StockController::class, 'index']);
@@ -102,23 +106,40 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mr', [MaterialRequestController::class, 'index']);
     Route::get('/mr/open', [MaterialRequestController::class, 'getOpenMR']);
     Route::get('/mr/generate-kode', [MaterialRequestController::class, 'generateKode']);
+    Route::get('/mr/export', [MaterialRequestController::class, 'exportMr']);
     Route::get('/mr/kode/{kode}', [MaterialRequestController::class, 'showKode'])->where('kode', '.*');
     Route::get('/mr/{id}', [MaterialRequestController::class, 'show']);
     Route::get('/mr/{kode}/export/pdf', [MaterialRequestController::class,'exportPdf'])->where('kode', '.*');
 
     // PURCHASE REQUEST
+    Route::get('/pr/export', [PurchaseRequestController::class, 'exportPr']);
     Route::get('/pr', [PurchaseRequestController::class, 'index']);
     Route::get('/pr/open', [PurchaseOrderController::class, 'getPrOpen']);
     Route::get('/pr/kode/{kode}', [PurchaseRequestController::class, 'showKode'])->where('kode', '.*');
     Route::get('/pr/{id}', [PurchaseRequestController::class, 'show']);
-     Route::get('{kode}/export/pdf', [PurchaseRequestController::class,'exportPdf'])->where('kode', '.*');
+     Route::get('/pr/{kode}/export/pdf', [PurchaseRequestController::class,'exportPdf'])->where('kode', '.*');
 
     // PURCHASE ORDER
-    Route::get('{kode}/export/pdf', [PurchaseOrderController::class,'exportPdf']);
+    Route::get('/po/export', [PurchaseOrderController::class, 'exportPo']);
+    Route::get('/po/{kode}/export/pdf', [PurchaseOrderController::class,'exportPdf']);
     Route::get('/po', [PurchaseOrderController::class, 'index']);
     Route::get('/po/kode/{kode}', [PurchaseOrderController::class, 'showKode'])->where('kode', '.*');
     Route::get('/po/{id}', [PurchaseOrderController::class, 'show']);
     
+    //PEMINJAMAN
+    Route::get('/peminjaman', [PeminjamanController::class, 'index']);
+    Route::get('/peminjaman/kode/{kode}', [PeminjamanController::class, 'showByKode'])->where('kode', '.*');
+    Route::get('/peminjaman/generate-kode', [PeminjamanController::class, 'generateKodePmj']);
+    Route::get('/peminjaman/export-excel', [PeminjamanController::class, 'exportPeminjaman']);
+    
+    // JOB COSTING
+    Route::get('/job-costing', [JobCostingController::class, 'index']);
+    Route::post('/job-costing', [JobCostingController::class, 'store']);
+    Route::get('/job-costing/{id}', [JobCostingController::class, 'show'])
+        ->whereNumber('id');
+    Route::get('/job-costing/kode/{kode}', [JobCostingController::class, 'showByKode']);
+    Route::get('/job-costing/export', [JobCostingController::class, 'export']);
+
 
     // RECEIVE
     Route::get('/receive', [ReceiveController::class, 'index']);
@@ -156,23 +177,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 });
 
-/*
-|--------------------------------------------------------------------------
-| WRITE (POST / PUT / DELETE) — DITUTUP TANGGAL 5
-|--------------------------------------------------------------------------
-*/
 
-Route::middleware(['auth:sanctum', CheckInputOpen::class])->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
 
     // AUTH
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/auth/resend-verification', [AuthController::class, 'resendVerification']);
+
+    //Peminjman 
+    Route::post('/peminjaman', [PeminjamanController::class, 'store']);
+    Route::post('/peminjaman/{pmj_id}/return-part',[PeminjamanController::class, 'returnPart']);
 
     // USERS
     Route::post('/users', [UserController::class, 'store']);
     Route::put('/users/{id}', [UserController::class, 'update']);
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
     Route::put('/users/{id}/status', [UserController::class, 'updateStatus']);
+    
 
     // BARANG
     Route::post('/barang', [BarangController::class, 'store']);
@@ -214,6 +235,7 @@ Route::middleware(['auth:sanctum', CheckInputOpen::class])->group(function () {
     Route::post('/spb/po', [SpbPoController::class, 'store']);
     Route::post('/spb/do', [SpbDoController::class, 'store']);
     Route::post('/spb/invoice', [SpbInvoiceController::class, 'store']);
+    Route::put('/spb/{id}', [SpbController::class, 'update']);
     
 
     // VENDOR
@@ -226,21 +248,4 @@ Route::middleware(['auth:sanctum', CheckInputOpen::class])->group(function () {
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::put('/customers/{id}', [CustomerController::class, 'update']);
     Route::put('/customers/{id}/toggle', [CustomerController::class, 'toggleStatus']);
-});
-
-/*
-|--------------------------------------------------------------------------
-| INPUT STATUS (UNTUK FRONTEND)
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/input-status', function () {
-    $today = now()->day;
-
-    return response()->json([
-        'is_open' => $today !== 5,
-        'message' => $today === 5
-            ? 'Input ditutup tanggal 5'
-            : 'Input dibuka'
-    ]);
 });

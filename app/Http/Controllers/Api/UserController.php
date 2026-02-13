@@ -9,19 +9,28 @@ use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
-public function index()
-{
-    // ambil SEMUA user (active & inactive)
-    $users = UserModel::latest()->get()->map(function ($user) {
-        return $this->formatUser($user);
-    });
+    /**
+     * ======================
+     * LIST USER
+     * ======================
+     */
+    public function index()
+    {
+        $users = UserModel::latest()->get()->map(function ($user) {
+            return $this->formatUser($user);
+        });
 
-    return response()->json([
-        'status' => true,
-        'data'   => $users
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'data'   => $users
+        ]);
+    }
 
+    /**
+     * ======================
+     * CREATE USER (ADMIN)
+     * ======================
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -33,12 +42,15 @@ public function index()
         ]);
 
         $user = UserModel::create([
-            'nama'     => $data['nama'],
-            'email'    => $data['email'],
-            'password' => Hash::make($data['password']),
-            'role'     => $data['role'],
-            'lokasi'   => $data['lokasi'] ?? null,
-            'status'   => 'active', // default active
+            'nama'            => $data['nama'],
+            'email'           => $data['email'],
+            'password'        => Hash::make($data['password']),
+            'role'            => $data['role'],
+            'lokasi'          => $data['lokasi'] ?? null,
+
+            // 🔥 DEFAULT SESUAI DESAIN BARU
+            'approval_status' => 'approved', // karena dibuat admin
+            'is_active'       => 1,
         ]);
 
         return response()->json([
@@ -47,6 +59,11 @@ public function index()
         ], 201);
     }
 
+    /**
+     * ======================
+     * DETAIL USER
+     * ======================
+     */
     public function show($id)
     {
         $user = UserModel::findOrFail($id);
@@ -57,6 +74,11 @@ public function index()
         ]);
     }
 
+    /**
+     * ======================
+     * UPDATE DATA USER
+     * ======================
+     */
     public function update(Request $request, $id)
     {
         $user = UserModel::findOrFail($id);
@@ -66,7 +88,6 @@ public function index()
             'email'  => 'sometimes|email|unique:users,email,' . $id,
             'role'   => 'sometimes|string',
             'lokasi' => 'nullable|string',
-            'status' => 'sometimes|in:active,inactive', // optional update status
         ]);
 
         $user->update($data);
@@ -76,55 +97,112 @@ public function index()
             'data'   => $this->formatUser($user)
         ]);
     }
-public function updateStatus(Request $request, $id)
-{
-    $request->validate([
-        'status' => 'required|in:active,inactive'
-    ]);
 
-    $user = UserModel::findOrFail($id);
-    $user->status = $request->status;
-    $user->save();
-
-    return response()->json([
-        'status' => true,
-        'data' => [
-            'id' => $user->id,
-            'status' => $user->status,
-        ]
-    ]);
-}
-
-    public function destroy($id)
+    /**
+     * ======================
+     * APPROVE USER
+     * ======================
+     */
+    public function approve($id)
     {
         $user = UserModel::findOrFail($id);
 
-        // soft delete manual
-        $user->status = 'inactive';
+        $user->approval_status = 'approved';
+        $user->is_active = 1;
         $user->save();
 
         return response()->json([
             'status'  => true,
-            'message' => 'User berhasil dinonaktifkan'
+            'message' => 'User berhasil di-approve',
+            'data'    => $this->formatUser($user)
         ]);
     }
 
+    /**
+     * ======================
+     * REJECT USER
+     * ======================
+     */
+    public function reject($id)
+    {
+        $user = UserModel::findOrFail($id);
+
+        $user->approval_status = 'rejected';
+        $user->is_active = 0;
+        $user->save();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'User berhasil di-reject',
+            'data'    => $this->formatUser($user)
+        ]);
+    }
+
+    /**
+     * ======================
+     * AKTIFKAN USER (SETELAH APPROVED)
+     * ======================
+     */
+    public function activate($id)
+    {
+        $user = UserModel::findOrFail($id);
+
+        if ($user->approval_status !== 'approved') {
+            return response()->json([
+                'message' => 'User belum disetujui'
+            ], 400);
+        }
+
+        $user->is_active = 1;
+        $user->save();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'User diaktifkan',
+            'data'    => $this->formatUser($user)
+        ]);
+    }
+
+    /**
+     * ======================
+     * NONAKTIFKAN USER
+     * ======================
+     */
+    public function deactivate($id)
+    {
+        $user = UserModel::findOrFail($id);
+
+        $user->is_active = 0;
+        $user->save();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'User dinonaktifkan',
+            'data'    => $this->formatUser($user)
+        ]);
+    }
+
+    /**
+     * ======================
+     * FORMAT RESPONSE USER
+     * ======================
+     */
     protected function formatUser($user)
     {
         return [
-            'id' => $user->id,
-            'nama' => $user->nama,
-            'email' => $user->email,
-            'role' => $user->role,
-            'lokasi' => $user->lokasi,
-            'status' => $user->status, // tambahkan status
+            'id'              => $user->id,
+            'nama'            => $user->nama,
+            'email'           => $user->email,
+            'role'            => $user->role,
+            'lokasi'          => $user->lokasi,
 
-            'email_verified' => !is_null($user->email_verified_at),
-            'email_verified_at' => $user->email_verified_at,
+            // 🔥 STATUS BARU
+            'approval_status' => $user->approval_status,
+            'is_active'       => (bool) $user->is_active,
 
-            'created_at' => $user->created_at,
-            'updated_at' => $user->updated_at,
+            'email_verified'  => !is_null($user->email_verified_at),
+            'created_at'      => $user->created_at,
+            'updated_at'      => $user->updated_at,
         ];
     }
 }
-

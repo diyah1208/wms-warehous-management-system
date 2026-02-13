@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Helpers\ClosingBook;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\DeliveryListExport;
 
 class DeliveryController extends Controller
 {
@@ -52,7 +54,6 @@ class DeliveryController extends Controller
         );
     }
 
-
     public function showKode($kode)
     {
         return response()->json(
@@ -65,18 +66,40 @@ class DeliveryController extends Controller
     public function store(Request $request)
     {
         ClosingBook::check($request->dlv_tanggal);
+
         $request->validate([
             'dlv_kode'        => 'required|unique:tb_delivery,dlv_kode',
             'mr_id'           => 'required|exists:tb_material_request,mr_id',
             'dlv_dari_gudang' => 'required',
             'dlv_ke_gudang'   => 'required',
-            'dlv_ekspedisi'   => 'required',
             'dlv_tanggal'   => 'required',
             'dlv_pic'         => 'required',
             'details'         => 'required|array|min:1',
             'details.*.part_id' => 'required|exists:tb_barang,part_id',
             'details.*.qty_pending' => 'required|integer|min:1',
         ]);
+
+        // VALIDASI RESI
+        if (strtoupper($request->dlv_ekspedisi) !== 'HAND CARRY') {
+        
+            // selain hand carry → WAJIB isi resi
+            if (!$request->filled('dlv_no_resi')) {
+                return response()->json([
+                    'message' => 'No resi wajib diisi untuk ekspedisi'
+                ], 422);
+            }
+        
+            // cek duplicate resi
+            $exists = DeliveryModel::where('dlv_no_resi', $request->dlv_no_resi)->exists();
+        
+            if ($exists) {
+                return response()->json([
+                    'message' => 'No resi sudah pernah digunakan!'
+                ], 422);
+            }
+        }
+
+
 
         DB::transaction(function () use ($request) {
 
@@ -86,6 +109,7 @@ class DeliveryController extends Controller
                 'dlv_dari_gudang' => $request->dlv_dari_gudang,
                 'dlv_ke_gudang'   => $request->dlv_ke_gudang,
                 'dlv_ekspedisi'   => $request->dlv_ekspedisi,
+                'dlv_no_resi'   => $request->dlv_no_resi,
                 'dlv_tanggal'   => $request->dlv_tanggal,
                 'dlv_pic'         => $request->dlv_pic,
                 'dlv_status'      => 'pending',
@@ -128,9 +152,6 @@ class DeliveryController extends Controller
         ]);
     }
 
-    /* =======================================================
-     * UPDATE STATUS DELIVERY
-     * ======================================================= */
 
     public function updateStatus(Request $request, $kode)
     {
@@ -166,9 +187,6 @@ class DeliveryController extends Controller
         ]);
     }
 
-    /* =======================================================
-     * PACKING → PINDAH KE ON DELIVERY
-     * ======================================================= */
 
     private function moveToPacking($delivery)
     {
@@ -240,7 +258,7 @@ class DeliveryController extends Controller
                         "Qty diterima melebihi qty dikirim ({$detail->dtl_dlv_part_number})"
                     );
                 }
-                $qtyKirim    = $detail->qty_on_delivery; // SUMBER KEBENARAN
+                $qtyKirim    = $detail->qty_on_delivery;
                 $qtyReceived = $input['qty_received'];
 
                 if ($qtyReceived > $qtyKirim) {
@@ -361,27 +379,54 @@ class DeliveryController extends Controller
         );
     }
 
-    public function testPdf()
-{
-    set_time_limit(0);
-
-    $path = storage_path('app/tmp/test.pdf');
-
-    Browsershot::html('<h1>TEST OK</h1>')
-        ->timeout(120)
-        ->save($path);
-
-    return response()->file($path);
-}
-
-
-    public function exportDeliveryHeader()
+    public function exportDeliveryHeader(Request $request)
     {
-        $deliveries = DeliveryModel::with('mr')->get();
+        $query = DeliveryModel::with(['mr', 'details']);
+
+        if ($request->filled('kode_it')) {
+            $query->where('dlv_kode', 'like', "%{$request->kode_it}%");
+        }
+
+        if ($request->filled('kode_mr')) {
+            $query->whereHas('mr', function ($q) use ($request) {
+                $q->where('mr_kode', 'like', "%{$request->kode_mr}%");
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('dlv_status', $request->status);
+        }
+
+        if ($request->filled('dari_gudang')) {
+            $query->where('dlv_dari_gudang', 'like', "%{$request->dari_gudang}%");
+        }
+
+        if ($request->filled('ke_gudang')) {
+            $query->where('dlv_ke_gudang', 'like', "%{$request->ke_gudang}%");
+        }
+
+        if ($request->filled('resi')) {
+            $query->where('dlv_no_resi', 'like', "%{$request->resi}%");
+        }
+
+        if ($request->filled('tanggal')) {
+            $query->where(function ($q) use ($request) {
+                $q->whereDate('dlv_tanggal', $request->tanggal)
+                ->orWhereDate('created_at', $request->tanggal);
+            });
+        }
+
+        $deliveries = $query
+            ->orderByDesc('dlv_kode')
+            ->get();
+            
+    // dd($deliveries->count());
+
+        $tanggalFile = $request->tanggal ?? now()->format('Y-m-d');
 
         return Excel::download(
             new DeliveryListExport($deliveries),
-            'DAFTAR_DELIVERY.xlsx'
+            "Delivery_{$tanggalFile}.xlsx"
         );
     }
 }

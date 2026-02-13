@@ -3,7 +3,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\SpbModel;
-use App\Models\SpbDoMOdel;
+use App\Models\SpbDoModel;
 use Illuminate\Http\Request;
 use App\Helpers\ClosingBook;
 
@@ -28,6 +28,13 @@ class SpbDoController extends Controller
             'do_no' => 'required',
             'do_date' => 'required',
         ]);
+
+        // $exists = SpbDoModel::where('spb_id', $request->spb_id)->exists();
+        // if ($exists) {
+        //     return response()->json([
+        //         'message' => 'SPB ini sudah memiliki Delivery Order'
+        //     ], 422);
+        // }
 
         $do = SpbDoModel::create([
             'spb_id' => $request->spb_id,

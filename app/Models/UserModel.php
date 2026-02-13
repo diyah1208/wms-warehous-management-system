@@ -14,17 +14,40 @@ class UserModel extends Authenticatable implements MustVerifyEmail
     protected $table = 'users';
     protected $primaryKey = 'id';
 
+    /**
+     * ======================
+     * MASS ASSIGNMENT
+     * ======================
+     */
     protected $fillable = [
         'nama',
         'email',
         'password',
         'role',
         'lokasi',
-         'status',
+
+        // 🔥 STATUS BARU
+        'approval_status',
+        'is_active',
     ];
 
+    /**
+     * ======================
+     * HIDDEN FIELD
+     * ======================
+     */
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    /**
+     * ======================
+     * CASTING
+     * ======================
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'is_active' => 'boolean', // 🔥 penting biar FE dapat true/false
     ];
 }

@@ -42,6 +42,7 @@ class BarangController extends Controller
             'part_number' => 'required|unique:tb_barang,part_number',
             'part_name'   => 'required|string',
             'part_satuan' => 'required|string',
+            'part_description' => 'required|string',
         ]);
 
         DB::transaction(function () use ($request) {
@@ -50,6 +51,7 @@ class BarangController extends Controller
                 'part_number' => $request->part_number,
                 'part_name'   => $request->part_name,
                 'part_satuan' => $request->part_satuan,
+                'part_description' => $request->part_description,
             ]);
 
             foreach (self::LOKASI_LIST as $lokasi) {
@@ -101,12 +103,14 @@ class BarangController extends Controller
             'part_number' => 'required|unique:tb_barang,part_number,' . $id . ',part_id',
             'part_name'   => 'required',
             'part_satuan' => 'required',
+            'part_description' => 'required',
         ]);
 
         $barang->update($request->only([
             'part_number',
             'part_name',
             'part_satuan',
+            'part_description',
         ]));
 
         return response()->json([
@@ -117,13 +121,14 @@ class BarangController extends Controller
     }
     public function exportBarang()
     {
-        $deliveries = BarangModel::get();
+        $barang = BarangModel::orderBy('part_name')->get();
 
         return Excel::download(
-            new BarangListExport($deliveries), 
+            new BarangListExport($barang),
             'DAFTAR_BARANG.xlsx'
         );
     }
+
     public function importBarang(Request $request)
     {
         Excel::queueImport(

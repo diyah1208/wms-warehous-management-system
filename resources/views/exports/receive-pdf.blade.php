@@ -6,7 +6,7 @@
 
     <style>
         body {
-            font-family: Calibri, sans-serif;
+            font-family: Helvetica, Arial, sans-serif;
             font-size: 12px;
             margin: 40px;
         }
@@ -140,13 +140,11 @@
 </table>
 @endif
 
-{{-- ================= TANDA TANGAN ================= --}}
 <table class="sign">
     <tr>
         <td width="60%"></td>
         <td width="40%">
-            <strong>Warehouse Penerima</strong><br>
-            {{ $receive->ri_lokasi }}
+            <strong>Warehouse</strong><br>
 
             @if ($receive->signed_penerima_sign)
                 <div style="margin:10px 0;">
@@ -155,7 +153,10 @@
                         style="max-width:180px; max-height:70px;"
                     >
                 </div>
-                <strong>{{ $receive->signed_penerima_name ?? $receive->ri_pic }}</strong>
+                <strong style="font-size:11px;">
+                    {{ $receive->signed_penerima_name ?? '-' }}
+                </strong>
+
                 <div style="font-size:10px;">
                     {{ \Carbon\Carbon::parse($receive->signed_penerima_at)->format('d-m-Y H:i') }}
                 </div>

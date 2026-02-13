@@ -60,7 +60,7 @@
             <th>Description</th>
             <th>Qty</th>
             <th>Satuan</th>
-            <th>No Unit AMM</th>
+            <th>No Unit</th>
             <th>Keterangan</th>
         </tr>
     </thead>
@@ -84,9 +84,9 @@
 {{-- SIGNATURE --}}
 <table class="no-border center">
     <tr>
-        <td>Yang Menyerahkan<br><br><br>{{ $spb->spb_pic_gmi }}</td>
+        <td>Yang Menyerahkan<br><br><br>Hitler Warren Chr Tambunan</td>
         <td>Mengetahui<br><br><br>GL Plant</td>
-        <td>Mengetahui<br><br><br>Planner</td>
+        <td>Mengetahui<br><br><br>Planner/Customer</td>
     </tr>
 </table>
 

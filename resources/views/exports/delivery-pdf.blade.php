@@ -65,7 +65,6 @@
     SURAT PENERIMAAN BARANG
 </div>
 
-<!-- ================= INFO DELIVERY ================= -->
 <table style="margin-bottom:16px;">
     <tr>
         <td width="140"><strong>Lokasi Pengiriman</strong></td>
@@ -108,7 +107,7 @@
     / {{ strtoupper($delivery->dlv_dari_gudang) }}
     / {{ strtoupper($delivery->dlv_ke_gudang) }}
 </div>
-<!-- ================= TABEL BARANG ================= -->
+
 <table class="data">
     <thead>
         <tr>
@@ -132,7 +131,7 @@
     </tbody>
 </table>
 
-{{-- ================= NOTES ================= --}}
+
 @if (!empty($delivery->details->pluck('receive_note')->filter()->first()))
 <table width="100%" style="margin-top:18px; border-collapse:collapse;">
     <tr>
@@ -154,13 +153,11 @@
 @endif
 
 
-<!-- ================= TTD ================= -->
 <table style="margin-top:40px;">
     <tr>
         <td width="60%"></td>
         <td align="center">
-            <strong>Warehouse Penerima</strong><br>
-            {{ $delivery->dlv_ke_gudang }}<br><br>
+            <strong>Warehouse</strong><br>
 
             @if ($delivery->signed_penerima_sign)
                 <img
@@ -170,8 +167,9 @@
             @endif
 
             <strong style="font-size:11px;">
-                {{ $delivery->signed_penerima_name ?? $delivery->dlv_pic }}
-            </strong><br>
+                {{ $delivery->signed_penerima_name ?? '-' }}
+            </strong>
+
 
             <span style="font-size:9px;">
                 {{ optional($delivery->signed_penerima_at)->format('d-m-Y H:i') }}

@@ -25,19 +25,37 @@ class DeliveryListExport implements
 
     public function collection()
     {
-        return $this->deliveries->map(function ($d, $i) {
-            return [
-                'no'            => $i + 1,
-                'dlv_kode'      => $d->dlv_kode,
-                'mr_kode'       => $d->mr?->mr_kode ?? '-',
-                'dari_gudang'   => $d->dlv_dari_gudang,
-                'ke_gudang'     => $d->dlv_ke_gudang,
-                'ekspedisi'     => $d->dlv_ekspedisi,
-                'jumlah_koli'   => $d->dlv_jumlah_koli,
-                'status'        => strtoupper($d->dlv_status),
-            ];
-        });
+        $rows = collect();
+        $no = 1;
+
+        foreach ($this->deliveries as $delivery) {
+            foreach ($delivery->details as $detail) {
+                $rows->push([
+                    'no'            => $no++,
+                    'dlv_kode'      => $delivery->dlv_kode,
+                    'mr_kode'       => $delivery->mr?->mr_kode ?? '-',
+                    'dari_gudang'   => $delivery->dlv_dari_gudang,
+                    'ke_gudang'     => $delivery->dlv_ke_gudang,
+                    'ekspedisi'     => $delivery->dlv_ekspedisi,
+                    'resi'          => $delivery->dlv_no_resi,
+
+                    // DETAIL
+                    'part_number'   => $detail->dtl_dlv_part_number,
+                    'part_name'     => $detail->dtl_dlv_part_name,
+                    'part_satuan'   => $detail->dtl_dlv_satuan,
+                    'qty_pending'   => $detail->qty_pending,
+                    'qty_delivered' => $detail->qty_delivered,
+
+                    'jumlah_koli'   => $delivery->dlv_jumlah_koli,
+                    'status'        => strtoupper($delivery->dlv_status),
+                ]);
+            }
+        }
+
+        return $rows;
     }
+
+
 
     public function headings(): array
     {
@@ -48,10 +66,17 @@ class DeliveryListExport implements
             'Dari Gudang',
             'Ke Gudang',
             'Ekspedisi',
+            'No Resi',
+            'Part Number',
+            'Part Name',
+            'Part Satuan',
+            'Qty Pending',
+            'Qty Delivered',
             'Jumlah Koli',
             'Status',
         ];
     }
+
 
     public function styles(Worksheet $sheet)
     {
@@ -59,7 +84,6 @@ class DeliveryListExport implements
         $lastColumn = $sheet->getHighestColumn();
 
         return [
-            // HEADER
             1 => [
                 'font' => [
                     'bold' => true,
@@ -75,7 +99,6 @@ class DeliveryListExport implements
                 ],
             ],
 
-            // BODY
             "A2:{$lastColumn}{$lastRow}" => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
@@ -87,7 +110,6 @@ class DeliveryListExport implements
                 ],
             ],
 
-            // ANGKA & STATUS TENGAH
             "A2:A{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
