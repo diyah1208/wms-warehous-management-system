@@ -116,6 +116,11 @@ export async function getSpbByKode(kode: string) {
   return res.data;
 }
 
+export async function updateSpb(spb_id: number, payload: any) {
+  const res = await api.put(`/spb/${spb_id}`, payload);
+  return res.data;
+}
+
 export async function downloadSpbExcel() {
   const res = await api.get("/spb/export-excel", {
     responseType: "blob",

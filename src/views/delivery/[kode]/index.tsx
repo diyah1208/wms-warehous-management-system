@@ -175,9 +175,12 @@ export function DeliveryDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/delivery/sign/${encodeURIComponent(
+              value={`https://wms-lourdes.my.id/delivery/sign/${encodeURIComponent(
                 dlvry.dlv_kode
               )}`}
+              // value={`http://10.10.6.37:5173/delivery/sign/${encodeURIComponent(
+              //   dlvry.dlv_kode
+              // )}`}
               size={200}
               className="mx-auto"
             />
@@ -254,11 +257,10 @@ export function DeliveryDetail() {
                 refresh={() => setRefresh((p) => !p)}
               />
             )}
-          {user?.role === "warehouse" &&
+          {user?.role === "warehouse_ho" &&
             dlvry.dlv_status === "delivered" &&
             dlvry.dlv_ke_gudang === user.lokasi &&
-            !dlvry.signed_penerima_sign &&
-            user?.nama == "Hitler Warren Chr Tambunan" && (
+            !dlvry.signed_penerima_sign && (
               <Button variant="outline" onClick={() => setShowSignature(true)}>
                 Tanda Tangan
               </Button>

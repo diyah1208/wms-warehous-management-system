@@ -49,18 +49,25 @@ interface CreatePOFormProps {
 
 const CLOSING_DAY = 5;
 
-function isClosedDate(trxDate?: Date) {
-  if (!trxDate) return false;
+function isClosedDate(dlvDate?: Date) {
+  if (!dlvDate) return false;
 
   const today = new Date();
-  const closingDate = new Date(
-    trxDate.getFullYear(),
-    trxDate.getMonth() + 1,
-    CLOSING_DAY,
-    23, 59, 59
+
+  // mulai tutup tepat jam 00:00 tanggal 5
+  const closingStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    5,
+    0, 0, 0
   );
 
-  return today > closingDate;
+  // kalau sekarang masih sebelum tgl 5 → belum closing
+  if (today < closingStart) return false;
+
+  // kalau sudah tanggal 5 atau lewat:
+  // semua tanggal <= tanggal 5 DIKUNCI
+  return dlvDate <= closingStart;
 }
 
 export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
@@ -106,13 +113,16 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
     fetchPO();
   }, []);
 
-  function getQtyReceived(partId?: string) {
-    if (!selectedPO || !partId) return 0;
-    return (
-      selectedPO.details.find((d) => d.part_id === partId)
-        ?.dtl_qty_received ?? 0
-    );
-  }
+ function getQtyReceived(partId?: string) {
+  if (!selectedPO || !partId) return 0;
+
+  const val =
+    selectedPO.details.find((d) => d.part_id === partId)
+      ?.dtl_qty_received;
+
+  return Number(val) || 0;
+}
+
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

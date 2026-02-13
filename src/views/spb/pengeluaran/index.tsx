@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { EditSpbDialog } from "@/components/dialog/edit-spb";
 
 
 export default function SpbPage() {
@@ -268,6 +269,7 @@ export default function SpbPage() {
         <TableRow>
           <TableHead className="border p-2">No</TableHead>
           <TableHead className="border p-2">No SPB</TableHead>
+          <TableHead className="border p-2">No WO</TableHead>
           <TableHead className="border p-2">Tanggal SPB</TableHead>
           <TableHead className="border p-2">Kode Unit</TableHead>
           <TableHead className="border p-2">Type Unit</TableHead>
@@ -288,6 +290,7 @@ export default function SpbPage() {
                 {PagingSize * (currentPage - 1) + (index + 1)}
               </TableCell>
               <TableCell className="border p-2">{mr.spb_no}</TableCell>
+              <TableCell className="border p-2">{mr.spb_no_wo}</TableCell>
               <TableCell className="border p-2">
                 {formatTanggal(mr.spb_tanggal)}
               </TableCell>
@@ -298,7 +301,8 @@ export default function SpbPage() {
               <TableCell className="border p-2">{mr.spb_gudang}</TableCell>
               <TableCell className="border p-2">{mr.spb_pic_gmi}</TableCell>
               <TableCell className="border p-2">{mr.spb_pic_ppa}</TableCell>
-              <TableCell className="border p-2 text-center">
+              <TableCell className="border p-2">
+              <div className="flex items-center justify-center gap-2">
                 <Button 
                 size="icon"
                 variant="outline"
@@ -308,6 +312,8 @@ export default function SpbPage() {
                     <Info className="h-4 w-4" />
                   </Link>
                 </Button>
+                <EditSpbDialog spb={mr} refresh={setRefresh} />
+                </div>
               </TableCell>
             </TableRow>
           ))

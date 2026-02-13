@@ -76,6 +76,7 @@ useEffect(() => {
       ======================== */}
       <DataMasterVendorSection
         vendors={vendors}
+        setVendors={setVendors} 
         setRefresh={setRefresh}
       />
 
@@ -116,7 +117,8 @@ useEffect(() => {
    COLUMNS
 ========================= */
 function VendorColumnsGenerator(
-  setRefresh: Dispatch<SetStateAction<boolean>>
+  setRefresh: Dispatch<SetStateAction<boolean>>,
+  setVendors: Dispatch<SetStateAction<MasterVendor[]>>
 ) {
   return [
     {
@@ -225,8 +227,16 @@ function VendorColumnsGenerator(
              onClick={async () => {
   try {
     await toggleMasterVendorStatus(row.vendor_id!);
+
+    setVendors(prev => // ✅ FIX
+      prev.map(v =>
+        v.vendor_id === row.vendor_id
+          ? { ...v, is_active: !v.is_active }
+          : v
+      )
+    );
+
     toast.success("Vendor berhasil dinonaktifkan");
-    setRefresh((prev) => !prev);
   } catch {
     toast.error("Gagal menonaktifkan vendor");
   }
@@ -272,8 +282,17 @@ function VendorColumnsGenerator(
              onClick={async () => {
   try {
     await toggleMasterVendorStatus(row.vendor_id!);
+
+    setVendors(prev => // ✅ FIX
+      prev.map(v =>
+        v.vendor_id === row.vendor_id
+          ? { ...v, is_active: !v.is_active }
+          : v
+      )
+    );
+
     toast.success("Vendor berhasil diaktifkan kembali");
-    setRefresh((prev) => !prev);
+
   } catch {
     toast.error("Gagal mengaktifkan vendor");
   }
@@ -298,10 +317,12 @@ function VendorColumnsGenerator(
 ========================= */
 function DataMasterVendorSection({
   vendors,
+  setVendors, // ✅ FIX
   setRefresh,
 }: {
   vendors: MasterVendor[];
   setRefresh: Dispatch<SetStateAction<boolean>>;
+  setVendors: Dispatch<SetStateAction<MasterVendor[]>>;
 }) {
   const [filteredVendors, setFilteredVendors] =
     useState<MasterVendor[]>([]);
@@ -315,8 +336,8 @@ function DataMasterVendorSection({
   const [vendorNo, setVendorNo] = useState("");
   const [vendorName, setVendorName] = useState("");
 const columns = useMemo(
-  () => VendorColumnsGenerator(setRefresh),
-  [setRefresh]
+  () => VendorColumnsGenerator(setRefresh,setVendors),
+  [setRefresh,setVendors]
 );
 
   useEffect(() => {

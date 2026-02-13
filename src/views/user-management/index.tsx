@@ -13,8 +13,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  getAllUsers,
+  approveUser,
+  rejectUser,
+  activateUser,
+  deactivateUser,
+} from "@/services/user";
 
-import { getAllUsers, updateUserStatus } from "@/services/user";
 import type { UserDb } from "@/types";
 import { PagingSize } from "@/types/enum";
 
@@ -24,6 +30,9 @@ import {
   Search,
   Filter,
   X,
+  Check,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
@@ -109,138 +118,226 @@ function UserColumnsGenerator(
       header: "Lokasi",
       accessorKey: "lokasi",
     },
-    {
-      header: "Status",
-      accessorKey: "status",
-      cell: (value: string) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1
-            ${
-              value === "active"
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
-        >
-          {value === "active" ? (
-            <>
-              <UserCheck className="h-3 w-3" />
-              AKTIF
-            </>
-          ) : (
-            <>
-              <UserX className="h-3 w-3" />
-              NON AKTIF
-            </>
-          )}
+{
+  header: "Status",
+  accessorKey: "approval_status",
+  cell: (_: any, row: UserDb) => {
+
+    // ===== PENDING =====
+    if (row.approval_status === "pending") {
+      return (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+          <Clock className="h-3 w-3" />
+          PENDING
         </span>
-      ),
-    },
-    {
-      header: "Aksi",
-      accessorKey: "aksi",
-      cell: (_: any, row: UserDb) => (
-        <div className="flex gap-2">
-          {/* EDIT */}
+      );
+    }
+
+    // ===== REJECTED =====
+    if (row.approval_status === "rejected") {
+      return (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+          <XCircle className="h-3 w-3" />
+          DITOLAK
+        </span>
+      );
+    }
+
+    // ===== APPROVED =====
+    return row.is_active ? (
+      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+        <UserCheck className="h-3 w-3" />
+        AKTIF
+      </span>
+    ) : (
+      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+        <UserX className="h-3 w-3" />
+        NONAKTIF
+      </span>
+    );
+  },
+},
+
+{
+
+  header: "Aksi",
+  accessorKey: "aksi",
+  cell: (_: any, row: UserDb) => (
+    <div className="flex gap-2">
+
+      {/* ================= PENDING ================= */}
+      {row.approval_status === "pending" && (
+        <>
+          {/* APPROVE */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" className="border-green-600 text-green-600">
+                <Check className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Terima user?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Yakin terima <b>{row.nama}</b>?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={async () => {
+                    try {
+                      await approveUser(row.id);
+                      toast.success("User di-approve");
+                      setRefresh((p) => !p);
+                    } catch {
+                      toast.error("Gagal approve");
+                    }
+                  }}
+                >
+                  Ya
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* REJECT */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" className="border-red-600 text-red-600">
+                <X className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Tolak user?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Yakin tolak <b>{row.nama}</b>?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={async () => {
+                    try {
+                      await rejectUser(row.id);
+                      toast.success("User di-reject");
+                      setRefresh((p) => !p);
+                    } catch {
+                      toast.error("Gagal reject");
+                    }
+                  }}
+                >
+                  Ya
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
+
+      {/* ================= APPROVED & ACTIVE ================= */}
+      {row.approval_status === "approved" && row.is_active && (
+        <>
+          {/* EDIT hanya muncul kalau AKTIF */}
           <EditUserDialog user={row} refresh={setRefresh} />
 
-          {/* AKTIF / NON AKTIF */}
-          {row.status === "active" ? (
-            <AlertDialog>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-600 text-red-600 hover:bg-red-50"
-                      >
-                        <UserX className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                  </TooltipTrigger>
-                  
-                </Tooltip>
-              </TooltipProvider>
+          {/* NONAKTIF */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" className="border-red-600 text-red-600">
+                <UserX className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
 
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Nonaktifkan User?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    User <b>{row.nama}</b> akan dinonaktifkan.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Nonaktifkan user?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  User <b>{row.nama}</b> akan dinonaktifkan dan
+                tidak bisa digunakan untuk transaksi.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
 
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                    onClick={async () => {
-  try {
-    await updateUserStatus(row.id, "inactive");
-    toast.success("User berhasil dinonaktifkan");
-    setRefresh((p) => !p);
-  } catch {
-    toast.error("Gagal menonaktifkan user");
-  }
-}}
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                  onClick={async () => {
+                    try {
+                      await deactivateUser(row.id);
+                      toast.success("User dinonaktifkan");
+                      setRefresh((p) => !p);
+                    } catch {
+                      toast.error("Gagal nonaktifkan");
+                    }
+                  }}
+                >
+                  Ya
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
 
-                  >
-                    Ya, Nonaktifkan
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          ) : (
-            <AlertDialog>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        size="sm"
-                        className="!bg-green-600 hover:!bg-green-700 text-white"
-                      >
-                        <UserCheck className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                  </TooltipTrigger>
-                  
-                </Tooltip>
-              </TooltipProvider>
+      {/* ================= APPROVED & INACTIVE ================= */}
+      {row.approval_status === "approved" && !row.is_active && (
+        <>
+          {/* ❗ EDIT HILANG kalau NONAKTIF */}
 
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Aktifkan User?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    User <b>{row.nama}</b> akan diaktifkan kembali.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
+          {/* AKTIFKAN */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button size="sm" variant="outline" className="border-green-600 text-green-600">
+                <UserCheck className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
 
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="!bg-green-600 hover:!bg-green-700 text-white"
-                   onClick={async () => {
-  try {
-    await updateUserStatus(row.id, "active");
-    toast.success("User berhasil diaktifkan kembali");
-    setRefresh((p) => !p);
-  } catch {
-    toast.error("Gagal mengaktifkan user");
-  }
-}}
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Aktifkan user?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  User <b>{row.nama}</b> akan diaktifkan kembali.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
 
-                  >
-                    Ya, Aktifkan
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-        </div>
-      ),
-    },
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={async () => {
+                    try {
+                      await activateUser(row.id);
+                      toast.success("User diaktifkan");
+                      setRefresh((p) => !p);
+                    } catch {
+                      toast.error("Gagal aktifkan");
+                    }
+                  }}
+                >
+                  Ya
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
+      )}
+
+      {/* ================= REJECTED ================= */}
+      {row.approval_status === "rejected" && (
+        <span className="text-xs text-gray-400 italic"></span>
+      )}
+    </div>
+  ),
+}
+
   ];
 }
 

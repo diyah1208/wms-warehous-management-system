@@ -1,5 +1,5 @@
-import type { PurchaseRequest } from "@/types";
+// import type { PurchaseRequest } from "@/types";
 
-export const prDetailCache: {
-  [kode: string]: PurchaseRequest;
-} = {};
+// export const prDetailCache: {
+//   [kode: string]: PurchaseRequest;
+// } = {};

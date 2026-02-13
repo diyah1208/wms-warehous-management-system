@@ -110,9 +110,12 @@ export function ReceiveDetail() {
             </h3>
 
             <QRCodeCanvas
-              value={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/receive/sign/${encodeURIComponent(
+              value={`https://wms-lourdes.my.id/receive/sign/${encodeURIComponent(
                 ri.ri_kode
               )}`}
+              // value={`http://10.10.6.37:5173/receive/sign/${encodeURIComponent(
+              //   ri.ri_kode
+              // )}`}
               size={200}
               className="mx-auto"
             />
@@ -195,7 +198,7 @@ export function ReceiveDetail() {
         </SectionBody>
         <SectionFooter>
           {ri.ri_lokasi == user!.lokasi &&
-          user?.nama == "Hitler Warren Chr Tambunan" &&
+          user?.role === "warehouse_ho" &&
           !ri.signed_penerima_sign &&(
             <Button
                 variant="outline"

@@ -59,7 +59,6 @@ export function DeliveryTimeline({
   status,
   isHandCarry = false,
 }: DeliveryTimelineProps) {
-  /* 🔥 FILTER STEP UNTUK HAND CARRY */
   const steps = isHandCarry
     ? BASE_STEPS.filter(
         (s) => s.key !== "ready to pickup" && s.key !== "on delivery"
@@ -69,7 +68,7 @@ export function DeliveryTimeline({
   const currentIndex = steps.findIndex((step) => step.key === status);
 
   return (
-    <div className="w-full bg-white border rounded-lg p-6">
+    <div className="w-full rounded-lg border border-border bg-background p-6">
       <div className="flex items-start justify-between">
         {steps.map((step, index) => {
           const isActive = index === currentIndex;
@@ -87,10 +86,10 @@ export function DeliveryTimeline({
                   className={`absolute top-5 right-[-50%] w-full h-[3px]
                     ${
                       isDone
-                        ? "bg-green-500"
+                        ? "bg-emerald-500"
                         : isActive
-                        ? "bg-blue-300"
-                        : "bg-gray-300"
+                        ? "bg-blue-400"
+                        : "bg-muted"
                     }`}
                 />
               )}
@@ -101,10 +100,10 @@ export function DeliveryTimeline({
                   z-10 shadow-sm
                   ${
                     isDone
-                      ? "bg-green-500 text-white"
+                      ? "bg-emerald-500 text-white"
                       : isActive
                       ? "bg-blue-500 text-white"
-                      : "bg-gray-200 text-gray-500"
+                      : "bg-muted text-muted-foreground"
                   }`}
               >
                 {isDone ? (
@@ -119,13 +118,15 @@ export function DeliveryTimeline({
                 <p
                   className={`text-sm font-semibold ${
                     isDone || isActive
-                      ? "text-gray-900"
-                      : "text-gray-400"
+                      ? "text-foreground"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {step.label}
                 </p>
-                <p className="text-xs text-muted-foreground">{step.desc}</p>
+                <p className="text-xs text-muted-foreground">
+                  {step.desc}
+                </p>
               </div>
             </div>
           );
@@ -134,3 +135,4 @@ export function DeliveryTimeline({
     </div>
   );
 }
+

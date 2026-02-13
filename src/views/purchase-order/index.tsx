@@ -48,6 +48,8 @@ import {
 import { Clock, ShoppingCart, CheckCircle } from "lucide-react";
 import { poCache } from "@/services/po-cache";
 import { userAuthCache } from "@/services/user-auth-cache";
+import { FileSpreadsheet } from "lucide-react";
+import { downloadPoExcel } from "@/services/purchase-order";
 
 
 
@@ -345,6 +347,21 @@ function renderPoStatus(status: string) {
         <TooltipContent>Reset Filter</TooltipContent>
       </Tooltip>
     </TooltipProvider>
+{/* EXPORT EXCEL */}
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={downloadPoExcel}
+      >
+        <FileSpreadsheet className="h-4 w-4 text-green-600" />
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>Download Excel PO</TooltipContent>
+  </Tooltip>
+</TooltipProvider>
 
   </div>
 </div>

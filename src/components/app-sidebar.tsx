@@ -20,6 +20,7 @@ import {
   Building2,
   User,
   Repeat,
+  Briefcase,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -34,8 +35,11 @@ import {
 
 import { useLocation } from "react-router-dom"
 
+
 const data = {
-  logo: "/Logo Garuda Mart Indonesia.png",
+  logo: "/Logo Garuda Mart Indonesia.png" ,
+
+  
 
   navAdmin: [
     {
@@ -89,6 +93,11 @@ const data = {
       title: "Delivery",
       url: "/delivery",
       icon: Truck,
+    },
+    {
+      title: "Job Costing",
+      url: "/job-costing",
+      icon: Briefcase,
     },
      {
       title: "Peminjaman",
@@ -182,8 +191,8 @@ export function AppSidebar({
       <SidebarHeader className="flex items-center justify-center py-4">
         <img
           src={data.logo}
-          alt="Lourdes Autoparts"
-          className="h-10 w-auto object-contain"
+          alt="Garuda Mart Indonesia"
+          className="h-10 w-auto object-contain dark:invert"
         />
       </SidebarHeader>
 

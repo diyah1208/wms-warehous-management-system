@@ -1,6 +1,7 @@
 import api from "@/lib/axios";
 import type { PurchaseRequest } from "@/types";
 import { encodeSafe } from "@/lib/utils";
+import { apiPublic } from "@/lib/apiPublic";
 //const BASE_URL = "http://localhost:8000/api/pr";
 
 /**
@@ -74,6 +75,24 @@ export async function getPrByKode(kode: string): Promise<PurchaseRequest | null>
   }
 }
 
+// export async function getPrByKode(kode: string): Promise<PurchaseRequest | null> {
+//   const safe = encodeSafe(kode);
+
+//   try {
+//     const res = await api.get(`/pr/kode/${safe}`, {
+//       params: {
+//         _: Date.now() // anti cache
+//       }
+//     });
+
+//     return res.data ?? null;
+//   } catch (err: any) {
+//     if (err.response?.status === 404) return null;
+//     throw err;
+//   }
+// }
+
+
 export async function createPR(data: PurchaseRequest) {
   const payload = {
     pr_kode: data.pr_kode,
@@ -97,24 +116,28 @@ export async function createPR(data: PurchaseRequest) {
 
 
 
-export async function submitSignature(
+export async function submitPrSignature(
   kode: string,
-  signatureBase64: string
+  signature: string,
+  name: string,
+  role: string
 ) {
-  const res = await api.post("/pr/sign", {
-    kode, // 🔥 HARUS "kode", BUKAN pr_kode
-    signature: signatureBase64,
+  return apiPublic.post("/pr/sign", {
+    kode,
+    signature,
+    name,
+    role,
   });
-
-  return res.data;
 }
+
+
+
 
 
 // services/purchase-request.ts
 export async function clearSignature(kode: string) {
   return api.delete(`/pr/${encodeURIComponent(kode)}/signature`);
 }
-
 
 export function downloadPrPdf(kode: string) {
   api
@@ -134,4 +157,23 @@ export function downloadPrPdf(kode: string) {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
     });
+}
+
+export async function downloadPrExcel() {
+  const res = await api.get("/pr/export", { responseType: "blob" });
+
+  const blob = new Blob([res.data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = "PURCHASE_REQUEST.xlsx";
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
 }

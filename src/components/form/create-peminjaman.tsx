@@ -297,8 +297,9 @@ export default function CreatePeminjamanForm({
                     {
                       stocks.find(
                         (s) =>
-                          s.part_id === item.part_id &&
-                          s.stk_location === pmjLokasi
+                          String(s.part_id) === String(item.part_id) &&
+                          s.stk_location?.trim().toUpperCase() ===
+                            pmjLokasi?.trim().toUpperCase()
                       )?.stk_qty ?? 0
                     }
                   </TableCell>

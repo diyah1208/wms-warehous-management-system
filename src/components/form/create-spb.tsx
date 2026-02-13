@@ -176,10 +176,10 @@ export default function CreateSpbForm({
       toast.error("Gudang wajib dipilih");
       return false;
     }
-    if (!spbNoWo.trim()) {
-      toast.error("No WO wajib diisi");
-      return false;
-    }
+    // if (!spbNoWo.trim()) {
+    //   toast.error("No WO wajib diisi");
+    //   return false;
+    // }
     if (!spbSection.trim()) {
       toast.error("Section wajib diisi");
       return false;
@@ -287,7 +287,7 @@ export default function CreateSpbForm({
 
       {/* FORM HEADER LANJUTAN */}
       <div className="col-span-12 lg:col-span-4 space-y-2">
-        <Label>No WO<span className="text-red-500">*</span></Label>
+        <Label>No WO</Label>
         <Input value={spbNoWo} onChange={(e) => setSpbNoWo(e.target.value)} />
       </div>
 
@@ -443,9 +443,10 @@ export default function CreateSpbForm({
                     {
                       stocks.find(
                         (s) =>
-                          s.part_id === item.part_id &&
-                          spbGudang === s.stk_location
-                      )?.stk_qty
+                          Number(s.part_id) === Number(item.part_id) &&
+                          s.stk_location?.trim().toUpperCase() ===
+                            spbGudang?.trim().toUpperCase()
+                      )?.stk_qty ?? 0
                     }
                   </TableCell>
                   <TableCell>

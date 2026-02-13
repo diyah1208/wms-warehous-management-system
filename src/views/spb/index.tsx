@@ -79,7 +79,7 @@ export default function ReportSpb() {
       <div className="relative mt-4">
         <div className="absolute inset-x-0">
           <div className="px-4">
-            <div className="rounded-md border bg-white p-4 shadow-sm w-full">
+            <div className="rounded-md border bg-white dark:bg-zinc-900 p-4 shadow-sm w-full">
               <div className="flex justify-between items-center mb-3">
                 <p className="font-semibold">
                   Daftar SPB
@@ -91,8 +91,8 @@ export default function ReportSpb() {
 
               {/* SCROLL */}
               <div className="w-full overflow-x-auto overflow-y-auto max-h-[65vh]">
-                <table className="w-full min-w-[2200px] text-xs border">
-                  <thead className="bg-gray-50">
+                <table className="w-full min-w-[2200px] text-xs border text-zinc-900 dark:text-zinc-100">
+                  <thead className="bg-gray-50 dark:bg-zinc-800">
                     <tr>
                       {[
                         "NO",
@@ -136,69 +136,69 @@ export default function ReportSpb() {
                   <tbody>
                     {filtered.length > 0 ? (
                       filtered.map((spb, i) => (
-                      <tr key={i} className="border-b hover:bg-gray-50">
+                      <tr key={i} className="border-b hover:bg-gray-50 dark:hover:bg-zinc-800">
                       
-                      <td className="border px-3 py-2">{i + 1}</td>
+                      <td className="border border-border px-3 py-2">{i + 1}</td>
                       
                       {/* TGL SPB */}
-                      <td className="border px-3 py-2">
+                      <td className="border border-border px-3 py-2">
                         {formatTanggal(spb.spb_tanggal)}
                       </td>
                       
                       <td className="border px-3 py-2 font-medium">{spb.spb_no}</td>
                       
-                      <td className="border px-3 py-2">{spb.dtl_spb_part_number}</td>
-                      <td className="border px-3 py-2">{spb.dtl_spb_part_name}</td>
-                      <td className="border px-3 py-2">{spb.dtl_spb_qty}</td>
-                      <td className="border px-3 py-2">{spb.dtl_spb_part_satuan}</td>
+                      <td className="border border-border px-3 py-2">{spb.dtl_spb_part_number}</td>
+                      <td className="border border-border px-3 py-2">{spb.dtl_spb_part_name}</td>
+                      <td className="border border-border px-3 py-2">{spb.dtl_spb_qty}</td>
+                      <td className="border border-border px-3 py-2">{spb.dtl_spb_part_satuan}</td>
                       
-                      <td className="border px-3 py-2">{spb.spb_kode_unit || "-"}</td>
-                      <td className="border px-3 py-2">{spb.spb_tipe_unit || "-"}</td>
-                      <td className="border px-3 py-2">{spb.spb_brand || "-"}</td>
-                      <td className="border px-3 py-2">{spb.spb_hm ?? "-"}</td>
-                      <td className="border px-3 py-2">{spb.spb_problem_remark || "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_kode_unit || "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_tipe_unit || "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_brand || "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_hm ?? "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_problem_remark || "-"}</td>
                       
-                      <td className="border px-3 py-2">{spb.spb_section}</td>
-                      <td className="border px-3 py-2">{spb.spb_pic_gmi}</td>
-                      <td className="border px-3 py-2">{spb.spb_pic_ppa}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_section}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_pic_gmi}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_pic_ppa}</td>
                       
-                      <td className="border px-3 py-2">{spb.spb_no_wo}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_no_wo}</td>
                       
                       {/* DATE INPUT SPB */}
-                      <td className="border px-3 py-2">
+                      <td className="border border-border px-3 py-2">
                         {formatTanggal(spb.spb_created_at)}
                       </td>
                       
                       {/* STATUS */}
-                      <td className="border px-3 py-2">{spb.spb_status}</td>
+                      <td className="border border-border px-3 py-2">{spb.spb_status}</td>
                       
                       {/* TGL SPB TO PO */}
-                      <td className="border px-3 py-2">
+                      <td className="border border-border px-3 py-2">
                         {formatTanggal(spb.spb_tanggal)}
                       </td>
                       
-                      <td className="border px-3 py-2">{spb.po_no ?? "-"}</td>
-                      <td className="border px-3 py-2">{spb.so_no ?? "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.po_no ?? "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.so_no ?? "-"}</td>
                       
                       {/* DATE INPUT PO */}
-                      <td className="border px-3 py-2">
+                      <td className="border border-border px-3 py-2">
                         {formatTanggal(spb.po_created_at)}
                       </td>
                       
-                      <td className="border px-3 py-2">{spb.do_no ?? "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.do_no ?? "-"}</td>
                       
                       {/* DATE INPUT DO */}
-                      <td className="border px-3 py-2">
+                      <td className="border border-border px-3 py-2">
                         {formatTanggal(spb.do_created_at)}
                       </td>
                       
-                      <td className="border px-3 py-2">{spb.invoice_no ?? "-"}</td>
+                      <td className="border border-border px-3 py-2">{spb.invoice_no ?? "-"}</td>
                       
-                      <td className="border px-3 py-2">
+                      <td className="border border-border px-3 py-2">
                         {formatTanggal(spb.invoice_date)}
                       </td>
                       
-                      <td className="border px-3 py-2">
+                      <td className="border border-border px-3 py-2">
                         {formatTanggal(spb.invoice_email_date)}
                       </td>
                       

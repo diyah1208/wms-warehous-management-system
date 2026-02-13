@@ -268,15 +268,18 @@ useEffect(() => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-        type="button"  
+          type="button"
           variant="outline"
           role="combobox"
-          className="w-full justify-between"
+          className="w-full justify-between overflow-hidden"
         >
-          {selectedPart
-            ? `${selectedPart.part_number} | ${selectedPart.part_name}`
-            : "Cari part number..."}
-          <ChevronsUpDownIcon className="h-4 w-4 opacity-50" />
+          <span className="truncate text-left">
+            {selectedPart
+              ? `${selectedPart.part_number} | ${selectedPart.part_name}`
+              : "Cari part number..."}
+          </span>
+
+          <ChevronsUpDownIcon className="h-4 w-4 opacity-50 shrink-0" />
         </Button>
       </PopoverTrigger>
 

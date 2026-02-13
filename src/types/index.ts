@@ -8,18 +8,36 @@ export type Timestamp = string;
    USER
 ========================== */
 
+// export interface UserDb {
+//   id: string;
+//   email: string;
+//   nama: string;
+//   role: string;
+//   lokasi: string;
+//   email_verified: boolean;
+//   auth_provider: "local";
+//   image_url: string | null;
+//   created_at?: Timestamp;
+//   updated_at?: Timestamp;
+//   status?: "active" | "inactive";
+// }
+
 export interface UserDb {
   id: string;
   email: string;
   nama: string;
   role: string;
   lokasi: string;
+
+  approval_status: "pending" | "approved" | "rejected";
+  is_active: boolean;
+
   email_verified: boolean;
   auth_provider: "local";
   image_url: string | null;
+
   created_at?: Timestamp;
   updated_at?: Timestamp;
-  status?: "active" | "inactive";
 }
 
 export interface POHeader {
@@ -34,15 +52,32 @@ export interface POHeader {
   created_at: Timestamp;
   updated_at: Timestamp;
 }
+// export interface UserComplete {
+//   id: string;
+//   email: string;
+//   nama: string;
+//   role: string;
+//   lokasi: string;
+//   email_verified: boolean;
+//   auth_provider: "local";
+//   image_url: string | null;
+//   created_at?: Timestamp;
+//   updated_at?: Timestamp;
+// }
 export interface UserComplete {
   id: string;
   email: string;
   nama: string;
   role: string;
   lokasi: string;
+
+  approval_status: "pending" | "approved" | "rejected";
+  is_active: boolean;
+
   email_verified: boolean;
   auth_provider: "local";
   image_url: string | null;
+
   created_at?: Timestamp;
   updated_at?: Timestamp;
 }
@@ -325,10 +360,26 @@ export interface PurchaseRequest {
   pr_pic: string;
   created_at: string;
   updated_at: string;
+
+  // === SIGNATURE BERJENJANG ===
+  signed_pengaju_name?: string | null;
+  signed_pengaju_sign?: string | null;
+  signed_pengaju_at?: string | null;
+
+  signed_spv_name?: string | null;
+  signed_spv_sign?: string | null;
+  signed_spv_at?: string | null;
+
+  signed_ppic_name?: string | null;
+  signed_ppic_sign?: string | null;
+  signed_ppic_at?: string | null;
+
+  sign_step?: "warehouse_ho" | "spv" | "ppic" | "done";
+
   details: PRItemReceive[];
-    signature_url?: string | null;
-  sign_at?: string | null;
 }
+
+
 
 /* ==========================
    RECEIVING ITEM (RI)
@@ -796,6 +847,77 @@ export interface Peminjaman
 
   details: PeminjamanDetail[];
 }
+export type JobCostingItem = {
+  part_no: string;
+  item_description: string;
+  qty: number;
+  unit: string;
 
+  /** relasi dari backend */
+  barang?: {
+    part_id: number;
+    part_number: string;
+    part_name: string;
+    part_satuan: string;
+  };
+};
+
+export type JobCostingRow = {
+  jc_id: number;
+  batch_no: string;
+  jc_date: string;
+  job_cost_account?: string;
+  description?: string;
+  barang_1: string;
+  barang_2?: string;
+  dept: string;
+  created_at?: string;
+};
+export interface JobCostingPayload {
+  batch_no: string;
+  jc_date: string;
+  description: string;
+  created_by: string;
+  lokasi: string, 
+
+  items: {
+    part_no: string;
+    item_description: string;
+    qty: number;
+    unit: string;
+  }[];
+}
+export type JobCostingDetail = {
+  jc_id: number;
+  batch_no: string;
+  jc_date: string;
+  description: string;
+  created_by: string;
+  created_at?: string;
+
+  items: JobCostingItem[];
+
+  /* =========================
+     TTD BERJENJANG
+  ========================= */
+
+  /** Pengaju (admin / partman WH) */
+  pengaju_sign?: string | null;
+  pengaju_name?: string | null;
+  pengaju_at?: string | null;
+
+  /** SPV Warehouse */
+  spv_sign?: string | null;
+  spv_name?: string | null;
+  spv_at?: string | null;
+
+  /** PPIC */
+  ppic_sign?: string | null;
+  ppic_name?: string | null;
+  ppic_at?: string | null;
+
+  /* optional legacy single signature */
+  signature_url?: string | null;
+};
 
 

@@ -34,19 +34,18 @@ import MasterCustomerPage from "@/views/customer";
 import MRSign from "@/views/mr-sign";
 import PRSign from "@/views/pr-sign";
 import POSign from "@/views/po-sign";
-import InputLockedBanner from "./components/InputLockedBanner.tsx";
-import { InputLockProvider } from "./context/InputLockContext.tsx";
 import PeminjamanIndex from "./views/peminjaman/index.tsx";
 import PeminjamanDetailPage from "./views/peminjaman/[kode]/index.tsx";
+import Dokumentasi from "./views/dokumentasi/index.tsx";
+import JobCostingIndex from "./views/job-costing/index.tsx";
+import JobCostingDetailPage from "./views/job-costing/[kode]/index.tsx";
 
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <InputLockProvider>
           {/* 🔴 Banner GLOBAL */}
-          <InputLockedBanner />
         <Routes>
           {/* ================= PUBLIC ================= */}
           <Route path="/login" element={<Login />} />
@@ -62,6 +61,14 @@ export default function App() {
               <ProtectedRoute>
                 <Navigate to="/dashboard" replace />
               </ProtectedRoute>
+            }
+          />
+        <Route
+            path="/dokumentasi"
+            element={
+              <ProtectedRoute>
+                <Dokumentasi />
+              </ProtectedRoute> 
             }
           />
 
@@ -279,6 +286,15 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/job-costing"
+            element={
+              <ProtectedRoute>
+                <JobCostingIndex />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/job-costing/:kode" element={<JobCostingDetailPage />} />
           {/* ================= USER MANAGEMENT ================= */}
           <Route
             path="/user-management"
@@ -293,7 +309,6 @@ export default function App() {
           {/* ================= FALLBACK ================= */}
           <Route path="*" element={<NotFound />} />
         </Routes>
-        </InputLockProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -105,7 +105,9 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://wms-lourdes.my.id/api",
+  //baseURL: "https://wms-lourdes.my.id/be-wms/public/api",
+  //baseURL: "http://localhost:8000/api",
+  baseURL: "http://10.10.6.37:8000/api",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

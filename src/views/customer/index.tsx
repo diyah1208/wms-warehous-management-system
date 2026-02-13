@@ -77,6 +77,7 @@ export default function MasterCustomerPage() {
     <DataMasterCustomerSection
   customers={customers}
   setRefresh={setRefresh}
+  setCustomers={setCustomers}
 />
 
       {/* =======================
@@ -119,7 +120,8 @@ export default function MasterCustomerPage() {
    COLUMNS
 ========================= */
 function CustomerColumnsGenerator(
-  setRefresh: Dispatch<SetStateAction<boolean>>
+  setRefresh: Dispatch<SetStateAction<boolean>>,
+  setCustomers: Dispatch<SetStateAction<MasterCustomer[]>>
 ) {
   return [
     {
@@ -221,9 +223,17 @@ function CustomerColumnsGenerator(
                 className="bg-red-600 hover:bg-red-700 text-white"
                onClick={async () => {
   try {
-    await toggleMasterCustomerStatus(row.customer_id!);
+      await toggleMasterCustomerStatus(row.customer_id!);
+
+    setCustomers(prev => // ✅ FIX
+      prev.map(c =>
+        c.customer_id === row.customer_id
+          ? { ...c, is_active: !c.is_active }
+          : c
+      )
+    );
+
     toast.success("Customer berhasil dinonaktifkan");
-    setRefresh((prev) => !prev);
   } catch {
     toast.error("Gagal menonaktifkan customer");
   }
@@ -268,9 +278,17 @@ function CustomerColumnsGenerator(
                 className="!bg-green-600 hover:!bg-green-700 text-white"
                onClick={async () => {
   try {
-    await toggleMasterCustomerStatus(row.customer_id!);
+     await toggleMasterCustomerStatus(row.customer_id!);
+
+    setCustomers(prev => // ✅ FIX
+      prev.map(c =>
+        c.customer_id === row.customer_id
+          ? { ...c, is_active: !c.is_active }
+          : c
+      )
+    );
+
     toast.success("Customer berhasil diaktifkan kembali");
-    setRefresh((prev) => !prev);
   } catch {
     toast.error("Gagal mengaktifkan customer");
   }
@@ -295,11 +313,11 @@ function CustomerColumnsGenerator(
 ========================= */
 function DataMasterCustomerSection({
   customers,
-
+  setCustomers, // ✅ FIX
   setRefresh,
 }: {
   customers: MasterCustomer[];
-
+  setCustomers: Dispatch<SetStateAction<MasterCustomer[]>>; // ✅ FIX
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }) {
 
@@ -311,8 +329,8 @@ function DataMasterCustomerSection({
   const pageSize = PagingSize;
   const [currentPage, setCurrentPage] = useState<number>(1);
 const columns = useMemo(
-  () => CustomerColumnsGenerator(setRefresh),
-  [setRefresh]
+  () => CustomerColumnsGenerator(setRefresh,setCustomers),
+  [setRefresh,setCustomers]
 );
   // filter state
   const [customerNo, setCustomerNo] = useState("");

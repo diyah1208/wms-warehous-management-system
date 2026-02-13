@@ -207,12 +207,14 @@ export async function downloadDeliveryExcel(filters: any) {
 
 export async function submitDeliverySignature(
   kode: string,
-  signatureBase64: string
+  signatureBase64: string,
+  signed_penerima_name: string
 ) {
   const res = await api.post(
     `/deliveries/${kode}/sign-penerima`,
     {
       signature: signatureBase64,
+      signed_penerima_name: signed_penerima_name
     }
   );
 

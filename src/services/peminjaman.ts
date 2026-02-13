@@ -21,6 +21,32 @@ export async function getPeminjamanByKode(
   }
 }
 
+export async function downloadPeminjamanExcel(filters: any) {
+  const res = await api.get(`/peminjaman/export-excel`, {
+    params: filters,
+    responseType: "blob",
+  });
+
+  const today = new Date().toISOString().split("T")[0]; 
+  // contoh: 2026-01-29
+
+  const blob = new Blob([res.data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Peminjaman_${today}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}
+
+
 export async function createPeminjaman(data: any): Promise<boolean> {
   try {
     const payload = {

@@ -38,7 +38,7 @@ import { DatePicker } from "@/components/date-picker";
 import { formatTanggal } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
-import { getAllPeminjaman } from "@/services/peminjaman";
+import { downloadPeminjamanExcel, getAllPeminjaman } from "@/services/peminjaman";
 
 import type { Peminjaman } from "@/types";
 
@@ -50,6 +50,7 @@ import {
   Search,
   Filter,
   X,
+  FileSpreadsheet,
 } from "lucide-react";
 
 import { useEffect, useState } from "react";
@@ -73,6 +74,15 @@ export default function PeminjamanIndex() {
   const [status, setStatus] = useState("");
   const [peminjam, setPeminjam] = useState("");
   const [tanggal, setTanggal] = useState<Date | undefined>(undefined);
+  const filters = {
+  kode: kode || null,
+  status: status || null,
+  peminjam: peminjam || null,
+  tanggal: tanggal
+    ? tanggal.toISOString().split("T")[0]
+    : null,
+};
+
 
   useEffect(() => {
     fetchData();
@@ -230,6 +240,21 @@ export default function PeminjamanIndex() {
 
               </PopoverContent>
             </Popover>
+            {/* EXPORT EXCEL */}
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => downloadPeminjamanExcel(filters)}
+                  >
+                    <FileSpreadsheet className="h-4 w-4 text-green-600" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Export Excel</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             {/* RESET */}
             <TooltipProvider>

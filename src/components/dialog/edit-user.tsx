@@ -134,6 +134,10 @@ export function EditUserDialog({
                     <SelectItem value="finance">Finance</SelectItem>
                     <SelectItem value="user">User</SelectItem>
                     <SelectItem value="approver_mr">Approver MR</SelectItem>
+                    <SelectItem value="spv_wh">SPV Warehouse</SelectItem>
+                    <SelectItem value="gl_mekanik">GL Mekanik/PJO</SelectItem>
+                    <SelectItem value="partman_wh">Partman Warehouse</SelectItem>
+                    <SelectItem value="ppic">PPIC</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

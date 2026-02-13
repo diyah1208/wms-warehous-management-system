@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/tooltip";
 import { CheckCircle, Clock } from "lucide-react";
 import { mrCache } from "@/services/mr-cache";
+import { FileSpreadsheet } from "lucide-react";
+import { downloadMrExcel } from "@/services/material-request";
 
 
 export default function MaterialRequest() {
@@ -48,6 +50,9 @@ const [mrs, setMrs] = useState<MRReceive[]>(mrCache.data ?? []);
 const [filteredMrs, setFilteredMrs] = useState<MRReceive[]>(mrCache.data ?? []);
 const [mrToShow, setMrToShow] = useState<MRReceive[]>(
   mrCache.data ? mrCache.data.slice(0, PagingSize) : []
+);
+const [hasFetched, setHasFetched] = useState<boolean>(
+  Boolean(mrCache.data)
 );
 
 
@@ -64,19 +69,21 @@ const [mrToShow, setMrToShow] = useState<MRReceive[]>(
   const [currentPage, setCurrentPage] = useState<number>(1);
 
 useEffect(() => {
-  async function fetchMr() {
-    try {
-      const mrResult = await getAllMr();
-      if (mrResult) {
-        mrCache.data = mrResult; // ⬅️ SIMPAN CACHE
-        setMrs(mrResult);
-        setFilteredMrs(mrResult);
-        setMrToShow(mrResult.slice(0, PagingSize));
-      }
-    } catch (error) {
-      toast.error("Gagal mengambil data Material Request");
+async function fetchMr() {
+  try {
+    const mrResult = await getAllMr();
+    if (mrResult) {
+      mrCache.data = mrResult;
+      setMrs(mrResult);
+      setFilteredMrs(mrResult);
+      setMrToShow(mrResult.slice(0, PagingSize));
     }
+  } catch (error) {
+    toast.error("Gagal mengambil data Material Request");
+  } finally {
+    setHasFetched(true); // ⬅️ WAJIB
   }
+}
 
   fetchMr(); // background
 }, [refresh]);
@@ -190,14 +197,15 @@ function renderMrStatus(status: string) {
     toast.success("Filter telah direset.");
   }
 
-  useEffect(() => {
-    setMrToShow(
-      filteredMrs.slice(
-        (currentPage - 1) * PagingSize,
-        currentPage * PagingSize
-      )
-    );
-  }, [currentPage]);
+useEffect(() => {
+  setMrToShow(
+    filteredMrs.slice(
+      (currentPage - 1) * PagingSize,
+      currentPage * PagingSize
+    )
+  );
+}, [currentPage, filteredMrs]);
+
 
   function nextPage() {
     setCurrentPage((prev) => prev + 1);
@@ -356,9 +364,25 @@ function renderMrStatus(status: string) {
           <TooltipContent>Reset Filter</TooltipContent>
         </Tooltip>
       </TooltipProvider>
+{/* EXPORT EXCEL */}
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={downloadMrExcel}
+      >
+        <FileSpreadsheet className="h-4 w-4 text-green-600" />
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>Export Excel</TooltipContent>
+  </Tooltip>
+</TooltipProvider>
 
     </div>
   </div>
+  
     </div>
 
           <div className="col-span-12 border rounded-sm overflow-x-auto">
@@ -377,7 +401,7 @@ function renderMrStatus(status: string) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mrToShow.length > 0 ? (
+                {mrToShow.length > 0 &&
                   mrToShow.map((mr, index) => (
                     <TableRow key={mr.mr_id}>
                       <TableCell className="border p-2">
@@ -402,39 +426,39 @@ function renderMrStatus(status: string) {
                       </TableCell>
                       <TableCell className="border p-2">
                       <TooltipProvider>
-  <Tooltip>
-    <TooltipTrigger asChild>
-      <Button
-        size="icon"
-        variant="outline"
-        className="border-sky-400 text-sky-600 hover:bg-sky-50"
-        asChild
-      >
-       <Link
-  to={`/mr/kode/${encodeURIComponent(mr.mr_kode)}`}
-  state={{ mr }}   // ⬅️ KIRIM DATA MR
->
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="border-sky-400 text-sky-600 hover:bg-sky-50"
+                            asChild
+                          >
+                          <Link
+                      to={`/mr/kode/${encodeURIComponent(mr.mr_kode)}`}
+                      state={{ mr }}  
+                    >
 
-          <Info className="h-4 w-4" />
-        </Link>
-      </Button>
-    </TooltipTrigger>
-  </Tooltip>
-</TooltipProvider>
+                              <Info className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                        </TooltipTrigger>
+                      </Tooltip>
+                    </TooltipProvider>
 
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="p-4 text-center text-muted-foreground"
-                    >
-                      Tidak ada Material Request ditemukan.
-                    </TableCell>
-                  </TableRow>
-                )}
+                 ))}
+               {hasFetched && mrToShow.length === 0 && (
+  <TableRow>
+    <TableCell
+      colSpan={8}
+      className="p-4 text-center text-muted-foreground"
+    >
+      Tidak ada Material Request ditemukan.
+    </TableCell>
+  </TableRow>
+)}
               </TableBody>
             </Table>
           </div>
@@ -454,7 +478,7 @@ function renderMrStatus(status: string) {
       </SectionContainer>
 
       {/* Tambah MR (Hanya untuk role warehouse) */}
-      {user?.role === "warehouse" && (
+      {user?.role === "warehouse_ho" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah MR Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">

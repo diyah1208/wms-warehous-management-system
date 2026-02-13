@@ -47,6 +47,8 @@ import {
 import { Clock, CheckCircle } from "lucide-react";
 import { prCache } from "@/services/pr-cache";
 
+import { FileSpreadsheet } from "lucide-react";
+import { downloadPrExcel } from "@/services/purchase-request";
 
 // Fungsi untuk format tanggal ke bahasa Indonesia
 function formatTanggalIndonesia(tanggal: string | Date): string {
@@ -337,6 +339,21 @@ function renderPrStatus(status: string) {
         <TooltipContent>Reset Filter</TooltipContent>
       </Tooltip>
     </TooltipProvider>
+{/* EXPORT EXCEL */}
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={downloadPrExcel}
+      >
+        <FileSpreadsheet className="h-4 w-4 text-green-600" />
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>Download Excel PR</TooltipContent>
+  </Tooltip>
+</TooltipProvider>
 
   </div>
 </div>

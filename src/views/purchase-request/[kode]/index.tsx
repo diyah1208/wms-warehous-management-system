@@ -24,8 +24,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useAuth } from "@/context/AuthContext";
 import { downloadPrPdf } from "@/services/purchase-request";
 import { useLocation, useParams } from "react-router-dom";
-
-import { prDetailCache } from "@/services/pr-detail-cache";
+//import { prDetailCache } from "@/services/pr-detail-cache";
 
 
 export function PurchaseRequestDetail() {
@@ -56,27 +55,44 @@ const statePr = (location.state as { pr?: PurchaseRequest })?.pr;
   // const [refresh, setRefresh] = useState<boolean>(false);
   const [showSignature, setShowSignature] = useState(false);
    const [, setRefresh] = useState<boolean>(false);
-const signatureToastShownRef = useRef(false);
+//const signatureToastShownRef = useRef(false);
 const [isPrinting, setIsPrinting] = useState(false);
-const [pr, setPr] = useState<PurchaseRequest | null>(
-  prDetailCache[prKode] ?? statePr ?? null
-);
+const [pr, setPr] = useState<PurchaseRequest | null>(statePr ?? null);
 
-useEffect(() => {
-  if (statePr && !prDetailCache[prKode]) {
-    prDetailCache[prKode] = statePr;
-  }
-}, [statePr, prKode]);
+const canSign =
+  user &&
+  pr &&
+  pr.sign_step === user.role;
+
+
+// const canPrint =
+//   pr?.sign_step === "done";
+
+const canPrint =
+  !!pr?.signed_pengaju_sign ||
+  !!pr?.signed_spv_sign ||
+  !!pr?.signed_ppic_sign;
+
+
+// useEffect(() => {
+//   if (statePr && !prDetailCache[prKode]) {
+//     prDetailCache[prKode] = statePr;
+//   }
+// }, [statePr, prKode]);
 
   
 useEffect(() => {
   async function fetchDetail() {
     try {
       const res = await getPrByKode(prKode);
+      // if (res) {
+      //   prDetailCache[prKode] = res; // cache
+      //   setPr(res);                 // update UI
+      // }
       if (res) {
-        prDetailCache[prKode] = res; // cache
-        setPr(res);                 // update UI
+        setPr(res);
       }
+
     } catch {
       toast.error("Gagal mengambil detail Purchase Request");
     }
@@ -86,28 +102,72 @@ useEffect(() => {
 }, [prKode]);
 
 
+// useEffect(() => {
+//   if (!showSignature) return;
+//   if (signatureToastShownRef.current) return;
+
+//   const interval = setInterval(async () => {
+//     try {
+//       const res = await getPrByKode(prKode);
+
+//       if (res && res.sign_step !== pr?.sign_step && !signatureToastShownRef.current) { 
+//         signatureToastShownRef.current = true;
+//         prDetailCache[prKode] = res;
+//         setPr(res);
+//         setShowSignature(false);
+//         toast.success("Tanda tangan diterima! Siap export PDF.");
+//         clearInterval(interval);
+//       }
+//     } catch {}
+//   }, 1000);
+
+//   return () => clearInterval(interval);
+// }, [showSignature, prKode]);
+
+
 useEffect(() => {
-  if (!showSignature) return;
-  if (signatureToastShownRef.current) return;
+  if (!showSignature || !prKode || !user) return;
 
   const interval = setInterval(async () => {
     try {
       const res = await getPrByKode(prKode);
+      console.log("PR POLL:", {
+        pengaju: res?.signed_pengaju_sign,
+        spv: res?.signed_spv_sign,
+        ppic: res?.signed_ppic_sign,
+      });
 
-      if (res?.signature_url && !signatureToastShownRef.current) {
-        signatureToastShownRef.current = true;
-        prDetailCache[prKode] = res;
+      if (!res) return;
+
+      let signed = false;
+
+      switch (user.role) {
+        case "warehouse_ho":
+          signed = !!res.signed_pengaju_sign;
+          break;
+
+        case "spv":
+          signed = !!res.signed_spv_sign;
+          break;
+
+        case "ppic":
+          signed = !!res.signed_ppic_sign;
+          break;
+      }
+
+      if (signed) {
         setPr(res);
         setShowSignature(false);
-        toast.success("Tanda tangan diterima! Siap export PDF.");
+        toast.success("Tanda tangan diterima! Siap lanjut proses.");
         clearInterval(interval);
       }
-    } catch {}
-  }, 1000);
+    } catch (err) {
+      console.error("Polling error:", err);
+    }
+  }, 2000);
 
   return () => clearInterval(interval);
-}, [showSignature, prKode]);
-
+}, [showSignature, prKode, user]);
 
 
 const handleDownloadPdf = async () => {
@@ -116,8 +176,8 @@ const handleDownloadPdf = async () => {
   try {
     setIsPrinting(true);
     downloadPrPdf(pr.pr_kode);
-    await clearSignature(kode);
-    setRefresh((prev) => !prev);
+    //await clearSignature(kode);
+    //setRefresh((prev) => !prev);
 
   } catch (error) {
     toast.error("Gagal mengunduh PDF PR");
@@ -167,14 +227,26 @@ if (!pr) {
   return (
     <WithSidebar>
            {showSignature && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center print:hidden">
+            
+            
+        <div 
+        key={pr?.sign_step} 
+        className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center print:hidden"
+        >
           <div className="bg-white p-6 rounded-md w-[350px] space-y-4 text-center">
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
 
-            <QRCodeCanvas
-              value={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/pr-sign/${encodeURIComponent(
+            {/* <QRCodeCanvas
+              value={`https://wms-lourdes.my.id/pr-sign/${encodeURIComponent(
                 pr.pr_kode
-              )}`}
+              )}?name=${user?.nama}&role=${user?.role}`}
+              size={200}
+              className="mx-auto"
+            /> */}
+             <QRCodeCanvas
+              value={`http://10.10.6.37:5173/pr-sign/${encodeURIComponent(
+                pr.pr_kode
+              )}?name=${user?.nama}&role=${user?.role}`}
               size={200}
               className="mx-auto"
             />
@@ -245,40 +317,53 @@ if (!pr) {
           </div>
         </SectionBody>
 <SectionFooter className="flex gap-2">
-  {/* ✍️ TANDA TANGAN */}
-  {!pr.signature_url && (
+
+  {/* ✍️ TANDA TANGAN (ROLE SESUAI STEP) */}
+  {canSign && (
     <Button
-  size="icon"
-  variant="outline"
-  onClick={() => {
-    signatureToastShownRef.current = false; // 🔁 reset
-    setShowSignature(true);
-  }}
-  title="Tanda Tangan"
->
-  <PenTool className="h-4 w-4" />
-</Button>
-
+      size="icon"
+      variant="outline"
+      onClick={() => setShowSignature(true)}
+      title="Tanda Tangan"
+    >
+      <PenTool className="h-4 w-4" />
+    </Button>
   )}
 
-  {/* 🖨️ PRINT / EXPORT PDF */}
-  {pr.signature_url && (
+  {/* 🖨️ PRINT (SETELAH SEMUA SELESAI) */}
+  {/* {canPrint && (
     <Button
-  size="icon"
-  variant="destructive"
-  onClick={handleDownloadPdf}
-  disabled={isPrinting}
-  title="Print / Export PDF"
->
-  {isPrinting ? (
-    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-  ) : (
-    <Printer className="h-4 w-4" />
-  )}
-</Button>
+      size="icon"
+      variant="destructive"
+      onClick={handleDownloadPdf}
+      disabled={isPrinting}
+      title="Print / Export PDF"
+    >
+      {isPrinting ? (
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+      ) : (
+        <Printer className="h-4 w-4" />
+      )}
+    </Button>
+  )} */}
+  {canPrint && (
+  <Button
+    size="sm"
+    variant={pr.sign_step === "done" ? "destructive" : "outline"}
+    onClick={handleDownloadPdf}
+    disabled={isPrinting}
+  >
+    <Printer className="h-4 w-4 mr-2" />
 
-  )}
+    {pr.sign_step === "done"
+      ? ""
+      : "Preview PDF"}
+  </Button>
+)}
+
+
 </SectionFooter>
+
       </SectionContainer>
 
       <SectionContainer span={12}>
@@ -324,25 +409,56 @@ if (!pr) {
 
                 </TableBody>
               </Table>
-     {pr.signature_url && (
-                <div className="hidden print:flex mt-16 justify-end px-8 pb-8">
-                  <div className="text-center w-[220px]">
-                    <p className="font-semibold mb-2">Tanda Tangan</p>
-             <img
-  src={`https://wms-warehous-management-sys-git-677a6a-diyahs-projects-c79729ee.vercel.app/storage/${pr.signature_url}`}
-  alt="signature"
-  className="h-28 mx-auto border-b-2 border-black"
-/>
+<div className="hidden print:flex mt-16 justify-between px-8 pb-8">
 
-                    <p className="text-sm mt-2">{user?.nama ?? pr.pr_pic}</p>
-                    {pr.sign_at && (
-                      <p className="text-xs text-muted-foreground">
-                        {formatTanggal(new Date(pr.sign_at))}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+{/* PENGAJU */}
+<div className="text-center w-[220px]">
+  <p className="font-semibold mb-2">Pengaju</p>
+
+  {pr.signed_pengaju_sign && (
+    <img
+      //src={`https://wms-lourdes.my.id/storage/${pr.signed_pengaju_sign}`}
+      src={`http://10.10.6.37:5173/storage/${pr.signed_pengaju_sign}`}
+      className="h-24 mx-auto border-b border-black"
+    />
+  )}
+
+  <p className="text-sm mt-2">{pr.signed_pengaju_name}</p>
+</div>
+
+{/* SPV */}
+<div className="text-center w-[220px]">
+  <p className="font-semibold mb-2">Mengetahui (SPV)</p>
+
+  {pr.signed_spv_sign && (
+    <img
+      src={`http://10.10.6.37:5173/storage/${pr.signed_spv_sign}`}
+      //src={`https://wms-lourdes.my.id/storage/${pr.signed_spv_sign}`}
+      className="h-24 mx-auto border-b border-black"
+    />
+  )}
+
+  <p className="text-sm mt-2">{pr.signed_spv_name}</p>
+</div>
+
+{/* PPIC */}
+<div className="text-center w-[220px]">
+  <p className="font-semibold mb-2">Menyetujui (PPIC)</p>
+
+  {pr.signed_ppic_sign && (
+    <img
+      src={`http://10.10.6.37:5173/storage/${pr.signed_ppic_sign}`}
+      //src={`https://wms-lourdes.my.id/storage/${pr.signed_ppic_sign}`}
+      className="h-24 mx-auto border-b border-black"
+    />
+  )}
+
+  <p className="text-sm mt-2">{pr.signed_ppic_name}</p>
+</div>
+
+</div>
+
+
 
             </div>
           </div>

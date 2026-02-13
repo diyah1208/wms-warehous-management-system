@@ -134,3 +134,24 @@ export async function downloadPoPdf(kode: string) {
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
+export async function downloadPoExcel() {
+  const res = await api.get("/po/export", {
+    responseType: "blob",
+  });
+
+  const blob = new Blob([res.data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  const url = window.URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "PURCHASE_ORDER.xlsx";
+  document.body.appendChild(a);
+  a.click();
+
+  document.body.removeChild(a);
+  window.URL.revokeObjectURL(url);
+}

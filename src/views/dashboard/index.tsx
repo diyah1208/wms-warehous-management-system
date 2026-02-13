@@ -40,15 +40,15 @@ function MrStatusBadge({ status }: { status?: string }) {
     { className: string; icon: React.ElementType }
   > = {
     open: {
-      className: "bg-red-100 text-red-700",
+      className: "bg-destructive/10 text-destructive",
       icon: Clock,
     },
     partial: {
-      className: "bg-orange-100 text-orange-700",
+      className: "bg-orange-500/10 text-orange-500",
       icon: CircleDashed,
     },
     close: {
-      className: "bg-green-100 text-green-700",
+      className: "bg-emerald-500/10 text-emerald-500",
       icon: CheckCircle,
     },
   };
@@ -131,19 +131,36 @@ function AlertCard({
   color: "yellow" | "blue" | "green";
 }) {
   const map = {
-    yellow: "bg-yellow-50 border-yellow-300",
-    blue: "bg-blue-50 border-blue-300",
-    green: "bg-green-50 border-green-300",
+    yellow: {
+      bg: "bg-yellow-500/10",
+      border: "border-yellow-500/30",
+      text: "text-yellow-500",
+    },
+    blue: {
+      bg: "bg-blue-500/10",
+      border: "border-blue-500/30",
+      text: "text-blue-500",
+    },
+    green: {
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/30",
+      text: "text-emerald-500",
+    },
   };
 
+  const c = map[color];
+
   return (
-    <div className={`border rounded-md p-4 ${map[color]}`}>
+    <div
+      className={`rounded-md border p-4 bg-background ${c.bg} ${c.border}`}
+    >
       <p className="text-sm font-medium">{title}</p>
-      <p className="text-3xl font-bold my-1">{value}</p>
+      <p className={`text-3xl font-bold my-1 ${c.text}`}>{value}</p>
       <p className="text-xs text-muted-foreground">{desc}</p>
     </div>
   );
 }
+
 
 function DashboardTable({
   title,
@@ -175,7 +192,7 @@ function DashboardTable({
   const pageData = filtered.slice(start, start + PagingSize);
 
   return (
-    <div className="rounded-md border bg-white p-4">
+    <div className="rounded-md border border-border bg-background p-4 text-foreground">
       <div className="flex justify-between items-center mb-3">
         <p className="font-semibold">{title}</p>
       </div>
@@ -191,8 +208,8 @@ function DashboardTable({
       />
 
       <div className="max-h-[320px] overflow-auto">
-        <table className="w-full border text-sm">
-          <thead className="bg-gray-50 sticky top-0">
+        <table className="w-full text-sm text-foreground">
+          <thead className="bg-muted sticky top-0">
             <tr>
               {columns.map((c) => (
                 <th key={c.key} className="border px-3 py-2 text-left">
@@ -203,9 +220,9 @@ function DashboardTable({
           </thead>
           <tbody>
             {pageData.map((row, i) => (
-              <tr key={i} className="border-b hover:bg-gray-50">
+              <tr key={i} className="border-b border-border hover:bg-muted/50">
                 {columns.map((c) => (
-                  <td key={c.key} className="border px-3 py-2">
+                  <td key={c.key} className="border border-border px-3 py-2">
                     {c.render ? c.render(row) : row[c.key] ?? "-"}
                   </td>
                 ))}

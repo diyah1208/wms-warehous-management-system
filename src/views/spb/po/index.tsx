@@ -130,9 +130,9 @@ export default function SpbPoPage() {
                         {PagingSize * (currentPage - 1) + (i + 1)}
                       </TableCell>
                       <TableCell>{row.spb?.spb_no}</TableCell>
-                      <TableCell>{row.so_date}</TableCell>
                       <TableCell>{row.po_no ?? "-"}</TableCell>
                       <TableCell>{row.so_no ?? "-"}</TableCell>
+                      <TableCell>{row.so_date}</TableCell>                     
                     </TableRow>
                   ))
                 ) : (

@@ -5,36 +5,29 @@ import { Label } from "@/components/ui/label";
 // import { signInWithGoogle } from "@/services/auth";
 // import { useNavigate } from "react-router-dom";
 // import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
+
+import { LokasiList } from "@/types/enum";
 // Tambahkan type untuk props: loading
 interface RegisterFormProps extends React.ComponentProps<"form"> {
   loading?: boolean; // Tambahkan prop loading
 }
+
 
 export function RegisterForm({
   className,
   loading,
   ...props
 }: RegisterFormProps) {
-  // const nav = useNavigate();
-  // async function hanldeGoogleLogin() {
-  //   try {
-  //     const result = await signInWithGoogle();
-  //     if (result) {
-  //       nav("/dashboard");
-  //     } else {
-  //       throw new Error("Gagal masuk dengan Google");
-  //     }
-  //   } catch (error) {
-  //     if (error instanceof Error) {
-  //       toast.error(
-  //         error.message || "Terjadi kesalahan saat masuk dengan Google."
-  //       );
-  //     } else {
-  //       toast.error("Terjadi kesalahan yang tidak diketahui.");
-  //     }
-  //   }
-  // }
+const [lokasi, setLokasi] = useState("");
   return (
     <form className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
@@ -94,21 +87,28 @@ export function RegisterForm({
           />
         </div>
 
-
-
-{/* Lokasi */}
-{/* Lokasi */}
 <div className="grid gap-3">
-  <Label htmlFor="lokasi">Lokasi<span className="text-red-500">*</span></Label>
-  <Input 
-    id="lokasi"
-    name="lokasi" 
-    type="text"
-    placeholder="contoh: Jakarta / Bekasi"
-    required 
-    disabled={loading}
-  />
+  <Label>Lokasi<span className="text-red-500">*</span></Label>
+
+  <Select value={lokasi} onValueChange={setLokasi} disabled={loading}>
+    <SelectTrigger className="w-full">
+      <SelectValue placeholder="Pilih lokasi" />
+    </SelectTrigger>
+
+    <SelectContent>
+      {LokasiList.map((item) => (
+        <SelectItem key={item.nama} value={item.nama}>
+          {item.nama}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+
+  {/* supaya ikut ke FormData saat submit */}
+  <input type="hidden" name="lokasi" value={lokasi} required />
 </div>
+
+
         {/* Login Button */}
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Loading..." : "Daftar"}{" "}

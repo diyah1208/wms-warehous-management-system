@@ -63,7 +63,6 @@ export function ReceiveDeliveryDialog({
   }
 
   async function handleSubmit() {
-    // ✅ VALIDASI FRONTEND
     for (const item of items) {
       if (
         item.qty_received < 0 ||

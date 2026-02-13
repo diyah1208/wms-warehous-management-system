@@ -4,20 +4,25 @@ import SignaturePad from "@/components/signature-pad";
 import { Button } from "@/components/ui/button";
 import { submitDeliverySignature } from "@/services/delivery";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
+
 
 export default function DeliverySign() {
   const { kode } = useParams<{ kode: string }>();
+  const { user } = useAuth();
+
 
   const [signature, setSignature] = useState<string | null>(null);
+  const signedName = user?.nama;
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit() {
-    if (!signature || !kode) return;
+    if (!signature || !kode || !signedName) return;
 
     try {
       setLoading(true);
-      await submitDeliverySignature(kode, signature);
+      await submitDeliverySignature(kode, signature,signedName);
 
       setSubmitted(true);
       toast.success("Tanda tangan berhasil disimpan");
