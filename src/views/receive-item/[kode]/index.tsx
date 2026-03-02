@@ -198,7 +198,7 @@ export function ReceiveDetail() {
         </SectionBody>
         <SectionFooter>
           {ri.ri_lokasi == user!.lokasi &&
-          user?.role === "warehouse_ho" &&
+          user?.role === "warehouse" &&
           !ri.signed_penerima_sign &&(
             <Button
                 variant="outline"

@@ -257,8 +257,8 @@ export function DeliveryDetail() {
                 refresh={() => setRefresh((p) => !p)}
               />
             )}
-          {user?.role === "warehouse_ho" &&
-            dlvry.dlv_status === "delivered" &&
+          {user?.role === "warehouse" &&
+            dlvry.dlv_status === "pending" &&
             dlvry.dlv_ke_gudang === user.lokasi &&
             !dlvry.signed_penerima_sign && (
               <Button variant="outline" onClick={() => setShowSignature(true)}>

@@ -109,8 +109,21 @@ const [user, setUser] = useState<UserComplete | null>(
   userAuthCache.data
 );
 
+function formatDateLocal(date?: string | null) {
+  if (!date) return "-";
 
+  // kalau formatnya YYYY-MM-DD
+  if (date.length === 10) {
+    const [year, month, day] = date.split("-");
+    return `${day}/${month}/${year}`;
+  }
 
+  // fallback kalau ada time
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "-";
+
+  return d.toLocaleDateString("id-ID");
+}
 useEffect(() => {
   async function fetchUser() {
     try {
@@ -391,10 +404,10 @@ function renderPoStatus(status: string) {
                         {po.kode_pr || '-'}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {formatTanggal(po.created_at)}
+                        {formatDateLocal(po.tanggal)}
                       </TableCell>
                       <TableCell className="p-2 border">
-                        {formatTanggal(po.tanggal_estimasi)}
+                        {formatDateLocal(po.tanggal_estimasi)}
                       </TableCell>
                    <TableCell className="p-2 border text-center">
   {renderPoStatus(po.status)}

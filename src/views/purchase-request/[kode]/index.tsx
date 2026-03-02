@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
-import { getPrByKode, clearSignature } from "@/services/purchase-request";
+import { getPrByKode } from "@/services/purchase-request";
 import { Button } from "@/components/ui/button";
 import { PenTool, Printer } from "lucide-react";
 import { QRCodeCanvas } from "qrcode.react";
@@ -142,7 +142,7 @@ useEffect(() => {
       let signed = false;
 
       switch (user.role) {
-        case "warehouse_ho":
+        case "warehouse":
           signed = !!res.signed_pengaju_sign;
           break;
 
@@ -235,21 +235,21 @@ if (!pr) {
         >
           <div className="bg-white p-6 rounded-md w-[350px] space-y-4 text-center">
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
-
-            {/* <QRCodeCanvas
+            <QRCodeCanvas
               value={`https://wms-lourdes.my.id/pr-sign/${encodeURIComponent(
                 pr.pr_kode
-              )}?name=${user?.nama}&role=${user?.role}`}
+              )}?name=${encodeURIComponent(user?.nama ?? "")}&role=${encodeURIComponent(
+                user?.role ?? ""
+              )}`}
               size={200}
-              className="mx-auto"
-            /> */}
-             <QRCodeCanvas
+            />
+             {/* <QRCodeCanvas
               value={`http://10.10.6.37:5173/pr-sign/${encodeURIComponent(
                 pr.pr_kode
               )}?name=${user?.nama}&role=${user?.role}`}
               size={200}
               className="mx-auto"
-            />
+            /> */}
 
             <p className="text-sm text-muted-foreground">
               Setelah tanda tangan, dokumen akan siap di-print
@@ -417,8 +417,8 @@ if (!pr) {
 
   {pr.signed_pengaju_sign && (
     <img
-      //src={`https://wms-lourdes.my.id/storage/${pr.signed_pengaju_sign}`}
-      src={`http://10.10.6.37:5173/storage/${pr.signed_pengaju_sign}`}
+      src={`https://wms-lourdes.my.id/storage/${pr.signed_pengaju_sign}`}
+      //src={`http://10.10.6.37:5173/storage/${pr.signed_pengaju_sign}`}
       className="h-24 mx-auto border-b border-black"
     />
   )}
@@ -432,8 +432,8 @@ if (!pr) {
 
   {pr.signed_spv_sign && (
     <img
-      src={`http://10.10.6.37:5173/storage/${pr.signed_spv_sign}`}
-      //src={`https://wms-lourdes.my.id/storage/${pr.signed_spv_sign}`}
+     // src={`http://10.10.6.37:5173/storage/${pr.signed_spv_sign}`}
+      src={`https://wms-lourdes.my.id/storage/${pr.signed_spv_sign}`}
       className="h-24 mx-auto border-b border-black"
     />
   )}
@@ -447,8 +447,8 @@ if (!pr) {
 
   {pr.signed_ppic_sign && (
     <img
-      src={`http://10.10.6.37:5173/storage/${pr.signed_ppic_sign}`}
-      //src={`https://wms-lourdes.my.id/storage/${pr.signed_ppic_sign}`}
+      //src={`http://10.10.6.37:5173/storage/${pr.signed_ppic_sign}`}
+      src={`https://wms-lourdes.my.id/storage/${pr.signed_ppic_sign}`}
       className="h-24 mx-auto border-b border-black"
     />
   )}
@@ -458,7 +458,7 @@ if (!pr) {
 
 </div>
 
-
+  
 
             </div>
           </div>

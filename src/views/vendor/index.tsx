@@ -43,21 +43,25 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { vendorCache } from "@/services/vendor-cache";
+//import { vendorCache } from "@/services/vendor-cache";
 import { useMemo } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MasterVendorPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
-const [vendors, setVendors] = useState<MasterVendor[]>(
-  vendorCache.data ?? []
-);
+// const [vendors, setVendors] = useState<MasterVendor[]>(
+//   vendorCache.data ?? []
+// );
+const [vendors, setVendors] = useState<MasterVendor[]>([]);
+
+const {user } = useAuth();
 
 useEffect(() => {
   async function fetchVendors() {
     try {
       const res = await getMasterVendors();
       if (res) {
-        vendorCache.data = res; // ⬅️ SIMPAN CACHE
+       // vendorCache.data = res; // ⬅️ SIMPAN CACHE
         setVendors(res);
       }
     } catch {
@@ -83,6 +87,7 @@ useEffect(() => {
       {/* =======================
           TAMBAH VENDOR
       ======================== */}
+      {user?.role === "purchasing" && (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Vendor</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -109,6 +114,7 @@ useEffect(() => {
 </SectionFooter>
 
       </SectionContainer>
+      )}
     </WithSidebar>
   );
 }
@@ -140,29 +146,34 @@ function VendorColumnsGenerator(
     {
       header: "Status",
       accessorKey: "is_active",
-      cell: (value: boolean) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1
-            ${
-              value
+      cell: (_: any, row: MasterVendor) => {
+        const active = Boolean(row.is_active);
+
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
+              active
                 ? "bg-green-100 text-green-700"
                 : "bg-red-100 text-red-700"
             }`}
-        >
-          {value ? (
-            <>
-              <UserCheck className="h-3 w-3" />
-              AKTIF
-            </>
-          ) : (
-            <>
-              <UserX className="h-3 w-3" />
-              NON AKTIF
-            </>
-          )}
-        </span>
-      ),
+          >
+            {active ? (
+              <>
+                <UserCheck className="h-3 w-3" />
+                AKTIF
+              </>
+            ) : (
+              <>
+                <UserX className="h-3 w-3" />
+                NON AKTIF
+              </>
+            )}
+          </span>
+        );
+      },
     },
+
 
     // {
     //   header: "Created At",
@@ -176,17 +187,20 @@ function VendorColumnsGenerator(
     <div className="flex gap-2">
 
       {/* =====================
-          EDIT
+          EDIT — hanya muncul kalau AKTIF
       ====================== */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div>
-              <EditVendorDialog vendor={row} refresh={setRefresh} />
-            </div>
-          </TooltipTrigger>
-        </Tooltip>
-      </TooltipProvider>
+{/* EDIT — hanya muncul kalau AKTIF */}
+{row.is_active ? (
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div>
+          <EditVendorDialog vendor={row} refresh={setRefresh} />
+        </div>
+      </TooltipTrigger>
+    </Tooltip>
+  </TooltipProvider>
+) : null}
 
       {/* =====================
           AKTIF / NONAKTIF (PAKAI KONFIRMASI)
@@ -207,15 +221,14 @@ function VendorColumnsGenerator(
                   </Button>
                 </AlertDialogTrigger>
               </TooltipTrigger>
-              
             </Tooltip>
           </TooltipProvider>
 
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Nonaktifkan Customer?</AlertDialogTitle>
+              <AlertDialogTitle>Nonaktifkan Vendor?</AlertDialogTitle>
               <AlertDialogDescription>
-                Customer <b>{row.vendor_name}</b> akan dinonaktifkan dan
+                Vendor <b>{row.vendor_name}</b> akan dinonaktifkan dan
                 tidak bisa digunakan untuk transaksi.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -224,24 +237,21 @@ function VendorColumnsGenerator(
               <AlertDialogCancel>Batal</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-red-600 hover:bg-red-700 text-white"
-             onClick={async () => {
-  try {
-    await toggleMasterVendorStatus(row.vendor_id!);
-
-    setVendors(prev => // ✅ FIX
-      prev.map(v =>
-        v.vendor_id === row.vendor_id
-          ? { ...v, is_active: !v.is_active }
-          : v
-      )
-    );
-
-    toast.success("Vendor berhasil dinonaktifkan");
-  } catch {
-    toast.error("Gagal menonaktifkan vendor");
-  }
-}}
-
+                onClick={async () => {
+                  try {
+                    await toggleMasterVendorStatus(row.vendor_id!);
+                    setVendors(prev =>
+                      prev.map(v =>
+                        v.vendor_id === row.vendor_id
+                          ? { ...v, is_active: !v.is_active }
+                          : v
+                      )
+                    );
+                    toast.success("Vendor berhasil dinonaktifkan");
+                  } catch {
+                    toast.error("Gagal menonaktifkan vendor");
+                  }
+                }}
               >
                 Ya, Nonaktifkan
               </AlertDialogAction>
@@ -263,15 +273,14 @@ function VendorColumnsGenerator(
                   </Button>
                 </AlertDialogTrigger>
               </TooltipTrigger>
-            
             </Tooltip>
           </TooltipProvider>
 
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Aktifkan Customer?</AlertDialogTitle>
+              <AlertDialogTitle>Aktifkan Vendor?</AlertDialogTitle>
               <AlertDialogDescription>
-                Customer <b>{row.vendor_name}</b> akan diaktifkan kembali.
+                Vendor <b>{row.vendor_name}</b> akan diaktifkan kembali.
               </AlertDialogDescription>
             </AlertDialogHeader>
 
@@ -279,25 +288,21 @@ function VendorColumnsGenerator(
               <AlertDialogCancel>Batal</AlertDialogCancel>
               <AlertDialogAction
                 className="!bg-green-600 hover:!bg-green-700 text-white"
-             onClick={async () => {
-  try {
-    await toggleMasterVendorStatus(row.vendor_id!);
-
-    setVendors(prev => // ✅ FIX
-      prev.map(v =>
-        v.vendor_id === row.vendor_id
-          ? { ...v, is_active: !v.is_active }
-          : v
-      )
-    );
-
-    toast.success("Vendor berhasil diaktifkan kembali");
-
-  } catch {
-    toast.error("Gagal mengaktifkan vendor");
-  }
-}}
-
+                onClick={async () => {
+                  try {
+                    await toggleMasterVendorStatus(row.vendor_id!);
+                    setVendors(prev =>
+                      prev.map(v =>
+                        v.vendor_id === row.vendor_id
+                          ? { ...v, is_active: !v.is_active }
+                          : v
+                      )
+                    );
+                    toast.success("Vendor berhasil diaktifkan kembali");
+                  } catch {
+                    toast.error("Gagal mengaktifkan vendor");
+                  }
+                }}
               >
                 Ya, Aktifkan
               </AlertDialogAction>
@@ -305,6 +310,7 @@ function VendorColumnsGenerator(
           </AlertDialogContent>
         </AlertDialog>
       )}
+
     </div>
   ),
 },

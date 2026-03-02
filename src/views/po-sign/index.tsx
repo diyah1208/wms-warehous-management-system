@@ -1,5 +1,4 @@
-
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import SignaturePad from "@/components/signature-pad";
 import { Button } from "@/components/ui/button";
@@ -8,31 +7,44 @@ import { toast } from "sonner";
 
 export default function POSign() {
   const { kode } = useParams<{ kode: string }>();
+  const [searchParams] = useSearchParams();
+
+  const name = searchParams.get("name");
+  const role = searchParams.get("role");
+
   const [signature, setSignature] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit() {
-    if (!signature || !kode) return;
+    if (!signature || !kode || !name || !role) return;
 
     try {
       setLoading(true);
-      await submitSignature(kode, signature);
+
+      await submitSignature(
+        decodeURIComponent(kode),
+        signature,
+        name,
+        role
+      );
 
       setSubmitted(true);
-      toast.success("Tanda tangan berhasil disimpan!");
-    } catch (error) {
-      console.error(error);
+      toast.success("Tanda tangan berhasil disimpan");
+    } catch (err) {
+      console.error(err);
       toast.error("Gagal menyimpan tanda tangan");
     } finally {
       setLoading(false);
     }
   }
 
+  /* ================= SUCCESS SCREEN ================= */
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
         <div className="bg-white p-8 rounded-md w-full max-w-md text-center space-y-4">
+
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
             <svg
               className="w-8 h-8 text-green-600"
@@ -50,11 +62,11 @@ export default function POSign() {
           </div>
 
           <h2 className="text-xl font-semibold text-green-600">
-            Tanda Tangan Berhasil!
+            Tanda Tangan Berhasil
           </h2>
-          
+
           <p className="text-muted-foreground">
-            Silakan kembali ke laptop untuk melanjutkan print dokumen.
+            Silakan kembali ke laptop untuk melanjutkan proses.
           </p>
 
           <Button
@@ -65,22 +77,26 @@ export default function POSign() {
               setSignature(null);
             }}
           >
-            Tanda Tangan Lagi
+            Tanda Tangan Ulang
           </Button>
         </div>
       </div>
     );
   }
 
+  /* ================= FORM SIGN ================= */
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
       <div className="bg-white p-6 rounded-md w-full max-w-md space-y-6">
+
         <div className="text-center space-y-2">
           <h1 className="font-semibold text-xl">
             Tanda Tangan Purchase Order
           </h1>
+
           <p className="text-sm text-muted-foreground">
-            Kode: <span className="font-medium">{kode}</span>
+            PO Code:
+            <span className="font-medium ml-1">{kode}</span>
           </p>
         </div>
 

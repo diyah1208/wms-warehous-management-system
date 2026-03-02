@@ -1,7 +1,7 @@
 import { useState } from "react";
 import api from "../../lib/axios";
 import { useNavigate } from "react-router-dom";
-
+import { Eye, EyeOff } from "lucide-react";
 export default function ForgotPassword() {
   const [step, setStep] = useState<"email" | "reset">("email");
   const [email, setEmail] = useState("");
@@ -9,7 +9,8 @@ export default function ForgotPassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-
+const [showNewPassword, setShowNewPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
   // Step 1: Send OTP
@@ -78,38 +79,67 @@ export default function ForgotPassword() {
           </form>
         )}
 
-        {step === "reset" && (
-          <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
-            <input
-              type="text"
-              placeholder="OTP"
-              maxLength={6}
-              className="border p-2 rounded"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password Baru"
-              className="border p-2 rounded"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Konfirmasi Password"
-              className="border p-2 rounded"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            <button type="submit" className="bg-yellow-600 text-white p-2 rounded hover:bg-yellow-700">
-              Atur Ulang Kata Sandi 
-            </button>
-          </form>
-        )}
+{step === "reset" && (
+  <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+
+    <input
+      type="text"
+      placeholder="OTP"
+      maxLength={6}
+      className="border p-2 rounded"
+      value={otp}
+      onChange={(e) => setOtp(e.target.value)}
+      required
+    />
+
+    {/* Password Baru */}
+    <div className="relative">
+      <input
+        type={showNewPassword ? "text" : "password"}
+        placeholder="Kata sandi baru"
+        className="border p-2 rounded w-full pr-10"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        required
+      />
+
+      <button
+        type="button"
+        onClick={() => setShowNewPassword(!showNewPassword)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+      >
+        {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+
+    {/* Konfirmasi Password */}
+    <div className="relative">
+      <input
+        type={showConfirmPassword ? "text" : "password"}
+        placeholder="Konfirmasi kata sandi"
+        className="border p-2 rounded w-full pr-10"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        required
+      />
+
+      <button
+        type="button"
+        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+      >
+        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
+    </div>
+
+    <button
+      type="submit"
+      className="bg-yellow-600 text-white p-2 rounded hover:bg-yellow-700"
+    >
+      Atur Ulang Kata Sandi
+    </button>
+  </form>
+)}
       </div>
     </div>
   );

@@ -52,6 +52,8 @@ export default function SpbDoPage() {
     fetchData();
   }, [refresh]);
 
+  
+
   /* =========================
      FILTER
   ========================= */
@@ -161,7 +163,7 @@ export default function SpbDoPage() {
       {/* ADD PO */}
       {user?.role === "logistik" && (
         <SectionContainer span={12}>
-          <SectionHeader>Attach PO ke SPB</SectionHeader>
+          <SectionHeader>Attach DO ke SPB</SectionHeader>
           <SectionBody>
             <CreateSpbDoForm setRefresh={setRefresh} />
           </SectionBody>

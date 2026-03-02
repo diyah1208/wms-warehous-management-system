@@ -58,12 +58,42 @@ interface CreatePRFormProps {
 // ✅ FIX STRING: helper pembanding ID
 const sameId = (a: any, b: any) => String(a) === String(b);
 
-function toMysqlDatetime(date: Date) {
-  return date.toISOString().slice(0, 19).replace("T", " ");
-}
+ function toMysqlDatetime(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
 
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
+
+const CLOSING_DAY = 5;
+
+function isClosedDate(dlvDate?: Date) {
+  if (!dlvDate) return false;
+
+  const today = new Date();
+
+  // mulai tutup tepat jam 00:00 tanggal 5
+  const closingStart = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    5,
+    0, 0, 0
+  );
+
+  // kalau sekarang masih sebelum tgl 5 → belum closing
+  if (today < closingStart) return false;
+
+  // kalau sudah tanggal 5 atau lewat:
+  // semua tanggal <= tanggal 5 DIKUNCI
+  return dlvDate <= closingStart;
+}
 export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   const [tanggalPR, setTanggalPR] = useState<Date | undefined>(new Date());
+  const closed = isClosedDate(tanggalPR);
   const [prItems, setPRItems] = useState<PRItemReceive[]>([]);
   const [, setMrIncluded] = useState<string[]>([]);
   const [kodePR, setKodePR] = useState<string>("");
@@ -228,6 +258,38 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
       id="create-pr-form"
       className="grid grid-cols-12 gap-4"
     >
+      {closed && (
+        <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black">
+          
+          {/* STRIPE */}
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" />
+
+          {/* CONTENT */}
+          <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
+            <div className="text-4xl font-black tracking-widest uppercase">
+              🚫 TRANSAKSI PURCHASE REQUEST DITUTUP
+            </div>
+
+            <div className="text-lg font-semibold">
+              PURCHASE REQUEST TERKUNCI OLEH SISTEM
+            </div>
+
+            <div className="text-sm opacity-90">
+              Periode PR sampai tanggal{" "}
+              <span className="font-bold underline">
+                {tanggalPR?.getDate()}
+              </span>{" "}
+              sudah ditutup
+            </div>
+          </div>
+        </div>
+      )}
+      <fieldset
+        disabled={closed}
+        className={`col-span-12 grid grid-cols-12 gap-4 ${
+          closed ? "opacity-50" : ""
+        }`}
+      ></fieldset>
       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         {/* Kode PR */}
         <div className="flex flex-col gap-2">

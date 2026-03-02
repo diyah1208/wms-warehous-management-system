@@ -66,7 +66,7 @@ export default function Register() {
     <div className="grid min-h-svh lg:grid-cols-2">
       <div className="bg-muted relative hidden lg:block">
         <img
-          src="/wh-1.webp"
+          src="/wh2.webp"
           alt="Image"
           className="mx-auto absolute inset-0 h-full w-full object-cover brightness-40 dark:grayscale"
         />
@@ -78,7 +78,12 @@ export default function Register() {
       </div>
       <div className="flex flex-col gap-4 p-6 md:p-10">
         <div className="flex w-full justify-center gap-2">
-          <img src="gmi-logo.webp" alt="Logo GMI" />
+          {/* <img src="gis_logo.png" alt="Logo GMI" /> */}
+           <img
+          src="/gmi-logo.webp"
+          alt="Logo GMI"
+          className="h-20 object-contain"
+        />
         </div>
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-xs">

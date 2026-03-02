@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import { MyPagination } from "@/components/my-pagination";
 import { PagingSize } from "@/types/enum";
 import { formatTanggal } from "@/lib/utils";
-import { getAllJobCosting, downloadJobCostingExcel } from "@/services/job-costing";
+import { getAllJobCosting, downloadJobCostingExcel, updateJobCostingToDone } from "@/services/job-costing";
 import type { JobCostingRow } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import CreateJobCostingForm from "@/components/form/create-jobcost";
@@ -126,6 +126,19 @@ const navigate = useNavigate();
   function pageChange(page: number) {
     setCurrentPage(page);
   }
+
+  async function handleDone(id: number) {
+    try {
+      await updateJobCostingToDone(id, user?.lokasi || "");
+
+      toast.success("Job Costing berhasil diubah ke DONE");
+      setRefresh((prev) => !prev);
+    } catch (error) {
+      toast.error("Gagal mengubah status ke DONE");
+    }
+  }
+
+
 
   return (
     <WithSidebar>
@@ -230,7 +243,8 @@ const navigate = useNavigate();
                   <TableHead className="border p-2">No</TableHead>
                   <TableHead className="border p-2">Batch No</TableHead>
                   <TableHead className="border p-2">Tanggal</TableHead>
-                  <TableHead className="border p-2">Barang Baru</TableHead>
+                  <TableHead className="border p-2">Finish Part</TableHead>
+                  <TableHead className="border p-2">Status</TableHead>
                   <TableHead className="border p-2 text-center">
                     Aksi
                   </TableHead>
@@ -254,27 +268,51 @@ const navigate = useNavigate();
                       </TableCell>
 
                       <TableCell className="border p-2">
-                        {jc.description}
+                        {jc.finish_part}
+                      </TableCell>
+                      <TableCell className="border p-2">
+                        {jc.jc_status}
                       </TableCell>
 
-                      <TableCell className="border p-2 text-center">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                             <Button
-  size="icon"
-  variant="outline"
-  className="border-sky-400 text-sky-600 hover:bg-sky-50"
-  onClick={() => navigate(`/job-costing/${jc.batch_no}`)}
->
-  <Info className="h-4 w-4" />
-</Button>
+                      <TableCell className="border p-2 text-center flex justify-center gap-2">
+                      {/* INFO */}
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              className="border-sky-400 text-sky-600 hover:bg-sky-50"
+                              onClick={() => navigate(`/job-costing/${jc.batch_no}`)}
+                            >
+                              <Info className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Detail</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
 
-                            </TooltipTrigger>
-                           
-                          </Tooltip>
-                        </TooltipProvider>
-                      </TableCell>
+                      {/* DONE */}
+                      {jc.jc_status !== "done" &&
+                        user?.lokasi === "JAKARTA" &&
+                        user?.role === "warehouse" && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="border-green-500 text-green-600 hover:bg-green-50"
+                                  onClick={() => handleDone(jc.jc_id)}
+                                >
+                                  ✔
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Mark as Done</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                    </TableCell>
                     </TableRow>
                   ))}
 
@@ -306,18 +344,17 @@ const navigate = useNavigate();
       </SectionContainer>
 
       {/* ================= CREATE ================= */}
-      {user?.role === "warehouse_ho" && (
+      {user?.role === "warehouse" && user?.lokasi === "JAKARTA" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah Job Costing</SectionHeader>
 
           <SectionBody className="grid grid-cols-12 gap-2">
             <div className="col-span-12 border rounded-sm p-2">
               <CreateJobCostingForm
-  setRefresh={setRefresh}
-  createdBy={user.nama}
-  lokasiUser={user.lokasi}
-/>
-
+                setRefresh={setRefresh}
+                createdBy={user.nama}
+                lokasiUser={user.lokasi}
+              />
             </div>
           </SectionBody>
 

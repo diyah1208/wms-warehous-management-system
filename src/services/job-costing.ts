@@ -75,6 +75,7 @@ import type {
   JobCostingPayload,
   JobCostingDetail,
 } from "@/types";
+import { apiPublic } from "@/lib/apiPublic";
 
 const BASE_URL = "/job-costing";
 
@@ -119,16 +120,30 @@ export async function createJobCosting(payload: JobCostingPayload) {
    SUBMIT SIGNATURE (BERJENJANG)
    role dikirim dari backend auth
 ========================= */
-export async function submitJobCostingSignature(
-  kode: string,
-  signatureBase64: string
-) {
-  const res = await api.post(`${BASE_URL}/sign`, {
-    kode, // 🔥 harus "kode" biar konsisten PR
-    signature: signatureBase64,
-  });
+// export async function submitJobCostingSignature(
+//   kode: string,
+//   signatureBase64: string
+// ) {
+//   const res = await api.post(`${BASE_URL}/sign`, {
+//     kode, // 🔥 harus "kode" biar konsisten PR
+//     signature: signatureBase64,
+//   });
 
-  return res.data;
+//   return res.data;
+// }
+
+export async function submitJobCostingSignature(
+  batch_no: string,
+  signature: string,
+  name: string,
+  role: string
+) {
+  return apiPublic.post("/jb/sign", {
+    batch_no,
+    signature,
+    name,
+    role,
+  });
 }
 
 /* =========================
@@ -142,24 +157,29 @@ export async function clearSignatureJobCosting(kode: string) {
 /* =========================
    DOWNLOAD PDF
 ========================= */
-export async function downloadJobCostingPdf(kode: string) {
-  const res = await api.get(
-    `${BASE_URL}/${encodeURIComponent(kode)}/export/pdf`,
-    { responseType: "blob" }
-  );
+export function downloadJobCostingPdf(kode: string) {
+  api
+    .get(`/job-costing/${encodeURIComponent(kode)}/export/pdf`, {
+      responseType: "blob",
+    })
+    .then((res) => {
+      const blob = new Blob([res.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
 
-  const blob = new Blob([res.data], { type: "application/pdf" });
-  const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `JC_${kode.replace(/\//g, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
 
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `JOB_COSTING_${kode.replace(/\//g, "_")}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-
-  document.body.removeChild(a);
-  window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    })
+    .catch(() => {
+      alert("Gagal download PDF Job Costing");
+    });
 }
+
 
 /* =========================
    DOWNLOAD EXCEL
@@ -183,4 +203,15 @@ export async function downloadJobCostingExcel() {
 
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
+}
+
+export async function updateJobCostingToDone(
+  id: number,
+  lokasi: string
+) {
+  const res = await api.put(`/job-costing/${id}/done`, {
+    lokasi,
+  });
+
+  return res.data;
 }

@@ -24,7 +24,8 @@ export const LokasiList: Lokasi[] = [
   { nama: "SITE BIB", kode: "BIB" }, // Kalimantan
   { nama: "SITE AMI", kode: "AMI" }, // Kalimantan
   { nama: "SITE TABANG", kode: "TAB" }, // Tabang
-  { nama: "unassigned", kode: "unassigned" },
+  { nama: "SITE BCP+PIK", kode: "BCP" }, // BCP+PIK
+  // { nama: "unassigned", kode: "unassigned" },
 ];
 
 export type LogCategory =

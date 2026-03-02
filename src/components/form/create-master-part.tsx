@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useRef  } from "react";
 import { type Dispatch, type SetStateAction } from "react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -42,12 +42,16 @@ const Satuan = [
 export default function CreateMasterPartForm({
   setRefresh,
 }: CreateMRFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const formData = new FormData(event.currentTarget);
+    setQrCode(null);
+
+    const formData = new FormData(formRef.current!);
+
     const partNumber = formData.get("part_number") as string;
     const partName = formData.get("part_name") as string;
     const satuan = formData.get("part_satuan") as string;
@@ -75,18 +79,21 @@ export default function CreateMasterPartForm({
         setQrCode(qr);
 
         toast.success("Master part berhasil dibuat!");
-        setRefresh((prev) => !prev);
-      } else {
-        toast.error(
-          "Part number sudah ada, silakan gunakan part number lain."
-        );
+        setRefresh(prev => !prev);
+        formRef.current?.reset();
       }
     } catch (error: any) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Terjadi kesalahan yang tidak diketahui"
-      );
+      if (error?.response?.status === 422) {
+        const msg =
+          error.response.data?.errors?.part_number?.[0] ||
+          error.response.data?.message ||
+          "Kode sudah digunakan";
+
+        toast.error(msg);
+        return;
+      }
+
+      toast.error("Terjadi kesalahan server");
     }
   }
 
@@ -94,6 +101,7 @@ export default function CreateMasterPartForm({
   <div className="grid grid-cols-12 gap-6">
     {/* FORM */}
     <form
+    ref={formRef}
       onSubmit={handleSubmit}
       id="create-master-part-form"
       className="col-span-12 grid grid-cols-12 gap-4"

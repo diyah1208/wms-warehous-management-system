@@ -24,12 +24,13 @@ export async function downloadStockExcel() {
   const blob = new Blob([res.data], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
+  const today = new Date().toISOString().split("T")[0];
 
   const url = window.URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = "STOCK.xlsx";
+  a.download = `STOCK_${today}.xlsx`; 
   document.body.appendChild(a);
   a.click();
 

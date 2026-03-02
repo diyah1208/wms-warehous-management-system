@@ -39,13 +39,13 @@ import PeminjamanDetailPage from "./views/peminjaman/[kode]/index.tsx";
 import Dokumentasi from "./views/dokumentasi/index.tsx";
 import JobCostingIndex from "./views/job-costing/index.tsx";
 import JobCostingDetailPage from "./views/job-costing/[kode]/index.tsx";
+import JcSign from "./views/jc-sign/index.tsx";
 
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-          {/* 🔴 Banner GLOBAL */}
         <Routes>
           {/* ================= PUBLIC ================= */}
           <Route path="/login" element={<Login />} />
@@ -267,6 +267,7 @@ export default function App() {
 
           <Route path="/po-sign/:kode" element={<POSign />} />
           <Route path="/pr-sign/:kode" element={<PRSign />} />
+          <Route path="/jc-sign/:kode" element={<JcSign />} />
    {/* ================= Vendor ================= */}
           <Route
             path="/vendors"

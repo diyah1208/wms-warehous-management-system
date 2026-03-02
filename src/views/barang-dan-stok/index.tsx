@@ -35,6 +35,8 @@ import {
 import { Upload } from "lucide-react";
 import { importStockExcel } from "@/services/stock";
 import { importMasterPartExcel } from "@/services/master-part";
+import { userAuthCache } from "@/services/user-auth-cache";
+import { Label } from "@radix-ui/react-label";
 
 
 
@@ -43,6 +45,7 @@ export default function BarangDanStok() {
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
+   const { user } = useAuth();
 
 useEffect(() => {
   async function fetchMasterPart() {
@@ -76,13 +79,17 @@ useEffect(() => {
         lokasiUser={user ? user.lokasi : ""}
       /> */}
 
-      <DataStokSection stocks={stocks as Stock[]} 
-      setRefresh={setRefresh}/>
+      <DataStokSection 
+      stocks={stocks as Stock[]} 
+      setRefresh={setRefresh}
+      userRole={user?.role}
+      />
 
       {/* Data Master Part */}
       <DataMasterPartSection masterParts={masterParts as MasterPart[]} 
       setRefresh={setRefresh}/>
       {/* Tambah */}
+      {user?.role === "warehouse" && (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Barang</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -100,12 +107,14 @@ useEffect(() => {
           </Button>
         </SectionFooter>
       </SectionContainer>
+      )}
     </WithSidebar>
   );
 }
 
 function MasterPartCollumnsGenerator(
-  setRefresh: Dispatch<SetStateAction<boolean>>
+  setRefresh: Dispatch<SetStateAction<boolean>>,
+  userRole?: string
 ) {
   return [
     {
@@ -139,126 +148,127 @@ function MasterPartCollumnsGenerator(
       accessorKey: "aksi",
       cell: (_: any, row: MasterPart) => (
         <div className="flex justify-center gap-2">
-          <EditPartDialog refresh={setRefresh} part={row} />
-          <Button
-            size="icon"
-            variant="edit"
-            className="text-orange-600 hover:text-orange-700"
-            onClick={async () => {
-            const qr = await QRCode.toDataURL(
-              `${row.part_number}|${row.part_name}|${row.part_description}`
-            );
+          {userRole === "warehouse" && (
+            <>
+              <EditPartDialog refresh={setRefresh} part={row} />
 
-            const win = window.open("", "_blank");
-            if (!win) return;
+              <Button
+                size="icon"
+                variant="edit"
+                className="text-orange-600 hover:text-orange-700"
+                onClick={async () => {
+                  const qr = await QRCode.toDataURL(
+                    `${row.part_number}|${row.part_name}|${row.part_description}`
+                  );
 
-            win.document.write(`
-              <html>
-                <head>
-                  <title>Print QR</title>
-                  <style>
-                    @page {
-                      size: A4;
-                      margin: 10mm;
-                    }
+                  const win = window.open("", "_blank");
+                  if (!win) return;
 
-                    body {
-                      margin: 0;
-                      font-family: Arial, sans-serif;
-                    }
+                  win.document.write(`
+                    <html>
+                      <head>
+                        <title>Print QR</title>
+                        <style>
+                          @page {
+                            size: A4;
+                            margin: 10mm;
+                          }
 
-                    /* LABEL SAJA YANG KECIL */
-                    .label {
-                      width: 6cm;
-                      height: 3cm;
-                      padding: 4px;
-                      box-sizing: border-box;
-                    }
+                          body {
+                            margin: 0;
+                            font-family: Arial, sans-serif;
+                          }
 
-                    /* HEADER ATAS */
-                    .header {
-                      display: flex;
-                      justify-content: space-between;
-                      align-items: center;
-                      margin-bottom: 2px;
-                    }
+                          .label {
+                            width: 6cm;
+                            height: 3cm;
+                            padding: 4px;
+                            box-sizing: border-box;
+                          }
 
-                    .brand {
-                      font-size: 9px;
-                      font-weight: bold;
-                    }
+                          .header {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 2px;
+                          }
 
-                    .logo {
-                      height: 16px;
-                    }
+                          .brand {
+                            font-size: 9px;
+                            font-weight: bold;
+                          }
 
-                    /* CONTENT */
-                    .content {
-                      display: flex;
-                      gap: 4px;
-                    }
+                          .logo {
+                            height: 16px;
+                          }
 
-                    .qr {
-                      width: 45px;
-                      height: 45px;
-                    }
+                          .content {
+                            display: flex;
+                            gap: 4px;
+                          }
 
-                    .text-area {
-                      flex: 1;
-                      display: flex;
-                      flex-direction: column;
-                      gap: 2px;
-                    }
+                          .qr {
+                            width: 45px;
+                            height: 45px;
+                          }
 
-                    .box {
-                      border: 1px solid #000;
-                      text-align: center;
-                      padding: 2px;
-                    }
+                          .text-area {
+                            flex: 1;
+                            display: flex;
+                            flex-direction: column;
+                            gap: 2px;
+                          }
 
-                    .part-no {
-                      font-size: 10px;
-                      font-weight: bold;
-                    }
+                          .box {
+                            border: 1px solid #000;
+                            text-align: center;
+                            padding: 2px;
+                          }
 
-                    .part-name {
-                      font-size: 8px;
-                    }
-                    .part-description {
-                      font-size: 8px;
-                    }
-                  </style>
-                </head>
-                <body onload="window.print();window.close();">
-                <div class="label">
-                  <!-- HEADER -->
-                  <div class="header">
-                    <div class="brand">LOURDES AUTOPART</div>
-                    <img src="/Logo-Lourdes.png" class="logo" />
-                  </div>
-                  <div class="content">
-                    <img src="${qr}" class="qr" />
-                    <div class="text-area">
-                      <div class="box part-no">
-                        ${row.part_number}
-                      </div>
-                      <div class="box part-name">
-                        ${row.part_name}
-                      </div>
-                      <div class="box part-description">
-                        ${row.part_description}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </body>
-              </html>
-            `);
-            win.document.close();
-            }} >
-          <QrCode className="h-4 w-4" />
-        </Button>
+                          .part-no {
+                            font-size: 10px;
+                            font-weight: bold;
+                          }
+
+                          .part-name {
+                            font-size: 8px;
+                          }
+
+                          .part-description {
+                            font-size: 8px;
+                          }
+                        </style>
+                      </head>
+
+                      <body onload="window.print();window.close();">
+                        <div class="label">
+                          <div class="header">
+                            <div class="brand">LOURDES AUTOPART</div>
+                            <img src="/Logo-Lourdes.png" class="logo" />
+                          </div>
+
+                          <div class="content">
+                            <img src="${qr}" class="qr" />
+                            <div class="text-area">
+                              <div class="box part-no">${row.part_number}</div>
+                              <div class="box part-name">${row.part_name}</div>
+                              <div class="box part-description">${row.part_description}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </body>
+                    </html>
+                  `);
+
+                  win.document.close();
+                }}
+              >
+                <QrCode className="h-4 w-4" />
+              </Button>
+            </>
+          )}
         </div>
+
       ),
     }
   ];
@@ -280,6 +290,7 @@ function DataMasterPartSection({
   const pageSize = PagingSize;
   const [currentPage, setCurrentPage] = useState<number>(1);
   const importPartRef = useRef<HTMLInputElement>(null);
+  const {user} = useAuth();
 
 
   useEffect(() => {
@@ -298,30 +309,54 @@ function DataMasterPartSection({
   const [pnm, setPnm] = useState<string>("");
   const [uom, setUom] = useState<string>("");
 
-  function filterMP() {
-    let filtered = filteredMasterParts;
+  // function filterMP() {
+  //   let filtered = filteredMasterParts;
 
-    if (pn) {
-      filtered = filtered.filter((mp) =>
-        mp.part_number.toLowerCase().includes(pn.toLowerCase())
-      );
-    }
+  //   if (pn) {
+  //     filtered = filtered.filter((mp) =>
+  //       mp.part_number.toLowerCase().includes(pn.toLowerCase())
+  //     );
+  //   }
 
-    if (uom) {
-      filtered = filtered.filter((mp) =>
-        mp.part_satuan.toLowerCase().includes(uom.toLowerCase())
-      );
-    }
+  //   if (uom) {
+  //     filtered = filtered.filter((mp) =>
+  //       mp.part_satuan.toLowerCase().includes(uom.toLowerCase())
+  //     );
+  //   }
 
-    if (pnm) {
-      filtered = filtered.filter((mp) =>
-        mp.part_name.toLowerCase().includes(pnm.toLowerCase())
-      );
-    }
+  //   if (pnm) {
+  //     filtered = filtered.filter((mp) =>
+  //       mp.part_name.toLowerCase().includes(pnm.toLowerCase())
+  //     );
+  //   }
 
-    setFilteredMasterParts(filtered);
-    setTableMasterParts(filtered.slice(0, PagingSize));
+  //   setFilteredMasterParts(filtered);
+  //   setTableMasterParts(filtered.slice(0, PagingSize));
+  // }
+useEffect(() => {
+  let filtered = masterParts;
+
+  if (pn) {
+    filtered = filtered.filter((mp) =>
+      mp.part_number.toLowerCase().includes(pn.toLowerCase())
+    );
   }
+
+  if (pnm) {
+    filtered = filtered.filter((mp) =>
+      mp.part_name.toLowerCase().includes(pnm.toLowerCase())
+    );
+  }
+
+  if (uom) {
+    filtered = filtered.filter((mp) =>
+      mp.part_satuan.toLowerCase().includes(uom.toLowerCase())
+    );
+  }
+
+  setFilteredMasterParts(filtered);
+  setCurrentPage(1);
+}, [pn, pnm, uom, masterParts]);
 
   function resetFilters() {
     setPn("");
@@ -349,7 +384,7 @@ function DataMasterPartSection({
 
           <div className="flex items-center gap-2">
             {/* Search by kode */}
-                <TooltipProvider>
+                {/* <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -362,7 +397,7 @@ function DataMasterPartSection({
                     </TooltipTrigger>
                     <TooltipContent>Cari Part</TooltipContent>
                   </Tooltip>
-                </TooltipProvider>
+                </TooltipProvider> */}
 
             
           <Popover>
@@ -382,16 +417,16 @@ function DataMasterPartSection({
                         <label className="text-sm font-medium">Part Number</label>
                         <Input
                           placeholder="Part number"
-                          value={pnm}
-                          onChange={(e) => setPnm(e.target.value)}
+                          value={pn}
+                          onChange={(e) => setPn(e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Part Name</label>
                         <Input
                           placeholder="Part name"
-                          value={pn}
-                          onChange={(e) => setPn(e.target.value)}
+                          value={pnm}
+                          onChange={(e) => setPnm(e.target.value)}
                         />
                       </div>
                       <div className="space-y-2">
@@ -413,7 +448,7 @@ function DataMasterPartSection({
 
                 {/* ACTION */}
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {
@@ -434,7 +469,7 @@ function DataMasterPartSection({
                     }}
                   >
                     Terapkan
-                  </Button>
+                  </Button> */}
                 </div>
               </PopoverContent>
           </Popover>
@@ -514,7 +549,7 @@ function DataMasterPartSection({
           </div>
           <QuickTable
             data={tableMasterParts}
-            columns={MasterPartCollumnsGenerator(setRefresh)}
+            columns={MasterPartCollumnsGenerator(setRefresh, user?.role)}
             page={currentPage}
           />
         </div>
@@ -536,9 +571,11 @@ function DataMasterPartSection({
 function DataStokSection({
   stocks,
   setRefresh,
+  userRole,
 }: {
   stocks: Stock[];
   setRefresh: Dispatch<SetStateAction<boolean>>;
+  userRole?: string;
 }) {
   const { user } = useAuth();
   const lokasiUser = user?.lokasi;
@@ -632,15 +669,15 @@ function DataStokSection({
     setCurrentPage(1);
   }, [stocks, pn, pnm, uom, lokasiFilter]);
 
-    function findStock(
+  function findStock(
   partNumber: string,
-): Stock | undefined {
-  return stocks.find(
-    (s) =>
-      s.barang?.part_number === partNumber &&
-      s.stk_location === user?.lokasi
-  );
-}
+  ): Stock | undefined {
+    return stocks.find(
+      (s) =>
+        s.barang?.part_number === partNumber &&
+        s.stk_location === user?.lokasi
+    );
+  }
 
   function StockColumnsGenerator() {
     const lokasiList = getUniqueLokasi(stocks);
@@ -655,7 +692,6 @@ function DataStokSection({
         accessorKey: lok,
         cell: (_: any, row: any) => row[lok] ?? 0,
       })),
-
       {
         header: "Aksi",
         accessorKey: "aksi",
@@ -665,7 +701,14 @@ function DataStokSection({
           if (!stock) {
             return (
               <span className="text-xs text-muted-foreground">
-                Tidak ada stok
+                {/* Tidak ada stok */}
+              </span>
+            );
+          }
+
+          if (userRole !== "warehouse") {
+            return (
+              <span className="text-xs text-muted-foreground">
               </span>
             );
           }
@@ -678,6 +721,7 @@ function DataStokSection({
           );
         },
       },
+
     ];
   }
 
@@ -709,21 +753,31 @@ function DataStokSection({
             </PopoverTrigger>
 
             <PopoverContent className="w-80 space-y-3">
+            
+            <div className="grid gap-1">
+              <Label>Part Name</Label>
               <Input
-                placeholder="Part Name"
+                placeholder="Masukkan part name"
                 value={pnm}
                 onChange={(e) => setPnm(e.target.value)}
               />
-              <Input
-                placeholder="Satuan"
-                value={uom}
-                onChange={(e) => setUom(e.target.value)}
-              />
-              <Input
-                placeholder="Lokasi"
-                value={lokasiFilter}
-                onChange={(e) => setLokasiFilter(e.target.value)}
-              />
+            </div>
+              <div className="grid gap-1">
+                <Label>Satuan</Label>
+                <Input
+                  placeholder="Masukkan satuan"
+                  value={uom}
+                  onChange={(e) => setUom(e.target.value)}
+                />
+              </div>
+               <div className="grid gap-1">
+                <Label>Lokasi</Label>
+                <Input
+                  placeholder="Masukkan lokasi"
+                  value={lokasiFilter}
+                  onChange={(e) => setLokasiFilter(e.target.value)}
+                />
+              </div>
             </PopoverContent>
           </Popover>
 

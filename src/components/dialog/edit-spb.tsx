@@ -15,8 +15,9 @@ import { Button } from "../ui/button";
 import { Pencil } from "lucide-react";
 
 import { toast } from "sonner";
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { updateSpb } from "@/services/spb";
+import type { Spb } from "@/types";
 
 interface MyDialogProps {
   spb: any;
@@ -26,6 +27,7 @@ interface MyDialogProps {
 export function EditSpbDialog({ spb, refresh }: MyDialogProps) {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
 
     const formData = new FormData(event.currentTarget);
 

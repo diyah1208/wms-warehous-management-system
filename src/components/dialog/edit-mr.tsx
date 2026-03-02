@@ -45,12 +45,14 @@ export function EditMRDetailDialog({
   onSuccess,
 }: Props) {
   const isEditable = mrStatus === "open";
+const [open, setOpen] = useState(false)
 
   const [partNumber, setPartNumber] = useState(detail.dtl_mr_part_number);
   const [partName, setPartName] = useState(detail.dtl_mr_part_name);
   const [satuan, setSatuan] = useState(detail.dtl_mr_satuan);
   const [prioritas, setPrioritas] = useState(detail.dtl_mr_prioritas);
   const [qtyRequest, setQtyRequest] = useState(detail.dtl_mr_qty_request);
+  const [partId, setPartId] = useState(detail.part_id);
 const { user } = useAuth();
 
   /** 🔹 stok saat ini (BERDASARKAN PART + LOKASI MR) */
@@ -75,12 +77,14 @@ const { user } = useAuth();
     setPartNumber(stock.barang.part_number);
     setPartName(stock.barang.part_name);
     setSatuan(stock.barang.part_satuan);
+    setPartId(stock.part_id);
   }
 async function handleSubmit() {
   try {
     await updateMR(mrId, {
       dtl_mr_id: detail.dtl_mr_id!,
-      part_id: detail.part_id!,
+      // part_id: detail.part_id!,
+      part_id: partId!,
       dtl_mr_part_number: partNumber,
       dtl_mr_part_name: partName,
       dtl_mr_satuan: satuan,
@@ -90,6 +94,7 @@ async function handleSubmit() {
     });
 
     toast.success("Detail MR berhasil diupdate");
+     setOpen(false);
     onSuccess();
   } catch (error) {
     toast.error("Gagal update detail MR");
@@ -98,7 +103,7 @@ async function handleSubmit() {
 
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
   <DialogTrigger asChild>
     <Button
   type="button"

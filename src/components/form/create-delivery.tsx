@@ -100,8 +100,8 @@ export default function CreateDeliveryForm({
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [deliveryItems, setDeliveryItems] = useState<DeliveryDetail[]>([]);
 
-  console.log("DLV:", dlvTanggal);
-console.log("CLOSED:", closed);
+//   console.log("DLV:", dlvTanggal);
+// console.log("CLOSED:", closed);
 
 
   useEffect(() => {

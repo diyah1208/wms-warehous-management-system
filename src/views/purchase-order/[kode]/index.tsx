@@ -18,17 +18,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { formatTanggal } from "@/lib/utils";
 import { getPrByKode } from "@/services/purchase-request";
-import { getPoByKode, clearSignature } from "@/services/purchase-order";
+import { getPoByKode, } from "@/services/purchase-order";
 import { Button } from "@/components/ui/button";
 import { PenTool, Printer } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { formatRupiah } from "@/lib/utils";
 import { QRCodeCanvas } from "qrcode.react";
 import { downloadPoPdf } from "@/services/purchase-order";
-  import { useParams, useLocation } from "react-router-dom";
+  import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { poDetailCache } from "@/services/po-detail-cache";
-
-
+import { EditPODialog } from "@/components/dialog/edit-po";
 
 export default function PurchaseOrderDetail() {
 const { kode } = useParams<{ kode?: string }>();
@@ -59,11 +58,15 @@ const [refresh, setRefresh] = useState(false);
 const [showSignature, setShowSignature] = useState(false);
 const [isPrinting, setIsPrinting] = useState(false);
 const signatureToastShownRef = useRef(false);
+const [openEdit, setOpenEdit] = useState(false);
 
 const { user } = useAuth();
 const isPurchasing = user?.role === "purchasing";
-
-
+const navigate = useNavigate();
+const canSign =
+  user?.role === "purchasing" &&
+  !po?.signed_pengaju_sign;
+  const canPrint = !!po?.signed_pengaju_sign;
 useEffect(() => {
   if (statePo && !poDetailCache[poKode]) {
     poDetailCache[poKode] = statePo;
@@ -84,8 +87,8 @@ useEffect(() => {
     }
   }
 
-  fetchDetail(); // ⬅️ SELALU jalan, background
-}, [poKode]);
+  fetchDetail();
+}, [poKode, refresh]); // 🔥 TAMBAHKAN refresh
 
 
 
@@ -97,46 +100,47 @@ useEffect(() => {
 }, [po]);
 
 useEffect(() => {
-  if (!showSignature || !kode) return;
-  if (signatureToastShownRef.current) return;
+  if (!showSignature || !poKode || !user) return;
 
   const interval = setInterval(async () => {
     try {
-      const res = await getPoByKode(kode);
+      const res = await getPoByKode(poKode);
+      if (!res) return;
 
-      if (res?.signature_url && !signatureToastShownRef.current) {
-        signatureToastShownRef.current = true; // 🔒 LOCK
+      let signed = false;
 
-      setPo(res);
+      switch (user.role) {
+        case "purchasing":
+          signed = !!res.signed_pengaju_sign;
+          break;
+      }
+
+      if (signed) {
+        setPo(res);
         setShowSignature(false);
-
-        toast.success("Tanda tangan diterima! Siap export PDF.");
-
+        toast.success("Tanda tangan diterima! Siap lanjut proses.");
         clearInterval(interval);
       }
-    } catch (error) {
-      console.error("Error polling signature:", error);
+    } catch (err) {
+      console.error("Polling error:", err);
     }
-  }, 1000); // lebih responsif
+  }, 2000);
 
   return () => clearInterval(interval);
-}, [showSignature, kode]);
+}, [showSignature, poKode, user]);
 
 const handleDownloadPdf = async () => {
   if (!po || !kode || isPrinting) return;
 
   try {
     setIsPrinting(true);
-    await downloadPoPdf(po.po_kode);
-    await clearSignature(kode);      // sama seperti PR
-    setRefresh((prev) => !prev);     // refresh data
+    downloadPoPdf(po.po_kode);
   } catch (error) {
     toast.error("Gagal mengunduh PDF PO");
   } finally {
     setIsPrinting(false);
   }
 };
-
 
 if (!po) {
   return (
@@ -154,22 +158,26 @@ if (!po) {
 
   return (
   <WithSidebar>
+    
                {showSignature && (
         <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center print:hidden">
           <div className="bg-white p-6 rounded-md w-[350px] space-y-4 text-center">
             <h3 className="font-semibold text-lg">Scan untuk Tanda Tangan</h3>
 
-            <QRCodeCanvas
-              // value={`https://wms-lourdes.my.id/po-sign/${encodeURIComponent(
-              //   po.po_kode
-              // )}`}
-
-              value={`http://10.10.6.37:5173/po-sign/${encodeURIComponent(
-                po.po_kode
-              )}`}
-              size={200}
-              className="mx-auto"
-            />
+         <QRCodeCanvas
+            value={`https://wms-lourdes.my.id/po-sign/${encodeURIComponent(
+              po.po_kode
+            )}?name=${encodeURIComponent(user?.nama ?? "")}&role=${encodeURIComponent(user?.role ?? "")}`}
+            size={200}
+            className="mx-auto"
+          />
+           {/* <QRCodeCanvas
+            value={`http://192.168.1.252:5173/po-sign/${encodeURIComponent(
+              po.po_kode
+            )}?name=${encodeURIComponent(user?.nama ?? "")}&role=${encodeURIComponent(user?.role ?? "")}`}
+            size={200}
+            className="mx-auto"
+          /> */}
 
             <p className="text-sm text-muted-foreground">
               Setelah tanda tangan, dokumen akan siap di-print
@@ -219,7 +227,7 @@ if (!po) {
             <div>
               <Label className="text-sm text-muted-foreground">Tanggal PO</Label>
               <p className="font-medium">
-                {formatTanggal(po.created_at)}
+                {formatTanggal(po.po_tanggal)}
               </p>
             </div>
 
@@ -231,52 +239,83 @@ if (!po) {
                 {formatTanggal(po.po_estimasi)}
               </p>
             </div>
+            {/* Person In Charge */}
+<div>
+  <Label className="text-sm text-muted-foreground">
+    Person In Charge
+  </Label>
+  <p className="font-medium">
+    {po.po_pic ?? "-"}
+  </p>
+</div>
+
+{/* Payment Term */}
+<div>
+  <Label className="text-sm text-muted-foreground">
+    Payment Term
+  </Label>
+  <p className="font-medium">
+    {po.po_payment_term ?? "-"}
+  </p>
+</div>
+
+{/* Keterangan */}
+<div>
+  <Label className="text-sm text-muted-foreground">
+    Keterangan
+  </Label>
+  <p className="font-medium whitespace-pre-line">
+    {po.po_keterangan ?? "-"}
+  </p>
+</div>
           </div>
         </div>
       </SectionBody>
 
 <SectionFooter className="flex gap-2">
-  {user?.role === "purchasing" && (
-    <>
-{/* ✍️ TANDA TANGAN */}
-{!po.signature_url && (
-<Button
-  type="button"   // 🔑 WAJIB
-  size="icon"
-  variant="outline"
-  onClick={() => {
-    signatureToastShownRef.current = false;
-    setShowSignature(true);
-  }}
-  title="Tanda Tangan"
->
-  <PenTool className="h-4 w-4" />
-</Button>
 
-)}
-
-{/* 🖨️ PRINT */}
-{po.signature_url && (
-<Button
-  type="button"   // 🔥 PALING PENTING
-  size="icon"
-  variant="destructive"
-  onClick={handleDownloadPdf}
-  disabled={isPrinting}
-  title="Print / Export PDF"
->
-  {isPrinting ? (
-    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-  ) : (
-    <Printer className="h-4 w-4" />
+ {/* ✏️ EDIT PO (kalau status pending) */}
+  {po?.po_status === "pending" && (
+    <EditPODialog
+      po={po}
+      refresh={setRefresh}
+    />
   )}
-</Button>
-
-)}
-
-
-    </>
+  {/* ✍️ TTD hanya untuk Purchasing */}
+  {canSign && (
+    <Button
+      type="button"
+      size="icon"
+      variant="outline"
+      onClick={() => {
+        signatureToastShownRef.current = false;
+        setShowSignature(true);
+      }}
+      title="Tanda Tangan"
+    >
+      <PenTool className="h-4 w-4" />
+    </Button>
   )}
+
+  {/* 🖨️ PRINT muncul kalau sudah ada TTD */}
+  {canPrint && (
+    <Button
+      type="button"
+      size="icon"
+      variant="outline"
+      className="border-black text-black hover:bg-gray-100"
+      onClick={handleDownloadPdf}
+      disabled={isPrinting}
+      title="Print / Export PDF"
+    >
+      {isPrinting ? (
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-black border-t-transparent" />
+      ) : (
+        <Printer className="h-4 w-4" />
+      )}
+    </Button>
+  )}
+
 </SectionFooter>
 
     </SectionContainer>
@@ -363,13 +402,13 @@ if (!po) {
 
             </Table>
 
-               {po.signature_url && (
+               {po.signed_pengaju_sign && (
                 <div className="hidden print:flex mt-16 justify-end px-8 pb-8">
                   <div className="text-center w-[220px]">
                     <p className="font-semibold mb-2">Tanda Tangan</p>
              <img
-  //src={`https://wms-lourdes.my.id/storage/${po.signature_url}`}
-  src={`http://10.10.6.37:5173/storage/${po.signature_url}`}
+  src={`https://wms-lourdes.my.id/storage/${po.signed_pengaju_sign}`}
+  //src={`http://192.168.1.252:5173/storage/${po.signed_pengaju_sign}`}
   alt="signature"
   className="h-28 mx-auto border-b-2 border-black"
 />
@@ -387,6 +426,7 @@ if (!po) {
         </div>
       </SectionBody>
     </SectionContainer>
+
   </WithSidebar>
 );
 

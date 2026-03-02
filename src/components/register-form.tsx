@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-
+import { Eye, EyeOff } from "lucide-react";
 
 import { LokasiList } from "@/types/enum";
 // Tambahkan type untuk props: loading
@@ -28,6 +28,8 @@ export function RegisterForm({
   ...props
 }: RegisterFormProps) {
 const [lokasi, setLokasi] = useState("");
+const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   return (
     <form className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2 text-center">
@@ -63,36 +65,65 @@ const [lokasi, setLokasi] = useState("");
           />
         </div>
         {/* Pass */}
-        <div className="grid gap-3">
-          <Label htmlFor="password">Kata Sandi<span className="text-red-500">*</span></Label>
-          <Input
-            id="password"
-            type="password"
-            name="password"
-                 placeholder="minimal 6 karakter"
-            required
-            disabled={loading}
-          />
-        </div>
-        {/* Konfirmasi Pass */}
-        <div className="grid gap-3">
-          <Label htmlFor="password-confirm">Konfirmasi Kata Sandi<span className="text-red-500">*</span></Label>
-          <Input
-            id="password-confirm"
-            type="password"
-            name="confirm-password"
-            placeholder="ulangi kata sandi"
-            required
-            disabled={loading} // Disable input saat loading
-          />
-        </div>
+<div className="grid gap-3">
+  <Label htmlFor="password">
+    Kata Sandi<span className="text-red-500">*</span>
+  </Label>
+
+  <div className="relative">
+    <Input
+      id="password"
+      type={showPassword ? "text" : "password"}
+      name="password"
+      placeholder="minimal 6 karakter"
+      required
+      disabled={loading}
+      className="pr-10"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+      tabIndex={-1}
+    >
+      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+  </div>
+</div>
+<div className="grid gap-3">
+  <Label htmlFor="password-confirm">
+    Konfirmasi Kata Sandi<span className="text-red-500">*</span>
+  </Label>
+
+  <div className="relative">
+    <Input
+      id="password-confirm"
+      type={showConfirmPassword ? "text" : "password"}
+      name="confirm-password"
+      placeholder="ulangi kata sandi"
+      required
+      disabled={loading}
+      className="pr-10"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+      tabIndex={-1}
+    >
+      {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+    </button>
+  </div>
+</div>
 
 <div className="grid gap-3">
   <Label>Lokasi<span className="text-red-500">*</span></Label>
 
   <Select value={lokasi} onValueChange={setLokasi} disabled={loading}>
     <SelectTrigger className="w-full">
-      <SelectValue placeholder="Pilih lokasi" />
+      <SelectValue placeholder="pilih lokasi" />
     </SelectTrigger>
 
     <SelectContent>

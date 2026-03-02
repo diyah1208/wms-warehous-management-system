@@ -48,9 +48,16 @@ interface CreatePOFormProps {
   user: UserComplete | UserDb;
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }
-function toMysqlDatetime(date: Date) {
-  return date.toISOString().slice(0, 19).replace("T", " ");
-}
+ function toMysqlDatetime(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    const seconds = String(date.getSeconds()).padStart(2, "0");
+
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  }
 
 export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
   const [open, setOpen] = useState(false);
@@ -70,6 +77,9 @@ export default function CreatePOForm({ user, setRefresh }: CreatePOFormProps) {
 const [poDetails, setPoDetails] = useState<PODetailInput[]>([]);
 
   const [estimasi, setEstimasi] = useState<Date | undefined>();
+  const [paymentTerm, setPaymentTerm] = useState<
+  "CASH" | "COD" | "NET 7" | "NET 14" | "NET 30" | ""
+>("");
   const [status, setStatus] = useState("pending");
   const [subStatus, setSubStatus] = useState(""); // Sub status baru
   const [kode, setKode] = useState(""); 
@@ -142,6 +152,10 @@ useEffect(() => {
       toast.error("Kode PO wajib diisi");
       return;
     }
+if (!paymentTerm) {
+  toast.error("Payment Term wajib dipilih");
+  return;
+}
 
     if (!subStatus) {
       toast.error("Sub status wajib dipilih");
@@ -163,7 +177,8 @@ const payload: PO = {
   po_kode: kode.trim(),
   pr_id: selectedPR.pr_id!,
   po_tanggal: toMysqlDatetime(new Date()),
-  po_estimasi: toMysqlDatetime(estimasi),
+ po_estimasi: estimasi.toLocaleDateString("sv-SE"),
+po_payment_term: paymentTerm,
 
   // 🔥 INI YANG DIPERBAIKI
   po_status: status,
@@ -286,11 +301,41 @@ details: poDetails.map((d) => ({
   </Select>
 </div>
 
-    <div className="flex flex-col gap-2">
-          <Label>Tanggal Estimasi<span className="text-red-500">*</span></Label>
-          <DatePicker value={estimasi} onChange={setEstimasi} />
-        </div>
-      </div>
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {/* Tanggal Estimasi */}
+  <div className="flex flex-col gap-2">
+    <Label>
+      Tanggal Estimasi<span className="text-red-500">*</span>
+    </Label>
+    <DatePicker value={estimasi} onChange={setEstimasi} />
+  </div>
+
+  {/* Payment Term */}
+  <div className="flex flex-col gap-2">
+    <Label>
+      Payment Term<span className="text-red-500">*</span>
+    </Label>
+    <Select
+      value={paymentTerm}
+      onValueChange={(val) =>
+        setPaymentTerm(val as typeof paymentTerm)
+      }
+      required
+    >
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Pilih Payment Term" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="CASH">Cash</SelectItem>
+        <SelectItem value="COD">COD</SelectItem>
+        <SelectItem value="NET 7">Net 7</SelectItem>
+        <SelectItem value="NET 14">Net 14</SelectItem>
+        <SelectItem value="NET 30">Net 30</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+  </div>
+    </div>
 
 
     

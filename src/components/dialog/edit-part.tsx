@@ -23,7 +23,7 @@ import { Pencil } from "lucide-react";
 
 import type { MasterPart } from "@/types";
 import { toast } from "sonner";
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { updateMasterPart } from "@/services/master-part";
 
 interface MyDialogProps {
@@ -52,6 +52,7 @@ const Satuan = [
 ].sort();
 
 export function EditPartDialog({ part, refresh }: MyDialogProps) {
+  const [open, setOpen] = useState(false);
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -75,6 +76,7 @@ export function EditPartDialog({ part, refresh }: MyDialogProps) {
       if (res) {
         toast.success("Data part berhasil diupdate");
         refresh((prev) => !prev);
+         setOpen(false); 
       } else {
         toast.error("Gagal update data part!");
       }
@@ -85,7 +87,7 @@ export function EditPartDialog({ part, refresh }: MyDialogProps) {
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="outline"

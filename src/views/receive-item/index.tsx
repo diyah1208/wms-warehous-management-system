@@ -341,7 +341,7 @@ export default function ReceiveItem() {
           />
         </SectionFooter>
       </SectionContainer>
-
+      {user?.role === "warehouse" && (
       <SectionContainer span={12}>
         <SectionHeader>Buat Receive Item (RI) Baru</SectionHeader>
         <SectionBody>
@@ -359,7 +359,7 @@ export default function ReceiveItem() {
           </Button>
         </SectionFooter>
       </SectionContainer>
-
+      )}
       {/* ==================== BAGIAN TABEL RI ==================== */}
       <SectionContainer span={12}>
         <SectionHeader>Daftar History Receive Item</SectionHeader>

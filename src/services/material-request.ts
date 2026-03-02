@@ -1,35 +1,26 @@
 import api from "@/lib/axios";
-// import axios from "axios";
 import { encodeSafe } from "@/lib/utils";
-
 import type {
   MRReceive,
   UpdateMRItemPayload,
   UpdateMRStatusPayload,
 } from "@/types";
-// import apiPublic from "@/lib/apiPublic";
 
-const BASE_URL = "/mr";
-
-/* =====================================================
- * GENERATE KODE MR
- * ===================================================== */
+/* ================= GENERATE KODE MR ================= */
 export async function generateKodeMR(lokasi: string): Promise<string> {
-  const res = await api.get(`${BASE_URL}/generate-kode`, {
+  const res = await api.get("/mr/generate-kode", {
     params: { lokasi },
   });
   return res.data;
 }
 
-/* =====================================================
- * GET OPEN MR
- * ===================================================== */
+/* ================= GET OPEN MR ================= */
 export async function getOpenMR() {
-  const res = await api.get(`${BASE_URL}/open`);
+  const res = await api.get("/mr/open");
   return res.data;
 }
 
-
+/* ================= CREATE MR ================= */
 export async function createMR(data: MRReceive) {
   const payload = {
     mr_tanggal: data.mr_tanggal,
@@ -37,7 +28,7 @@ export async function createMR(data: MRReceive) {
     mr_lokasi: data.mr_lokasi,
     mr_pic: data.mr_pic,
     mr_status: data.mr_status,
-    mr_last_edit_by: data.mr_last_edit_by, // 🔥 WAJIB
+    mr_last_edit_by: data.mr_last_edit_by,
     mr_last_edit_at: data.mr_last_edit_at,
     details: data.details.map((d) => ({
       part_id: d.part_id,
@@ -49,20 +40,16 @@ export async function createMR(data: MRReceive) {
     })),
   };
 
-  return api.post(`${BASE_URL}`, payload);
+  return api.post("/mr", payload);
 }
 
-/* =====================================================
- * GET ALL MR
- * ===================================================== */
+/* ================= GET ALL MR ================= */
 export async function getAllMr(): Promise<MRReceive[]> {
-  const res = await api.get(`${BASE_URL}`);
+  const res = await api.get("/mr");
   return res.data;
 }
 
-/* =====================================================
- * GET MR BY KODE
- * ===================================================== */
+/* ================= GET MR BY KODE ================= */
 export async function getMrByKode(kode: string): Promise<MRReceive | null> {
   const safe = encodeSafe(kode);
   try {
@@ -74,43 +61,46 @@ export async function getMrByKode(kode: string): Promise<MRReceive | null> {
   }
 }
 
-/* =====================================================
- * UPDATE MR
- * - STATUS  → { mr_status }
- * - ITEM    → { dtl_mr_id, ... }
- * ===================================================== */
+/* ================= UPDATE MR ================= */
 export async function updateMR(
   mrId: string,
   payload: UpdateMRItemPayload | UpdateMRStatusPayload
 ) {
-  const res = await api.put(`${BASE_URL}/${mrId}`, payload);
+  const res = await api.put(`/mr/${mrId}`, payload);
   return res.data;
 }
 
+/* ================= DELETE DETAIL ================= */
 export async function deleteMRDetail(detailId: string) {
-  return api.delete(`${BASE_URL}/items/${detailId}`);
+  return api.delete(`/mr/items/${detailId}`);
 }
 
-
-export async function submitSignature(kode: string, signatureBase64: string) {
+/* ================= SIGNATURE ================= */
+export async function submitSignature(
+  kode: string,
+  signature: string,
+  name: string,
+  role: string
+) {
   const res = await api.post("/mr/sign", {
     kode,
-    signature: signatureBase64,
+    signature,
+    name,
+    role,
   });
   return res.data;
 }
 
-export async function clearSignature(kode: string) {
-  const res = await api.delete(
-    `${BASE_URL}/${encodeURIComponent(kode)}/signature`
-  );
-  return res.data;
-}
 
+// export async function clearSignature(kode: string) {
+//   const res = await api.delete(`/mr/${encodeURIComponent(kode)}/signature`);
+//   return res.data;
+// }
 
+/* ================= DOWNLOAD PDF ================= */
 export function downloadMrPdf(kode: string) {
   api
-    .get(`/mr/${encodeURIComponent(kode)}/export/pdf`, {
+    .get(`/mr/${encodeSafe(kode)}/export/pdf`, {
       responseType: "blob",
     })
     .then((res) => {
@@ -128,6 +118,7 @@ export function downloadMrPdf(kode: string) {
     });
 }
 
+/* ================= DOWNLOAD EXCEL ================= */
 export async function downloadMrExcel() {
   const res = await api.get("/mr/export", {
     responseType: "blob",

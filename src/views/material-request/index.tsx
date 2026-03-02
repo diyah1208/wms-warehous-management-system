@@ -478,7 +478,7 @@ useEffect(() => {
       </SectionContainer>
 
       {/* Tambah MR (Hanya untuk role warehouse) */}
-      {user?.role === "warehouse_ho" && (
+      {user?.role === "warehouse" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah MR Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">

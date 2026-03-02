@@ -451,6 +451,7 @@ export default function CreateSpbForm({
                   </TableCell>
                   <TableCell>
                     <Button
+                      type="button"
                       size="sm"
                       variant="outline"
                       onClick={() => handleRemoveItem(idx)}

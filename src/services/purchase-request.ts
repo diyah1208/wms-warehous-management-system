@@ -92,7 +92,6 @@ export async function getPrByKode(kode: string): Promise<PurchaseRequest | null>
 //   }
 // }
 
-
 export async function createPR(data: PurchaseRequest) {
   const payload = {
     pr_kode: data.pr_kode,
@@ -113,9 +112,6 @@ export async function createPR(data: PurchaseRequest) {
   return api.post("/pr", payload);
 }
 
-
-
-
 export async function submitPrSignature(
   kode: string,
   signature: string,
@@ -130,14 +126,10 @@ export async function submitPrSignature(
   });
 }
 
-
-
-
-
 // services/purchase-request.ts
-export async function clearSignature(kode: string) {
-  return api.delete(`/pr/${encodeURIComponent(kode)}/signature`);
-}
+// export async function clearSignature(kode: string) {
+//   return api.delete(`/pr/${encodeURIComponent(kode)}/signature`);
+// }
 
 export function downloadPrPdf(kode: string) {
   api

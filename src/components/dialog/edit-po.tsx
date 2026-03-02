@@ -45,7 +45,7 @@ export function EditPODialog({ po, refresh }: MyDialogProps) {
     };
 
     try {
-      await updatePO(po.po_id, payload);
+      await updatePO(po.po_id!, payload);
       toast.success("Data PO berhasil diupdate");
       refresh((prev) => !prev);
     } catch (error) {
@@ -61,7 +61,6 @@ const [status, setStatus] = useState<"pending" | "purchased">(
       <DialogTrigger asChild>
        <Button variant="edit" size="sm" className="flex items-center gap-4">
   <Pencil className="h-4 w-4" />
-  Edit PO
 </Button>
       </DialogTrigger>
 
@@ -151,19 +150,22 @@ const [status, setStatus] = useState<"pending" | "purchased">(
           </div>
         </form>
 
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="outline">Batalkan</Button>
-          </DialogClose>
-        <Button
-  type="submit"
-  form="edit-po-form"
-  className="!bg-orange-600 hover:!bg-orange-700 text-white"
->
-  Edit
-</Button>
+<DialogFooter>
+  <DialogClose asChild>
+    <Button variant="outline">Batalkan</Button>
+  </DialogClose>
 
-        </DialogFooter>
+  <DialogClose asChild>
+    <Button
+      type="submit"
+      form="edit-po-form"
+      className="!bg-orange-600 hover:!bg-orange-700 text-white"
+    >
+      Edit
+    </Button>
+  </DialogClose>
+</DialogFooter>
+
       </DialogContent>
     </Dialog>
   );

@@ -44,14 +44,17 @@ export interface POHeader {
   id?: string;
   kode: string;
   kode_pr: string;
-  tanggal_estimasi: string;
+
     po_detail_status?: string;
   status: string;
   pic: string;
   keterangan?: string;
   created_at: Timestamp;
   updated_at: Timestamp;
-}
+ tanggal: string | null;           // 🔥 tanggal PO (po_tanggal)
+  tanggal_estimasi: string | null;  // 🔥 estimasi
+
+  }
 // export interface UserComplete {
 //   id: string;
 //   email: string;
@@ -127,11 +130,23 @@ export interface MRReceive {
 
   created_at: string;
   updated_at: string;
+
   details: MRDetail[];
 
-    // ✅ TAMBAHAN SIGNATURE
-  signature_url?: string | null;
-  sign_at?: string | null;
+  /* ================= SIGNATURE FLOW ================= */
+
+  // step approval sekarang
+  sign_step?: "warehouse" | "gl_mekanik" | "done" | null;
+
+  // --- Pengaju (warehouse)
+  signed_pengaju_name?: string | null;
+  signed_pengaju_sign?: string | null;
+  signed_pengaju_at?: string | null;
+
+  // --- GL Mekanik / PJO
+  signed_gl_name?: string | null;
+  signed_gl_sign?: string | null;
+  signed_gl_at?: string | null;
 }
 
 export type MasterVendor = {
@@ -251,6 +266,12 @@ export interface PO {
   pr_id?: string;
   po_tanggal: string;
   po_estimasi: string;
+    po_payment_term: 
+    | "CASH"
+    | "COD"
+    | "NET 7"
+    | "NET 14"
+    | "NET 30";
   po_status: string;
   po_pic: string;
   po_detail_status?: string;
@@ -259,6 +280,15 @@ export interface PO {
   updated_at: string;
   details: PODetail[];
 }
+// export interface POReceive {
+//   po_id?: string;
+//   part_id?: string;
+//   dtl_po_part_number: string;
+//   dtl_po_part_name: string;
+//   dtl_po_satuan: string;
+//   dtl_po_qty: number;
+//   dtl_qty_received?: number;
+// }
 
 // export interface POReceive {
 //   po_id?: string;
@@ -301,17 +331,37 @@ export interface POReceive {
   po_id?: string;
   po_kode: string;
   pr_id: string;
+ po_payment_term: 
+    | "CASH"
+    | "COD"
+    | "NET 7"
+    | "NET 14"
+    | "NET 30";
   po_tanggal: string;
   po_estimasi: string;
   po_keterangan: string;
   po_pic: string | null;
+
   po_detail_status?: string;
   po_status: string;
+
   created_at: string;
   updated_at: string;
+
   purchase_request: PurchaseRequest;
   details: PODetail[];
-      signature_url?: string | null;
+
+  /* ================= SIGNATURE FLOW BARU ================= */
+
+  sign_step?: string | null;
+
+  signed_pengaju_name?: string | null;
+  signed_pengaju_sign?: string | null;
+  signed_pengaju_at?: string | null;
+
+  /* ================= LEGACY (boleh dihapus nanti) ================= */
+
+  signature_url?: string | null;
   sign_at?: string | null;
 }
 // export interface POReceive {
@@ -360,8 +410,6 @@ export interface PurchaseRequest {
   pr_pic: string;
   created_at: string;
   updated_at: string;
-
-  // === SIGNATURE BERJENJANG ===
   signed_pengaju_name?: string | null;
   signed_pengaju_sign?: string | null;
   signed_pengaju_at?: string | null;
@@ -374,7 +422,7 @@ export interface PurchaseRequest {
   signed_ppic_sign?: string | null;
   signed_ppic_at?: string | null;
 
-  sign_step?: "warehouse_ho" | "spv" | "ppic" | "done";
+  sign_step?: "warehouse" | "spv" | "ppic" | "done";
 
   details: PRItemReceive[];
 }
@@ -726,6 +774,7 @@ export interface SpbCreate {
 
 export interface Spb {
   spb_id: number;
+  spb_po_id: number;
   spb_no: string;
   spb_tanggal: string;
   spb_no_wo?: string;
@@ -742,8 +791,8 @@ export interface Spb {
   created_at?: string;
   updated_at?: string;
   details: SpbDetail[];
-  po?: SpbPo;
-  do?: SpbDo;
+  po?: SpbPo[];
+  do?: SpbDo[];
   invoice?: SpbInvoice;
 }
 
@@ -780,6 +829,11 @@ export interface SpbDo {
   created_at?: string;
   updated_at?: string;
   spb?: Spb;
+  details?: {
+    spb_do_dtl_id: number;
+    spb_dtl_id: number;
+    spb_detail?: SpbDetail;
+  }[];
 }
 
 export interface SpbInvoice {
@@ -852,7 +906,7 @@ export type JobCostingItem = {
   item_description: string;
   qty: number;
   unit: string;
-
+ finish_part?: string; 
   /** relasi dari backend */
   barang?: {
     part_id: number;
@@ -867,19 +921,23 @@ export type JobCostingRow = {
   batch_no: string;
   jc_date: string;
   job_cost_account?: string;
+   finish_part?: string; 
   description?: string;
   barang_1: string;
   barang_2?: string;
+  jc_status: string;
   dept: string;
   created_at?: string;
 };
 export interface JobCostingPayload {
   batch_no: string;
   jc_date: string;
-  description: string;
+  jc_status: string;
+  description?: string;
   created_by: string;
   lokasi: string, 
-
+    barang_1: string;    
+ finish_part?: string; 
   items: {
     part_no: string;
     item_description: string;
@@ -894,8 +952,21 @@ export type JobCostingDetail = {
   description: string;
   created_by: string;
   created_at?: string;
+finish_part?: string; 
 
   items: JobCostingItem[];
+   signed_pengaju_name?: string;
+  signed_pengaju_sign?: string;
+  signed_pengaju_at?: string;
+
+  signed_spv_name?: string;
+  signed_spv_sign?: string;
+  signed_spv_at?: string;
+
+  signed_ppic_name?: string;
+  signed_ppic_sign?: string;
+  signed_ppic_at?: string;
+  sign_step?: "warehouse" | "spv" | "ppic" | "done";
 
   /* =========================
      TTD BERJENJANG

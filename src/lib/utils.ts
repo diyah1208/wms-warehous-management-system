@@ -38,7 +38,10 @@ export function formatDateTime(
 ): string {
   if (!date) return "-";
 
-  const d = typeof date === "string" ? new Date(date) : date;
+  const d =
+    typeof date === "string"
+      ? new Date(date.replace(" ", "T")) // 🔥 penting
+      : date;
 
   if (isNaN(d.getTime())) return "-";
 
@@ -48,6 +51,7 @@ export function formatDateTime(
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Jakarta", // 🔥 paksa WIB
   });
 }
 

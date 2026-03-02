@@ -75,23 +75,37 @@ export async function createSpb(data: SpbCreate) {
   return api.post("/spb", payload);
 }
 
+// export async function createSpbPo(data: {
+//   spb_id: number;
+//   spb_dtl_id: number; 
+//   po_no: string;
+//   so_no?: string;
+//   so_date?: string;
+// }): Promise<SpbPo> {
+//   const res = await api.post("/spb/po", data);
+//   return res.data.data ?? res.data;
+// }
 export async function createSpbPo(data: {
   spb_id: number;
   po_no: string;
   so_no?: string;
   so_date?: string;
-}): Promise<SpbPo> {
+  details: {
+    spb_dtl_id: number;
+  }[];
+}): Promise<any> {
   const res = await api.post("/spb/po", data);
   return res.data.data ?? res.data;
 }
 
 export async function createSpbDo(data: {
-    spb_id: number;
-    do_no: string;
-    do_date?: string;
-    do_status_part?: string;
-}
-): Promise<SpbDo> {
+  spb_po_id: number;
+  do_no: string;
+  do_date: string;
+  details: {
+    spb_po_dtl_id: number;
+  }[];
+}): Promise<SpbDo> {
   const res = await api.post(`/spb/do`, data);
   return res.data.data ?? res.data;
 }
@@ -99,14 +113,16 @@ export async function createSpbDo(data: {
 
 export async function createSpbInvoice(
   data: {
-    spb_id: number,
-    spb_do_id?: number,
+    spb_do_id: number;
     invoice_no: string;
     invoice_date?: string;
     invoice_email_date?: string;
+    details: {
+      spb_do_dtl_id: number;
+    }[];
   }
 ): Promise<SpbInvoice> {
-  const res = await api.post(`/spb/invoice`, data);
+  const res = await api.post("/spb/invoice", data);
   return res.data.data ?? res.data;
 }
 

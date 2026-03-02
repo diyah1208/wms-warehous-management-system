@@ -168,11 +168,11 @@ export function AppSidebar({
   const visibleNavMain =
   role === "marketing"
     ? data.navMain.filter(item =>
-        ["Peminjaman", "Stock Out"].includes(item.title)
+        ["Peminjaman", "Stock Out","Barang dan Stok"].includes(item.title)
       )
     : role === "finance"
     ? data.navMain.filter(item =>
-        item.title === "Stock Out"
+        ["Stock Out", "Barang dan Stok"].includes(item.title)
       )
     : data.navMain.filter(item =>
         item.title !== "Peminjaman"

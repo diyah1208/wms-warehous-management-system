@@ -2,10 +2,10 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import SignaturePad from "@/components/signature-pad";
 import { Button } from "@/components/ui/button";
-import { submitSignature } from "@/services/material-request";
 import { toast } from "sonner";
+import { submitJobCostingSignature } from "@/services/job-costing";
 
-export default function MRSign() {
+export default function JcSign() {
   const { kode } = useParams<{ kode: string }>();
   const [searchParams] = useSearchParams();
 
@@ -22,7 +22,7 @@ export default function MRSign() {
     try {
       setLoading(true);
 
-      await submitSignature(
+      await submitJobCostingSignature(
         decodeURIComponent(kode),
         signature,
         name,
@@ -39,7 +39,6 @@ export default function MRSign() {
     }
   }
 
-  /* ================= SUCCESS SCREEN ================= */
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
@@ -91,11 +90,11 @@ export default function MRSign() {
 
         <div className="text-center space-y-2">
           <h1 className="font-semibold text-xl">
-            Tanda Tangan Material Request
+            Tanda Tangan Job Costing
           </h1>
 
           <p className="text-sm text-muted-foreground">
-            MR Code:
+            Batch No:
             <span className="font-medium ml-1">{kode}</span>
           </p>
         </div>

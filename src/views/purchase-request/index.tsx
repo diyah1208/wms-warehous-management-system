@@ -440,7 +440,7 @@ function renderPrStatus(status: string) {
       </SectionContainer>
 
       {/* Tambah (tidak ada perubahan) */}
-      {user?.role === "warehouse" || user?.role === "purchasing" ? (
+      {user?.role === "warehouse" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah PR Baru</SectionHeader>
           <SectionBody>
@@ -467,8 +467,6 @@ function renderPrStatus(status: string) {
 </SectionFooter>
 
         </SectionContainer>
-      ) : (
-        ""
       )}
     </WithSidebar>
   );

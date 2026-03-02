@@ -31,7 +31,7 @@ import { formatTanggal } from "@/lib/utils";
 import { PagingSize } from "@/types/enum";
 import CreateSpbForm from "@/components/form/create-spb";
 import { downloadSpbExcel, getAllSpb } from "@/services/spb";
-import { Label } from "recharts";
+import { Label } from "@/components/ui/label";
 import {
   Tooltip,
   TooltipContent,
@@ -44,6 +44,7 @@ import { EditSpbDialog } from "@/components/dialog/edit-spb";
 export default function SpbPage() {
   const {user} = useAuth()
   const [mrs, setMrs] = useState<Spb[]>([]);
+  const [spb2, setSpb] = useState<Spb| null>(null);
   const [filteredMrs, setFilteredMrs] = useState<Spb[]>([]);
   const [mrToShow, setMrToShow] = useState<Spb[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
@@ -131,6 +132,51 @@ export default function SpbPage() {
     setMrToShow(mrs.slice(0, PagingSize));
     toast.success("Filter telah direset.");
   }
+  useEffect(() => {
+  let filtered = mrs;
+
+  // if (tanggalMr) {
+  //   filtered = filtered.filter(
+  //     (mr) =>
+  //       new Date(mr.spb_tanggal).toDateString() ===
+  //       tanggalMr.toDateString()
+  //   );
+  // }
+  if (tanggalMr) {
+  filtered = filtered.filter(
+    (mr) =>
+      new Date(mr.spb_tanggal).toDateString() ===
+      tanggalMr.toDateString()
+  );
+}
+
+  if (lokasi) {
+    filtered = filtered.filter((mr) =>
+      mr.spb_gudang?.toLowerCase().includes(lokasi.toLowerCase())
+    );
+  }
+
+  if (pic) {
+    filtered = filtered.filter((mr) =>
+      mr.spb_pic_gmi?.toLowerCase().includes(pic.toLowerCase())
+    );
+  }
+
+  if (status) {
+    filtered = filtered.filter((mr) =>
+      mr.spb_status?.toLowerCase().includes(status.toLowerCase())
+    );
+  }
+
+  if (kode) {
+    filtered = filtered.filter((mr) =>
+      mr.spb_no?.toLowerCase().includes(kode.toLowerCase())
+    );
+  }
+
+  setFilteredMrs(filtered);
+  setCurrentPage(1);
+}, [tanggalMr, lokasi, pic, status, kode, mrs]);
 
   useEffect(() => {
     setMrToShow(
@@ -139,7 +185,7 @@ export default function SpbPage() {
         currentPage * PagingSize
       )
     );
-  }, [currentPage]);
+  }, [currentPage,filteredMrs]);
 
   function nextPage() {
     setCurrentPage((prev) => prev + 1);
@@ -245,7 +291,7 @@ export default function SpbPage() {
     </TooltipProvider>
 
     {/* EXPORT EXCEL */}
-    <TooltipProvider>
+    {/* <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
@@ -258,7 +304,7 @@ export default function SpbPage() {
         </TooltipTrigger>
         <TooltipContent>Export Excel</TooltipContent>
       </Tooltip>
-    </TooltipProvider>
+    </TooltipProvider> */}
 
   </div>
 
@@ -312,8 +358,12 @@ export default function SpbPage() {
                     <Info className="h-4 w-4" />
                   </Link>
                 </Button>
+                 {user?.role === "warehouse" &&(
                 <EditSpbDialog spb={mr} refresh={setRefresh} />
+                    )}
+            
                 </div>
+            
               </TableCell>
             </TableRow>
           ))

@@ -363,10 +363,18 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
                         disabled={closed}
                         className="text-orange-600 hover:text-orange-700"
                         onClick={() => {
-                          if (closed) return;
-                          setSelectedItem(item);
-                          setOpenQtyDialog(true);
-                        }}
+                        const partId = item.part_id ?? "";
+                        const defaultQty =
+                          getQtyPo(partId) ?? item.dtl_pr_qty;
+
+                        setReceiveQty((prev) => ({
+                          ...prev,
+                          [partId]: prev[partId] ?? 0,
+                        }));
+
+                        setSelectedItem(item);
+                        setOpenQtyDialog(true);
+                      }}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -405,11 +413,12 @@ export default function CreateRIForm({ user, setRefresh }: CreatePOFormProps) {
                   getQtyPo(selectedItem.part_id) ??
                   selectedItem.dtl_pr_qty
                 }
-                value={
-                  receiveQty[selectedItem.part_id ?? ""] ??
-                  (getQtyPo(selectedItem.part_id) ??
-                    selectedItem.dtl_pr_qty)
-                }
+                // value={
+                //   receiveQty[selectedItem.part_id ?? ""] ??
+                //   (getQtyPo(selectedItem.part_id) ??
+                //     selectedItem.dtl_pr_qty)
+                // }
+                value={receiveQty[selectedItem.part_id ?? ""] ?? 0}
                 onChange={(e) =>
                   
                   setReceiveQty((prev) => ({

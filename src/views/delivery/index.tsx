@@ -168,6 +168,7 @@ export default function DeliveryPage() {
     setDariGudang("");
     setKeGudang("");
     setResi("");
+    setTanggal(undefined);
     toast.success("Filter telah direset.");
   }
   function StatusBadge({ status }: { status: string }) {
@@ -289,7 +290,7 @@ export default function DeliveryPage() {
                       <DatePicker value={tanggal} onChange={setTanggal} />
                     </div>                  
 
-                  <div className="grid gap-1">
+                  {/* <div className="grid gap-1">
                     <Label htmlFor="filter-resi">No. Resi Pengiriman</Label>
                     <Input
                       id="filter-resi"
@@ -297,7 +298,7 @@ export default function DeliveryPage() {
                       value={resi}
                       onChange={(e) => setResi(e.target.value)}
                     />
-                  </div>
+                  </div> */}
 
                   {/* STATUS — TIDAK DIUBAH */}
                   <div className="grid gap-1">
@@ -459,7 +460,7 @@ export default function DeliveryPage() {
       </SectionContainer>
 
       {/* Tambah */}
-      {user?.role === "warehouse" || user?.role === "purchasing" ? (
+      {user?.role === "warehouse" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah Delivery Baru</SectionHeader>
           <SectionBody>
@@ -477,8 +478,6 @@ export default function DeliveryPage() {
             </Button>
           </SectionFooter>
         </SectionContainer>
-      ) : (
-        ""
       )}
     </WithSidebar>
   );

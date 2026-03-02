@@ -13,7 +13,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import type { Stock } from "@/types";
 import { toast } from "sonner";
-import type { Dispatch, SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { Pencil } from "lucide-react";
 import { saveStock } from "@/services/stock";
 
@@ -24,8 +24,10 @@ interface MyDialogProps {
 }
 
 export function EditStockDialog({ stock, refresh }: MyDialogProps) {
+  const [open, setOpen] = useState(false);
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    
 
     const formData = new FormData(event.currentTarget);
     const min = formData.get("stk_min") as string;
@@ -49,6 +51,7 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
       if (res) {
         toast.success("Data stock berhasil diupdate");
         refresh((prev) => !prev);
+        setOpen(false);
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -60,7 +63,7 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="outline"

@@ -10,7 +10,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { toast } from "sonner";
 import axios from "axios";
-import { ClipboardPlus, Trash2, Check, ChevronsUpDown } from "lucide-react";
+import { ClipboardPlus, Trash2, Check, ChevronsUpDown, X } from "lucide-react";
 
 import {
   Table,
@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils";
 import { getMasterParts } from "@/services/master-part";
 
 
+
 /* ================= TYPES ================= */
 
 type JobCostingItemUI = {
@@ -72,6 +73,8 @@ export default function CreateJobCostingForm({
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
 
   const [items, setItems] = useState<JobCostingItemUI[]>([]);
+  const [jc_status, setStatus] = useState<"pending" | "done">("pending");
+
 
   /* SELECT STATE */
   const [open, setOpen] = useState(false);
@@ -83,7 +86,7 @@ const [selectedFinishPart, setSelectedFinishPart] = useState<MasterPart | null>(
 useEffect(() => {
   getMasterParts()
     .then((data) => {
-      console.log("MASTER PART API:", data);
+      //console.log("MASTER PART API:", data);
       setMasterParts(data);
     })
     .catch(() => toast.error("Gagal ambil master part"));
@@ -119,18 +122,18 @@ useEffect(() => {
 function getStockByPartNo(partNo: string) {
   const part = partMap.get(partNo);
 
-  console.log("PART:", part);
-  console.log("lokasiUser:", lokasiUser);
+  // console.log("PART:", part);
+  // console.log("lokasiUser:", lokasiUser);
 
   const relatedStocks = stocks.filter(
     (s) => s.part_id === part?.part_id
   );
 
-  console.log("STOCK PART IN ALL LOCATION:", relatedStocks);
+  // console.log("STOCK PART IN ALL LOCATION:", relatedStocks);
 
   const stock = stockMap.get(`${part?.part_id}_${lokasiUser}`);
 
-  console.log("FINAL STOCK:", stock);
+  // console.log("FINAL STOCK:", stock);
 
   return stock;
 }
@@ -147,6 +150,7 @@ function getStockByPartNo(partNo: string) {
 
     if (items.some((i) => i.part_no === selectedPart.part_number))
       return toast.error("Barang sudah ditambahkan");
+
 
     setItems((p) => [
       ...p,
@@ -173,49 +177,61 @@ function getStockByPartNo(partNo: string) {
 
   /* ================= SUBMIT ================= */
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+async function handleSubmit(e: React.FormEvent) {
+  e.preventDefault();
 
-    if (!batchNo || !jcDate || !description)
-      return toast.error("Form belum lengkap");
+  if (!batchNo || !jcDate )
+    return toast.error("Form belum lengkap");
 
-    for (const item of items) {
-      const stock = getStockByPartNo(item.part_no);
-      if (!stock || item.qty > stock.stk_qty)
-        return toast.error(`Stock ${item.part_no} kurang`);
-    }
+  if (!selectedFinishPart)
+    return toast.error("Finish part wajib dipilih");
 
-    const payload: JobCostingPayload = {
-      batch_no: batchNo,
-      jc_date: jcDate,
-      description,
-      created_by: createdBy,
-      lokasi: lokasiUser, 
-      items: items.map((i) => ({
-        part_no: i.part_no,
-        qty: i.qty,
-        unit: i.unit,
-        item_description: description,
-      })),
-    };
+  if (items.length === 0)
+    return toast.error("Barang belum ditambahkan");
 
-    try {
-      await createJobCosting(payload);
-      toast.success("Job Costing berhasil");
-
-      setRefresh((p) => !p);
-      setBatchNo("");
-      setJcDate("");
-      setDescription("");
-      setItems([]);
-    } catch (e) {
-      if (axios.isAxiosError(e))
-        toast.error(e.response?.data?.message ?? "Gagal simpan");
-    }
+  for (const item of items) {
+    const stock = getStockByPartNo(item.part_no);
+    if (!stock || item.qty > stock.stk_qty)
+      return toast.error(`Stock ${item.part_no} kurang`);
   }
 
+  const payload: JobCostingPayload = {
+    batch_no: batchNo,
+    jc_date: jcDate,
+    description,
+    created_by: createdBy,
+    lokasi: lokasiUser,
+    jc_status,
+barang_1: items[0].part_no,
+    // 🔥 INI YANG MEMBUAT MASUK KE DB
+    finish_part: selectedFinishPart.part_number,
+
+    items: items.map((i) => ({
+      part_no: i.part_no,
+      qty: i.qty,
+      unit: i.unit,
+      item_description: description,
+    })),
+  };
+
+  try {
+    await createJobCosting(payload);
+    toast.success("Job Costing berhasil");
+
+    setRefresh((p) => !p);
+    setBatchNo("");
+    setJcDate("");
+    setDescription("");
+    setItems([]);
+    setSelectedFinishPart(null); // reset finish part
+  } catch (e) {
+    if (axios.isAxiosError(e))
+      toast.error(e.response?.data?.message ?? "Gagal simpan");
+  }
+}
+
   /* ================= UI ================= */
-console.log("MASTER PARTS:", masterParts);
+// console.log("MASTER PARTS:", masterParts);
 
   return (
     <form onSubmit={handleSubmit} id="jobcosting-form" className="space-y-6">
@@ -229,6 +245,8 @@ console.log("MASTER PARTS:", masterParts);
           <Label>Tanggal<span className="text-red-500">*</span></Label>
           <Input type="date" value={jcDate} onChange={(e) => setJcDate(e.target.value)} />
         </div>
+        
+
       </div>
 
       {/* ================= PILIH BARANG (SPB STYLE) ================= */}
@@ -287,65 +305,97 @@ console.log("MASTER PARTS:", masterParts);
 
 {/* FINISH PART */}
 <div className="col-span-6">
-  <Label>Finish Part<span className="text-red-500">*</span></Label>
+  <Label>
+    Finish Part<span className="text-red-500">*</span>
+  </Label>
 
-  <Popover open={openFinish} onOpenChange={setOpenFinish}>
-    <PopoverTrigger asChild>
-      <Button
-        variant="outline"
-        className="w-full justify-between overflow-hidden"
+  <div className="relative">
+    <Popover open={openFinish} onOpenChange={setOpenFinish}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full justify-between overflow-hidden pr-16"
+        >
+          <span className="truncate text-left">
+            {selectedFinishPart
+              ? `${selectedFinishPart.part_number} - ${selectedFinishPart.part_name}`
+              : "Pilih finish part"}
+          </span>
+
+          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+        </Button>
+      </PopoverTrigger>
+
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput placeholder="Cari finish part..." />
+          <CommandList>
+            <CommandEmpty>Tidak ada part.</CommandEmpty>
+
+            <CommandGroup>
+              {masterParts.map((part) => (
+                <CommandItem
+                  key={part.part_number}
+                  onSelect={() => {
+                    setSelectedFinishPart(part);
+                    setOpenFinish(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedFinishPart?.part_number === part.part_number
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                  {part.part_number} | {part.part_name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+
+    {/* ICON CLEAR */}
+    {selectedFinishPart && (
+      <button
+        type="button"
+        onClick={() => setSelectedFinishPart(null)}
+        className="absolute right-10 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500"
       >
-        <span className="truncate text-left">
-          {selectedFinishPart
-            ? `${selectedFinishPart.part_number} - ${selectedFinishPart.part_name}`
-            : "Pilih finish part"}
-        </span>
-
-        <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
-      </Button>
-    </PopoverTrigger>
-
-    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-      <Command>
-        <CommandInput placeholder="Cari finish part..." />
-        <CommandList>
-          <CommandEmpty>Tidak ada part.</CommandEmpty>
-          <CommandGroup>
-            {masterParts.map((part) => (
-              <CommandItem
-                key={part.part_number}
-                onSelect={() => {
-                  setSelectedFinishPart(part);
-                  setOpenFinish(false);
-                }}
-              >
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4",
-                    selectedFinishPart?.part_number === part.part_number
-                      ? "opacity-100"
-                      : "opacity-0"
-                  )}
-                />
-                {part.part_number} | {part.part_name}
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
+        <X className="h-4 w-4" />
+      </button>
+    )}
+  </div>
 </div>
 
+
         {/* KETERANGAN */}
+        
         <div className="col-span-6">
-          <Label>Keterangan<span className="text-red-500">*</span></Label>
+          <Label>Keterangan</Label>
           <Input
           placeholder="Masukkan keterangan" 
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
+        <div className="col-span-6">
+          <Label>Status<span className="text-red-500">*</span></Label>
+
+          <select
+            value={jc_status}
+            onChange={(e) => setStatus(e.target.value as "pending" | "done")}
+            className="w-full border rounded-md px-3 py-2 text-sm"
+          >
+            <option value="pending">Pending</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        
       </div>
 
       <Button type="button" onClick={addItem} className="w-full !bg-green-600">

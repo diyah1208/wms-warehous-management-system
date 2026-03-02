@@ -44,20 +44,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useMemo } from "react";
 
-import { customerCache } from "@/services/customer-cache";
+// import { customerCache } from "@/services/customer-cache";
+import { useAuth } from "@/context/AuthContext";
 
 export default function MasterCustomerPage() {
-  const [customers, setCustomers] = useState<MasterCustomer[]>(
-    customerCache.data ?? [] // ⬅️ LANGSUNG ISI
-  );
+  // const [customers, setCustomers] = useState<MasterCustomer[]>(
+  //   customerCache.data ?? [] // ⬅️ LANGSUNG ISI
+  // );
+  const [customers, setCustomers] = useState<MasterCustomer[]>([]);
   const [refresh, setRefresh] = useState(false);
+  const {user} = useAuth();
 
   useEffect(() => {
     async function fetchCustomers() {
       try {
         const res = await getMasterCustomers();
         if (res) {
-          customerCache.data = res; // ⬅️ SIMPAN CACHE
+          //customerCache.data = res; // ⬅️ SIMPAN CACHE
           setCustomers(res);
         }
       } catch {
@@ -83,6 +86,7 @@ export default function MasterCustomerPage() {
       {/* =======================
           TAMBAH CUSTOMER
       ======================== */}
+      {user?.role === "purchasing" && (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Customer</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -112,6 +116,7 @@ export default function MasterCustomerPage() {
 
 
       </SectionContainer>
+       )}
     </WithSidebar>
   );
 }
@@ -141,31 +146,34 @@ function CustomerColumnsGenerator(
       accessorKey: "contact_name",
     },
     {
-      header: "Status",
-      accessorKey: "is_active",
-      cell: (value: boolean) => (
-        <span
-          className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1
-            ${
-              value
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
-        >
-          {value ? (
-            <>
-              <UserCheck className="h-3 w-3" />
-              AKTIF
-            </>
-          ) : (
-            <>
-              <UserX className="h-3 w-3" />
-              NON AKTIF
-            </>
-          )}
-        </span>
-      ),
-    },
+  header: "Status",
+  accessorKey: "is_active",
+  cell: (_: any, row: MasterCustomer) => {
+    const active = Boolean(row.is_active);
+    return (
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
+          active
+            ? "bg-green-100 text-green-700"
+            : "bg-red-100 text-red-700"
+        }`}
+      >
+        {active ? (
+          <>
+            <UserCheck className="h-3 w-3" />
+            AKTIF
+          </>
+        ) : (
+          <>
+            <UserX className="h-3 w-3" />
+            NON AKTIF
+          </>
+        )}
+      </span>
+    );
+  },
+},
+
 {
   header: "Aksi",
   accessorKey: "aksi",
@@ -173,17 +181,19 @@ function CustomerColumnsGenerator(
     <div className="flex gap-2">
 
       {/* =====================
-          EDIT
+          EDIT — hanya muncul kalau AKTIF
       ====================== */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div>
-              <EditCustomerDialog customer={row} refresh={setRefresh} />
-            </div>
-          </TooltipTrigger>
-        </Tooltip>
-      </TooltipProvider>
+      {row.is_active ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <EditCustomerDialog customer={row} refresh={setRefresh} />
+              </div>
+            </TooltipTrigger>
+          </Tooltip>
+        </TooltipProvider>
+      ) : null}
 
       {/* =====================
           AKTIF / NONAKTIF (PAKAI KONFIRMASI)
@@ -204,7 +214,6 @@ function CustomerColumnsGenerator(
                   </Button>
                 </AlertDialogTrigger>
               </TooltipTrigger>
-              
             </Tooltip>
           </TooltipProvider>
 
@@ -221,24 +230,21 @@ function CustomerColumnsGenerator(
               <AlertDialogCancel>Batal</AlertDialogCancel>
               <AlertDialogAction
                 className="bg-red-600 hover:bg-red-700 text-white"
-               onClick={async () => {
-  try {
-      await toggleMasterCustomerStatus(row.customer_id!);
-
-    setCustomers(prev => // ✅ FIX
-      prev.map(c =>
-        c.customer_id === row.customer_id
-          ? { ...c, is_active: !c.is_active }
-          : c
-      )
-    );
-
-    toast.success("Customer berhasil dinonaktifkan");
-  } catch {
-    toast.error("Gagal menonaktifkan customer");
-  }
-}}
-
+                onClick={async () => {
+                  try {
+                    await toggleMasterCustomerStatus(row.customer_id!);
+                    setCustomers(prev =>
+                      prev.map(c =>
+                        c.customer_id === row.customer_id
+                          ? { ...c, is_active: !c.is_active }
+                          : c
+                      )
+                    );
+                    toast.success("Customer berhasil dinonaktifkan");
+                  } catch {
+                    toast.error("Gagal menonaktifkan customer");
+                  }
+                }}
               >
                 Ya, Nonaktifkan
               </AlertDialogAction>
@@ -260,7 +266,6 @@ function CustomerColumnsGenerator(
                   </Button>
                 </AlertDialogTrigger>
               </TooltipTrigger>
-            
             </Tooltip>
           </TooltipProvider>
 
@@ -276,24 +281,21 @@ function CustomerColumnsGenerator(
               <AlertDialogCancel>Batal</AlertDialogCancel>
               <AlertDialogAction
                 className="!bg-green-600 hover:!bg-green-700 text-white"
-               onClick={async () => {
-  try {
-     await toggleMasterCustomerStatus(row.customer_id!);
-
-    setCustomers(prev => // ✅ FIX
-      prev.map(c =>
-        c.customer_id === row.customer_id
-          ? { ...c, is_active: !c.is_active }
-          : c
-      )
-    );
-
-    toast.success("Customer berhasil diaktifkan kembali");
-  } catch {
-    toast.error("Gagal mengaktifkan customer");
-  }
-}}
-
+                onClick={async () => {
+                  try {
+                    await toggleMasterCustomerStatus(row.customer_id!);
+                    setCustomers(prev =>
+                      prev.map(c =>
+                        c.customer_id === row.customer_id
+                          ? { ...c, is_active: !c.is_active }
+                          : c
+                      )
+                    );
+                    toast.success("Customer berhasil diaktifkan kembali");
+                  } catch {
+                    toast.error("Gagal mengaktifkan customer");
+                  }
+                }}
               >
                 Ya, Aktifkan
               </AlertDialogAction>
@@ -301,10 +303,10 @@ function CustomerColumnsGenerator(
           </AlertDialogContent>
         </AlertDialog>
       )}
+
     </div>
   ),
 },
-
   ];
 }
 
@@ -336,7 +338,7 @@ const columns = useMemo(
   const [customerNo, setCustomerNo] = useState("");
   const [customerName, setCustomerName] = useState("");
 useEffect(() => {
-  if (customers.length === 0) return;
+ // if (customers.length === 0) return;
 
   setFilteredCustomers(customers);
   setTableCustomers(customers.slice(0, pageSize));
