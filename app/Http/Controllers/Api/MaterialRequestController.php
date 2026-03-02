@@ -29,6 +29,7 @@ class MaterialRequestController extends Controller
         'SITE BIB'       => 'BIB',
         'SITE AMI'       => 'AMI',
         'SITE TABANG'    => 'TAB',
+        'SITE BCP_PIK'   => 'BCP',
     ];
 
     private function getLokasiKode(string $lokasi): string
@@ -36,21 +37,30 @@ class MaterialRequestController extends Controller
         return $this->lokasiKodeMap[strtoupper($lokasi)] ?? 'UNK';
     }
 
-public function exportPdf(string $kode)
-{
-    $mr = MaterialRequestModel::with(['details'])
-        ->where('mr_kode', $kode)
-        ->firstOrFail();
+    public function exportPdf(string $kode)
+    {
+        // decode URL (%2F → /)
+        // $decodedKode = urldecode($kode);
+        $decodedKode = base64_decode(strtr($kode, '-_', '+/'));
+    
+        if (!$decodedKode) {
+            abort(400, 'Kode MR tidak valid');
+        }
 
-    $pdf = Pdf::loadView(
-        'exports.mr-pdf',
-        compact('mr')
-    )->setPaper('A4', 'portrait');
+        $mr = MaterialRequestModel::with('details')
+            ->where('mr_kode', $decodedKode)
+            ->firstOrFail();
 
-    return $pdf->download(
+        $pdf = Pdf::loadView('exports.mr-pdf', compact('mr'))
+            ->setPaper('A4', 'portrait');
+
+    return $pdf->stream(
         'MR_' . str_replace('/', '_', $mr->mr_kode) . '.pdf'
     );
-}
+
+    }
+
+
 
     public function index()
     {
@@ -106,6 +116,7 @@ public function exportPdf(string $kode)
                 'mr_due_date' => $request->mr_due_date,
                 'mr_status'   => 'open',
                 'mr_last_edit_by' => $request->mr_last_edit_by,
+                'sign_step'  => 'warehouse',
                 'mr_last_edit_at' => now(),
             ]);
 
@@ -133,14 +144,44 @@ public function exportPdf(string $kode)
         );
     }
 
-    public function showKode($kode)
-    {
-        $mr = MaterialRequestModel::with(['details'])
-            ->where('mr_kode', $kode)
-            ->firstOrFail();
+public function showKode($kode)
+{
+    // 1️⃣ convert base64url → base64 normal
+    $base64 = str_replace(['-', '_'], ['+', '/'], $kode);
 
-        return response()->json($mr);
+    // 2️⃣ TAMBAHKAN padding yang hilang
+    $padding = strlen($base64) % 4;
+    if ($padding !== 0) {
+        $base64 .= str_repeat('=', 4 - $padding);
     }
+
+    // 3️⃣ decode
+    $decodedKode = base64_decode($base64);
+
+    // 🔍 DEBUG sementara
+    if (!$decodedKode) {
+        return response()->json([
+            'message' => 'Decode gagal',
+            'kode_dikirim' => $kode,
+            'base64_setelah_padding' => $base64,
+        ], 400);
+    }
+
+    // 4️⃣ cari MR
+    $mr = MaterialRequestModel::with('details')
+        ->where('mr_kode', $decodedKode)
+        ->first();
+
+    if (!$mr) {
+        return response()->json([
+            'message' => 'MR tidak ditemukan',
+            'kode_decode' => $decodedKode,
+        ], 404);
+    }
+
+    return response()->json($mr);
+}
+
 
     public function getOpenMR()
     {
@@ -250,76 +291,79 @@ public function deleteDetail(string $detailId): JsonResponse
     });
 }
 
-
 public function sign(Request $request): JsonResponse
 {
-    try {
-        $request->validate([
-            'kode' => 'required|string',
-            'signature' => 'required|string',
-        ]);
+    $request->validate([
+        'kode'      => 'required|string',
+        'signature' => 'required|string',
+        'name'      => 'required|string',
+        'role'      => 'required|string',
+    ]);
 
-        $mr = MaterialRequest::where('mr_kode', $request->kode)->first();
+$decodedKode = urldecode($request->kode);
 
-        if (!$mr) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Material Request tidak ditemukan'
-            ], 404);
-        }
+$mr = MaterialRequest::where('mr_kode', $decodedKode)->firstOrFail();
 
-        if (!empty($mr->signature_url)) {
-            $oldPath = str_replace('/storage/', '', $mr->signature_url);
-            if (Storage::disk('public')->exists($oldPath)) {
-                Storage::disk('public')->delete($oldPath);
-            }
-        }
-
-        $signatureData = preg_replace(
-            '#^data:image/\w+;base64,#i',
-            '',
-            $request->signature
-        );
-        $signatureData = str_replace(' ', '+', $signatureData);
-
-        $decodedImage = base64_decode($signatureData);
-
-        if ($decodedImage === false) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Format signature tidak valid'
-            ], 422);
-        }
-
-        $safeKode = str_replace('/', '_', $mr->mr_kode);
-        $filename = 'signature_' . $safeKode . '.png';
-        $relativePath = 'signatures/' . $filename;
-
-        Storage::disk('public')->put($relativePath, $decodedImage);
-
-        $mr->update([
-            'signature_url' => $relativePath, 
-            'sign_at' => now(),
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Tanda tangan berhasil disimpan'
-        ]);
-
-    } catch (\Throwable $e) {
-        Log::error('SIGN ERROR', [
-            'message' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal menyimpan tanda tangan'
-        ], 500);
+    if (!in_array($request->role, ['warehouse', 'gl_mekanik'])) {
+        return response()->json(['message' => 'Tidak berhak'], 403);
     }
+
+    if ($request->role === 'gl_mekanik' && !$mr->signed_pengaju_at) {
+        return response()->json(['message' => 'Pengaju belum TTD'], 422);
+    }
+
+    $map = [
+        'warehouse'  => 'pengaju',
+        'gl_mekanik' => 'gl',
+    ];
+
+    $level = $map[$request->role];
+
+    $path = $this->saveSignature($request->signature, $mr->mr_kode, $level);
+
+    $nextStep = match ($request->role) {
+        'warehouse'  => 'gl_mekanik',
+        'gl_mekanik' => 'done',
+    };
+
+    $mr->update([
+        "signed_{$level}_name" => $request->name,
+        "signed_{$level}_sign" => $path,
+        "signed_{$level}_at"   => now(),
+        "sign_step"            => $nextStep,
+    ]);
+    Log::info('SIGN DEBUG', [
+    'kode_request' => $request->kode,
+    'kode_decode'  => $decodedKode,
+]);
+    return response()->json([
+        'message' => 'Tanda tangan berhasil',
+        'sign_step' => $nextStep,
+    ]);
+
+
+
 }
+
+private function saveSignature(string $base64, string $kode, string $level): string
+{
+    $clean = preg_replace('#^data:image/\w+;base64,#i', '', $base64);
+    $clean = str_replace(' ', '+', $clean);
+
+    $image = base64_decode($clean);
+    if ($image === false) {
+        throw new \Exception('Signature tidak valid');
+    }
+
+    $safeKode = str_replace('/', '_', $kode);
+    $filename = "{$level}_{$safeKode}_" . uniqid() . ".png";
+    $path = 'signatures/' . $filename;
+
+    Storage::disk('public')->put($path, $image);
+
+    return $path;
+}
+
 
 public function clearSignature(string $kode): JsonResponse
 {

@@ -17,11 +17,11 @@
 <table class="no-border">
     <tr>
         <td>
-             <img
+            <img
                 src="{{ public_path('images/logo_gmi_600.png') }}"
                 width="240"
             >
-            <div style="font-size:12px; margin-top:4px; line-height:1.4;">
+            <div style="margin-top:6px; line-height:1.4;">
                 <strong>PT. Garuda Mart Indonesia</strong><br>
                 RT.002/RW.012, Jatiasih, Kec. Jatiasih<br>
                 Kota Bekasi, Jawa Barat 17423<br>
@@ -84,9 +84,9 @@
 {{-- SIGNATURE --}}
 <table class="no-border center">
     <tr>
-        <td>Yang Menyerahkan<br><br><br>Hitler Warren Chr Tambunan</td>
-        <td>Mengetahui<br><br><br>GL Plant</td>
-        <td>Mengetahui<br><br><br>Planner/Customer</td>
+        <td>Yang Menyerahkan<br><br><br><br><br>Warehouse</td>
+        <td>Mengetahui<br><br><br><br><br>GL Plant</td>
+        <td>Mengetahui<br><br><br><br><br>Planner/Customer</td>
     </tr>
 </table>
 

@@ -161,10 +161,11 @@
 
             @if ($delivery->signed_penerima_sign)
                 <img
-                    src="{{ public_path('storage/'.$delivery->signed_penerima_sign) }}"
-                    width="150"
+                    src="{{ storage_path('app/public/'.$delivery->signed_penerima_sign) }}"
+                    width="150" 
                 ><br>
             @endif
+
 
             <strong style="font-size:11px;">
                 {{ $delivery->signed_penerima_name ?? '-' }}

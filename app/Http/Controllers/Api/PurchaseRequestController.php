@@ -131,7 +131,7 @@ class PurchaseRequestController extends Controller
                 'pr_tanggal'  => $request->pr_tanggal,
                 'pr_status'   => 'open',
                 'pr_pic'      => $request->pr_pic,
-                'sign_step'   => 'warehouse_ho', 
+                'sign_step'   => 'warehouse', 
             ]);
 
             foreach ($request->details as $item) {
@@ -160,7 +160,7 @@ class PurchaseRequestController extends Controller
 
         $pr = PurchaseRequestModel::where('pr_kode', $request->kode)->firstOrFail();
 
-        if (!in_array($request->role, ['warehouse_ho', 'spv', 'ppic'])) {
+        if (!in_array($request->role, ['warehouse', 'spv', 'ppic'])) {
             return response()->json([
                 'message' => 'Tidak berhak melakukan tanda tangan'
             ], 403);
@@ -179,7 +179,7 @@ class PurchaseRequestController extends Controller
         }
 
         $map = [
-            'warehouse_ho' => 'pengaju',
+            'warehouse' => 'pengaju',
             'spv'          => 'spv',
             'ppic'         => 'ppic',
         ];
@@ -193,7 +193,7 @@ class PurchaseRequestController extends Controller
         );
 
         $nextStep = match ($request->role) {
-            'warehouse_ho' => 'spv',
+            'warehouse' => 'spv',
             'spv'          => 'ppic',
             'ppic'         => 'done',
         };
@@ -293,30 +293,28 @@ class PurchaseRequestController extends Controller
 //         'PR_' . str_replace('/', '_', $pr->pr_kode) . '.pdf'
 //     );
 // }
-public function exportPdf(string $kode)
-{
-    $kode = urldecode($kode);
+    public function exportPdf(string $kode)
+    {
+        $kode = urldecode($kode);
 
-    $pr = PurchaseRequestModel::with(['details.mr'])
-        ->where('pr_kode', $kode)
-        ->first();
+        $pr = PurchaseRequestModel::with(['details.mr'])
+            ->where('pr_kode', $kode)
+            ->first();
 
-    if (!$pr) {
-        abort(404, 'PR tidak ditemukan');
+        if (!$pr) {
+            abort(404, 'PR tidak ditemukan');
+        }
+
+        // DEBUG
+        // dd($pr->toArray());
+
+        $pdf = Pdf::loadView('exports.pr-pdf', compact('pr'))
+            ->setPaper('A4', 'portrait');
+
+        return $pdf->download(
+            'PR_' . str_replace('/', '_', $pr->pr_kode) . '.pdf'
+        );
     }
-
-    // DEBUG
-    // dd($pr->toArray());
-
-    $pdf = Pdf::loadView('exports.pr-pdf', compact('pr'))
-        ->setPaper('A4', 'portrait');
-
-    return $pdf->download(
-        'PR_' . str_replace('/', '_', $pr->pr_kode) . '.pdf'
-    );
-}
-
-
 
     private function saveSignature(string $base64, string $kode, string $level): string
     {
@@ -336,55 +334,51 @@ public function exportPdf(string $kode)
 
         return $path;
     }
+    public function clearSignature(string $kode): JsonResponse
+    {
+        try {
+            $kode = urldecode($kode);
 
+            $pr = PurchaseRequestModel::where('pr_kode', $kode)->first();
 
-public function clearSignature(string $kode): JsonResponse
-{
-    try {
-        $kode = urldecode($kode);
+            if (!$pr) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Purchase Request tidak ditemukan'
+                ], 404);
+            }
 
-        $pr = PurchaseRequestModel::where('pr_kode', $kode)->first();
+            if ($pr->signature_url && Storage::disk('public')->exists($pr->signature_url)) {
+                Storage::disk('public')->delete($pr->signature_url);
+            }
 
-        if (!$pr) {
+            $pr->update([
+                'signature_url' => null,
+                'signed_at' => null,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Signature berhasil direset'
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('CLEAR SIGNATURE ERROR', [
+                'message' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Purchase Request tidak ditemukan'
-            ], 404);
+                'message' => 'Gagal reset signature'
+            ], 500);
         }
-
-        if ($pr->signature_url && Storage::disk('public')->exists($pr->signature_url)) {
-            Storage::disk('public')->delete($pr->signature_url);
-        }
-
-        $pr->update([
-            'signature_url' => null,
-            'signed_at' => null,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Signature berhasil direset'
-        ]);
-    } catch (\Throwable $e) {
-        Log::error('CLEAR SIGNATURE ERROR', [
-            'message' => $e->getMessage(),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal reset signature'
-        ], 500);
     }
-}
-public function exportPr()
-{
-    $prs = PurchaseRequestModel::with('details')->get();
+    public function exportPr()
+    {
+        $prs = PurchaseRequestModel::with('details')->get();
 
-    return Excel::download(
-        new PrListExport($prs),
-        'DAFTAR_PURCHASE_REQUEST.xlsx'
-    );
-}
-
-
+        return Excel::download(
+            new PrListExport($prs),
+            'DAFTAR_PURCHASE_REQUEST.xlsx'
+        );
+    }
 }

@@ -24,16 +24,24 @@ use Carbon\Carbon;
 
 class SpbController extends Controller
 {
+    // public function index()
+    // {
+    //     return response()->json(
+    //         SpbModel::get()
+    //     );
+    // }
     public function index()
     {
-        return response()->json(
-            SpbModel::get()
-        );
+        $data = SpbModel::with(['po','details','po.details.spbDetail'])
+            ->orderByDesc('spb_id')
+            ->get();
+
+        return response()->json($data);
     }
+
 
     public function showKode(string $kode)
     {
-        // ðŸ”¥ decode base64 URL-safe (SAMA PERSIS DENGAN MR)
         $decodedKode = base64_decode(strtr($kode, '-_', '+/'));
     
         if (!$decodedKode) {
@@ -166,8 +174,6 @@ class SpbController extends Controller
         ]);
     }
 
-
-
     public function generateKodeSpb()
     {
         $lokasiKode = 'TJE'; 
@@ -196,7 +202,6 @@ class SpbController extends Controller
     }
     public function printSpb(string $kode)
     {
-        // 🔥 decode base64 URL-safe
         $decodedKode = base64_decode(strtr($kode, '-_', '+/'));
     
         if (!$decodedKode) {
@@ -204,7 +209,7 @@ class SpbController extends Controller
         }
     
         $spb = SpbModel::with(['details'])
-            ->where('spb_no', $decodedKode) // ⚠️ pakai kolom yang BENAR
+            ->where('spb_no', $decodedKode) 
             ->firstOrFail();
     
         $pdf = Pdf::loadView(

@@ -14,8 +14,21 @@ class JobCosting extends Model
         'jc_date',
         'description',
         'barang_1',
+        'finish_part',
         'created_by',
-        'created_at'
+        'created_at',
+        'sign_at',
+        'signed_pengaju_name',
+        'signed_pengaju_sign',
+        'signed_pengaju_at',
+        'signed_spv_name',
+        'signed_spv_sign',
+        'signed_spv_at',
+        'signed_ppic_name',
+        'signed_ppic_sign',
+        'signed_ppic_at',
+        'sign_step',
+        'jc_status'
     ];
 
     /* RELATION */

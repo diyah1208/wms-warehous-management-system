@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
+     protected $casts = [
+        'is_active' => 'boolean',
+    ];
     protected $fillable = [
         'customer_no',
         'customer_name',

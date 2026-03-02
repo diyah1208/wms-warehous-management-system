@@ -23,6 +23,16 @@ class MaterialRequestModel extends Model
     'mr_last_edit_at',
       'signature_url',
   'sign_at',
+   // 🔥 SIGN FLOW MR
+    'sign_step',
+
+    'signed_pengaju_name',
+    'signed_pengaju_sign',
+    'signed_pengaju_at',
+
+    'signed_gl_name',
+    'signed_gl_sign',
+    'signed_gl_at',
 
     ];
 

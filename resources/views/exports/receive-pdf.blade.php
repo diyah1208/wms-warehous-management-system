@@ -47,7 +47,7 @@
                 src="{{ public_path('images/logo_gmi_600.png') }}"
                 width="240"
             >
-            <div style="font-size:12px; margin-top:4px; line-height:1.4;">
+            <div style="margin-top:6px; line-height:1.4;">
                 <strong>PT. Garuda Mart Indonesia</strong><br>
                 RT.002/RW.012, Jatiasih, Kec. Jatiasih<br>
                 Kota Bekasi, Jawa Barat 17423<br>
@@ -106,7 +106,6 @@
             <th>Part Name</th>
             <th width="10%">Satuan</th>
             <th width="10%">Qty</th>
-            <th width="17%">Keterangan</th>
         </tr>
     </thead>
     <tbody>
@@ -117,7 +116,6 @@
             <td class="left">{{ $item->dtl_ri_part_name }}</td>
             <td>{{ $item->dtl_ri_satuan }}</td>
             <td>{{ $item->dtl_ri_qty }}</td>
-            <td></td>
         </tr>
         @endforeach
     </tbody>
@@ -158,7 +156,7 @@
                 </strong>
 
                 <div style="font-size:10px;">
-                    {{ \Carbon\Carbon::parse($receive->signed_penerima_at)->format('d-m-Y H:i') }}
+                    {{ \Carbon\Carbon::parse($receive->signed_penerima_at)->format('d-m-Y') }}
                 </div>
             @endif
         </td>

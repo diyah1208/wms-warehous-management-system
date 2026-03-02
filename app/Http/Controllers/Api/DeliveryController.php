@@ -79,17 +79,14 @@ class DeliveryController extends Controller
             'details.*.qty_pending' => 'required|integer|min:1',
         ]);
 
-        // VALIDASI RESI
         if (strtoupper($request->dlv_ekspedisi) !== 'HAND CARRY') {
         
-            // selain hand carry → WAJIB isi resi
             if (!$request->filled('dlv_no_resi')) {
                 return response()->json([
                     'message' => 'No resi wajib diisi untuk ekspedisi'
                 ], 422);
             }
         
-            // cek duplicate resi
             $exists = DeliveryModel::where('dlv_no_resi', $request->dlv_no_resi)->exists();
         
             if ($exists) {
@@ -98,8 +95,6 @@ class DeliveryController extends Controller
                 ], 422);
             }
         }
-
-
 
         DB::transaction(function () use ($request) {
 
@@ -321,19 +316,21 @@ class DeliveryController extends Controller
     {
         $request->validate([
             'signature' => 'required|string',
+            'signed_penerima_name'      => 'required|string',
         ]);
 
         $delivery = DeliveryModel::with('details')
             ->where('dlv_kode', $kode)
             ->firstOrFail();
 
-        if ($delivery->dlv_status !== 'delivered') {
-            throw new Exception('Belum bisa TTD penerima');
-        }
+        // if ($delivery->dlv_status !== 'delivered') {
+        //     throw new Exception('Belum bisa TTD penerima');
+        // }
 
         $path = $this->saveSignature($request->signature);
 
         $delivery->update([
+            'signed_penerima_name' => $request->signed_penerima_name,  
             'signed_penerima_sign' => $path,
             'signed_penerima_at'   => now(),
             'delivered_at'         => now(),
@@ -409,12 +406,22 @@ class DeliveryController extends Controller
             $query->where('dlv_no_resi', 'like', "%{$request->resi}%");
         }
 
-        if ($request->filled('tanggal')) {
-            $query->where(function ($q) use ($request) {
-                $q->whereDate('dlv_tanggal', $request->tanggal)
-                ->orWhereDate('created_at', $request->tanggal);
-            });
+        // if ($request->filled('tanggal')) {
+        //     $query->where(function ($q) use ($request) {
+        //         $q->whereDate('dlv_tanggal', $request->tanggal)
+        //         ->orWhereDate('created_at', $request->tanggal);
+        //     });
+        // }
+        if ($request->tanggal) {
+            $tanggal = \Carbon\Carbon::parse($request->tanggal)->toDateString();
+
+            $query->whereBetween('dlv_tanggal', [
+                \Carbon\Carbon::parse($tanggal)->subDay()->toDateString(),
+                \Carbon\Carbon::parse($tanggal)->addDay()->toDateString(),
+            ]);
         }
+
+   
 
         $deliveries = $query
             ->orderByDesc('dlv_kode')
@@ -422,7 +429,8 @@ class DeliveryController extends Controller
             
     // dd($deliveries->count());
 
-        $tanggalFile = $request->tanggal ?? now()->format('Y-m-d');
+        //$tanggalFile = $request->tanggal ?? now()->format('Y-m-d');
+        $tanggalFile = $deliveries->first()?->dlv_tanggal ?? now()->format('Y-m-d');
 
         return Excel::download(
             new DeliveryListExport($deliveries),

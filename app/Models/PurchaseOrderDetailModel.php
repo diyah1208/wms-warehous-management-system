@@ -21,6 +21,12 @@ class PurchaseOrderDetailModel extends Model
     'vendor_id',  
             'signature_url',
         'sign_at',
+           // 🔥 FIELD SIGNATURE YANG BENAR
+        'signed_pengaju_name',
+        'signed_pengaju_sign',
+        'signed_pengaju_at',
+        'sign_step',
+         'po_payment_term',
     ];
 
     public function purchaseOrder()

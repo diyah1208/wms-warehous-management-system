@@ -15,11 +15,15 @@ class SpbPoModel extends Model
         'po_no',
         'so_no',
         'so_date',
-        'po_pic',
     ];
 
     public function spb()
     {
         return $this->belongsTo(SpbModel::class, 'spb_id', 'spb_id');
     }
+    public function details()
+    {
+        return $this->hasMany(SpbPoDetailModel::class, 'spb_po_id', 'spb_po_id');
+    }
+    
 }

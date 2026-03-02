@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
+use Carbon\Carbon;
 
 class MrListExport implements
     FromCollection,
@@ -24,56 +25,62 @@ class MrListExport implements
         $this->mrs = $mrs;
     }
 
-public function collection()
-{
-    $no = 1;
+    public function collection()
+    {
+        $no = 1;
 
-    return $this->mrs->flatMap(function ($mr) use (&$no) {
+        return $this->mrs->flatMap(function ($mr) use (&$no) {
 
-        if ($mr->details->isEmpty()) {
-            return [[
-                'no'            => $no++,
-                'mr_kode'       => $mr->mr_kode,
-                'tanggal_mr'    => optional($mr->mr_tanggal)->format('d-m-Y'),
-                'due_date'      => optional($mr->mr_due_date)->format('d-m-Y'),
-                'lokasi'        => $mr->mr_lokasi,
-                'pic'           => $mr->mr_pic,
-                'status'        => strtoupper($mr->mr_status),
-                'jumlah_barang' => 0,
+            // format tanggal aman
+            $tanggalMr = $mr->mr_tanggal
+                ? Carbon::parse($mr->mr_tanggal)->format('d-m-Y')
+                : '';
 
-                'part_number'   => '',
-                'part_name'     => '',
-                'satuan'        => '',
-                'prioritas'     => '',
-                'qty_request'   => 0,
-                'qty_received'  => 0,
-            ]];
-        }
+            $dueDate = $mr->mr_due_date
+                ? Carbon::parse($mr->mr_due_date)->format('d-m-Y')
+                : '';
 
-        $jumlahBarang = $mr->details->count();
+            if ($mr->details->isEmpty()) {
+                return [[
+                    'no'            => $no++,
+                    'mr_kode'       => $mr->mr_kode,
+                    'tanggal_mr'    => $tanggalMr,
+                    'due_date'      => $dueDate,
+                    'lokasi'        => $mr->mr_lokasi,
+                    'pic'           => $mr->mr_pic,
+                    'status'        => strtoupper($mr->mr_status),
+                    'jumlah_barang' => 0,
+                    'part_number'   => '',
+                    'part_name'     => '',
+                    'satuan'        => '',
+                    'prioritas'     => '',
+                    'qty_request'   => 0,
+                    'qty_received'  => 0,
+                ]];
+            }
 
-        return $mr->details->map(function ($dtl) use ($mr, &$no, $jumlahBarang) {
-            return [
-                'no'            => $no++,
-                'mr_kode'       => $mr->mr_kode,
-                'tanggal_mr'    => optional($mr->mr_tanggal)->format('d-m-Y'),
-                'due_date'      => optional($mr->mr_due_date)->format('d-m-Y'),
-                'lokasi'        => $mr->mr_lokasi,
-                'pic'           => $mr->mr_pic,
-                'status'        => strtoupper($mr->mr_status),
-                'jumlah_barang' => $jumlahBarang,
+            $jumlahBarang = $mr->details->count();
 
-                'part_number'   => $dtl->dtl_mr_part_number,
-                'part_name'     => $dtl->dtl_mr_part_name,
-                'satuan'        => $dtl->dtl_mr_satuan,
-                'prioritas'     => $dtl->dtl_mr_prioritas,
-                'qty_request'   => $dtl->dtl_mr_qty_request,
-                'qty_received'  => $dtl->dtl_mr_qty_received,
-            ];
+            return $mr->details->map(function ($dtl) use ($mr, &$no, $jumlahBarang, $tanggalMr, $dueDate) {
+                return [
+                    'no'            => $no++,
+                    'mr_kode'       => $mr->mr_kode,
+                    'tanggal_mr'    => $tanggalMr,
+                    'due_date'      => $dueDate,
+                    'lokasi'        => $mr->mr_lokasi,
+                    'pic'           => $mr->mr_pic,
+                    'status'        => strtoupper($mr->mr_status),
+                    'jumlah_barang' => $jumlahBarang,
+                    'part_number'   => $dtl->dtl_mr_part_number,
+                    'part_name'     => $dtl->dtl_mr_part_name,
+                    'satuan'        => $dtl->dtl_mr_satuan,
+                    'prioritas'     => $dtl->dtl_mr_prioritas,
+                    'qty_request'   => $dtl->dtl_mr_qty_request,
+                    'qty_received'  => $dtl->dtl_mr_qty_received,
+                ];
+            });
         });
-    });
-}
-
+    }
 
     public function headings(): array
     {
@@ -101,7 +108,6 @@ public function collection()
         $lastColumn = $sheet->getHighestColumn();
 
         return [
-            // HEADER
             1 => [
                 'font' => ['bold' => true],
                 'alignment' => [
@@ -115,7 +121,6 @@ public function collection()
                 ],
             ],
 
-            // BODY
             "A2:{$lastColumn}{$lastRow}" => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
@@ -127,19 +132,18 @@ public function collection()
                 ],
             ],
 
-            // TANGGAL CENTER
             "C2:D{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                 ],
             ],
 
-            // JUMLAH BARANG & QTY RIGHT
             "H2:H{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_RIGHT,
                 ],
             ],
+
             "L2:M{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_RIGHT,

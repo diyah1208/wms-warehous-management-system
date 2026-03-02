@@ -194,6 +194,7 @@ class ReceiveController extends Controller
     // }
     public function exportReceive(Request $request)
     {
+         logger('EXPORT RECEIVE:', $request->all());
         $query = ReceiveModel::with(['purchaseOrder', 'details']);
 
         if ($request->filled('kodeRi')) {
@@ -214,11 +215,22 @@ class ReceiveController extends Controller
             $query->where('ri_pic', 'like', "%{$request->picRi}%");
         }
 
-        if ($request->filled('tanggal')) {
-            $query->where(function ($q) use ($request) {
-                $q->whereDate('ri_tanggal', $request->tanggal)
-                ->orWhereDate('created_at', $request->tanggal);
-            });
+        // if ($request->filled('tanggal')) {
+        //     $query->where(function ($q) use ($request) {
+        //         $q->whereDate('ri_tanggal', $request->tanggal)
+        //         ->orWhereDate('created_at', $request->tanggal);
+        //     });
+        // }
+        // if (!empty($request->tanggal)) {
+        //     $query->whereDate('ri_tanggal', $request->tanggal);
+        // }
+        if ($request->tanggal) {
+            $tanggal = \Carbon\Carbon::parse($request->tanggal)->toDateString();
+
+            $query->whereBetween('ri_tanggal', [
+                \Carbon\Carbon::parse($tanggal)->subDay()->toDateString(),
+                \Carbon\Carbon::parse($tanggal)->addDay()->toDateString(),
+            ]);
         }
 
         $receive = $query
@@ -227,7 +239,8 @@ class ReceiveController extends Controller
             
     // dd($receive->count());
 
-        $tanggalFile = $request->tanggal ?? now()->format('Y-m-d');
+        //$tanggalFile = $request->tanggal ?? now()->format('Y-m-d');
+        $tanggalFile = $receive->first()?->ri_tanggal ?? now()->format('Y-m-d');
 
         return Excel::download(
             new ReceiveListExport($receive),

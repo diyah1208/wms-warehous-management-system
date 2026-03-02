@@ -45,9 +45,11 @@ class StockListExport implements
                 $tabang     = $get('SITE TABANG');
                 $tal        = $get('SITE TAL');
                 $tanjung    = $get('MUARA ENIM');
+                $bcp    = $get('BCP+PIK');
 
                 $sum = $balikpapan + $jakarta + $ami + $ba + $bib
-                     + $mifa + $mip + $tabang + $tal + $tanjung;
+                     + $mifa + $mip + $tabang + $tal + $tanjung + $bcp;
+                $sum = $balikpapan + $jakarta;
 
                 return [
                     'no'          => $i + 1,
@@ -64,6 +66,7 @@ class StockListExport implements
                     'tabang'      => $tabang,
                     'tal'         => $tal,
                     'tanjung'     => $tanjung,
+                    'bcp'     => $bcp,
                     'sum'         => $sum,
                 ];
             });
@@ -86,6 +89,7 @@ class StockListExport implements
             'SITE TABANG',
             'SITE TAL',
             'MUARA ENIM',
+            'BCP+PIK',
             'TOTAL',
         ];
     }

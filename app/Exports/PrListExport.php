@@ -10,6 +10,7 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
+use Carbon\Carbon;
 
 class PrListExport implements
     FromCollection,
@@ -30,19 +31,23 @@ class PrListExport implements
 
         return $this->prs->flatMap(function ($pr) use (&$no) {
 
+            // 🔥 FORMAT TANGGAL SEKALI
+            $tanggalPr = $pr->pr_tanggal
+                ? Carbon::parse($pr->pr_tanggal)->format('d-m-Y')
+                : '';
+
             $jumlahBarang = $pr->details?->count() ?? 0;
 
-            // ✅ PR TANPA DETAIL → tetap 1 baris
+            // PR TANPA DETAIL
             if ($pr->details->isEmpty()) {
                 return [[
                     'no'             => $no++,
                     'pr_kode'        => $pr->pr_kode,
-                    'tanggal_pr'     => optional($pr->pr_tanggal)->format('d-m-Y'),
+                    'tanggal_pr'     => $tanggalPr,
                     'lokasi'         => $pr->pr_lokasi,
                     'pic'            => $pr->pr_pic,
                     'status'         => strtoupper($pr->pr_status),
                     'jumlah_barang'  => 0,
-
                     'part_number'    => '',
                     'part_name'      => '',
                     'satuan'         => '',
@@ -51,17 +56,16 @@ class PrListExport implements
                 ]];
             }
 
-            // ✅ PR DENGAN DETAIL
-            return $pr->details->map(function ($dtl) use ($pr, &$no, $jumlahBarang) {
+            // PR DENGAN DETAIL
+            return $pr->details->map(function ($dtl) use ($pr, &$no, $jumlahBarang, $tanggalPr) {
                 return [
                     'no'             => $no++,
                     'pr_kode'        => $pr->pr_kode,
-                    'tanggal_pr'     => optional($pr->pr_tanggal)->format('d-m-Y'),
+                    'tanggal_pr'     => $tanggalPr,
                     'lokasi'         => $pr->pr_lokasi,
                     'pic'            => $pr->pr_pic,
                     'status'         => strtoupper($pr->pr_status),
                     'jumlah_barang'  => $jumlahBarang,
-
                     'part_number'    => $dtl->dtl_pr_part_number,
                     'part_name'      => $dtl->dtl_pr_part_name,
                     'satuan'         => $dtl->dtl_pr_satuan,
@@ -96,7 +100,6 @@ class PrListExport implements
         $lastColumn = $sheet->getHighestColumn();
 
         return [
-            // HEADER
             1 => [
                 'font' => ['bold' => true],
                 'alignment' => [
@@ -108,7 +111,6 @@ class PrListExport implements
                 ],
             ],
 
-            // BODY
             "A2:{$lastColumn}{$lastRow}" => [
                 'alignment' => [
                     'vertical' => Alignment::VERTICAL_CENTER,
@@ -118,14 +120,12 @@ class PrListExport implements
                 ],
             ],
 
-            // TANGGAL CENTER
             "C2:C{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_CENTER,
                 ],
             ],
 
-            // QTY RIGHT
             "J2:J{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_RIGHT,

@@ -21,15 +21,15 @@ class BarangImport implements
 {
     private const LOKASI_LIST = [
         'JAKARTA',
-        'MUARA ENIM',
+        // 'MUARA ENIM',
         'BALIKPAPAN',
-        'SITE BA',
-        'SITE TAL',
-        'SITE MIP',
-        'SITE MIFA',
-        'SITE BIB',
-        'SITE AMI',
-        'SITE TABANG',
+        // 'SITE BA',
+        // 'SITE TAL',
+        // 'SITE MIP',
+        // 'SITE MIFA',
+        // 'SITE BIB',
+        // 'SITE AMI',
+        // 'SITE TABANG',
     ];
 
     public function model(array $row)

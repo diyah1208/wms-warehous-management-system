@@ -6,9 +6,9 @@
 
     <style>
         body {
-            font-family: "calibri", Times, serif;
+            font-family: Helvetica, Arial, sans-serif;
             font-size: 12px;
-            margin: 40px 40px 30px 40px;
+            margin: 40px;
         }
 
         table {
@@ -16,19 +16,29 @@
             border-collapse: collapse;
         }
 
-        .label {
-            font-weight: bold;
-            white-space: nowrap;
+        .header td {
+            vertical-align: top;
         }
 
-        .data th, .data td {
+        .company-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .info td {
+            padding: 3px 0;
+        }
+
+        .data th,
+        .data td {
             border: 1px solid #000;
             padding: 6px;
             text-align: center;
         }
 
         .data th {
-            background: #f2f2f2;
+            background: #eee;
         }
 
         .left {
@@ -36,161 +46,181 @@
         }
 
         .sign td {
-            padding-top: 60px;
             text-align: center;
+            vertical-align: top;
+        }
+
+        .sign img {
+            max-height: 60px;
+        }
+
+        h2 {
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        hr {
+            margin: 15px 0;
         }
     </style>
 </head>
 
 <body>
 
-{{-- ================= HEADER ================= --}}
-<table>
-    <tr>
-        <td>
-            <img
-                src="{{ public_path('images/logo-gmi_small.png') }}"
-                style="height:50px; display:block;"
+    {{-- HEADER --}}
+    <table class="header">
+        <tr>
+            <td width="70%">
+                <img
+                src="{{ public_path('images/logo_gmi_600.png') }}"
+                width="240"
             >
-
-            <div style="font-size:12px; margin-top:4px; line-height:1.4;">
+            <div style="margin-top:6px; line-height:1.4;">
                 <strong>PT. Garuda Mart Indonesia</strong><br>
                 RT.002/RW.012, Jatiasih, Kec. Jatiasih<br>
                 Kota Bekasi, Jawa Barat 17423<br>
                 Telp: (021) 82407309
             </div>
-        </td>
+</td>
 
-        <td width="30%" align="right" valign="top">
-            <img
-                src="{{ public_path('images/Logo-Lourdes.png') }}"
-                style="height:45px;"
-            >
-        </td>
-    </tr>
-</table>
+            <td width="30%" align="right">
+                <img src="{{ public_path('images/Logo-Lourdes.png') }}" height="50">
+            </td>
+        </tr>
+    </table>
 
-<table style="margin-top:10px; margin-bottom:18px;">
-    <tr>
-        <td style="border-bottom:1px solid #000;"></td>
-    </tr>
-</table>
+    <hr>
 
-<div style="text-align:center; margin: 10px 0 18px 0;">
-    <div style="font-size:15px; font-weight:bold; letter-spacing:0.5px;">
-        JOB COSTING
-    </div>
+    <h2>JOB COSTING</h2>
+
+    {{-- INFO JOB COSTING --}}
+    <table class="info">
+        <tr>
+            <td width="140">Batch No</td>
+            <td>: {{ $jc->batch_no }}</td>
+        </tr>
+        <tr>
+            <td>Tanggal</td>
+            <td>: {{ \Carbon\Carbon::parse($jc->jc_date)->format('d F Y') }}</td>
+        </tr>
+        <tr>
+            <td>Barang Hasil</td>
+            <td>: {{ $jc->finish_part }}</td>
+        </tr>
+        <tr>
+            <td>Status</td>
+            <td>: {{ $jc->jc_status }}</td>
+        </tr>
+        <tr>
+            <td>Dibuat Oleh</td>
+            <td>: {{ $jc->created_by }}</td>
+        </tr>
+        <tr>
+            <td>Dibuat Pada</td>
+            <td>: {{ \Carbon\Carbon::parse($jc->created_at)->format('d-m-Y H:i') }}</td>
+        </tr>
+    </table>
+
+    <br>
+
+    {{-- DETAIL TABLE --}}
+    <table class="data">
+        <thead>
+            <tr>
+                <th width="5%">No</th>
+                <th width="20%">Part Number</th>
+                <th width="30%">Nama Part</th>
+                <th width="10%">Qty</th>
+                <th width="10%">Unit</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach($jc->items as $i => $item)
+                <tr>
+                    <td>{{ $i + 1 }}</td>
+                    <td>{{ $item->part_no }}</td>
+                    <td class="left">{{ $item->barang->part_name ?? '-' }}</td>
+                    <td>{{ $item->qty }}</td>
+                    <td>{{ $item->unit }}</td>
+                    <!-- <td class="left">{{ $item->item_description ?? '-' }}</td> -->
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
+    {{-- ================= KETERANGAN ================= --}}
+    @if(!empty($jc->description))
+<table width="100%" style="margin-top:18px;border-collapse:collapse;">
+<tr>
+<td style="
+    border:1px solid #000;
+    padding:12px 18px;
+    font-size:11px;
+    line-height:1.6;
+">
+<div style="margin-bottom:6px;">
+<strong>Keterangan:</strong>
 </div>
 
-{{-- ================= INFO JC ================= --}}
-<table width="100%" style="margin-bottom:18px;">
-    <tr>
-        <td width="50%" valign="top">
-            <table width="100%">
-                <tr>
-                    <td class="label" style="width:140px;">Batch No</td>
-                    <td style="width:10px;">:</td>
-                    <td>{{ $jc->batch_no }}</td>
-                </tr>
-
-                <tr>
-                    <td class="label">Tanggal</td>
-                    <td>:</td>
-                    <td>
-                        {{ \Carbon\Carbon::parse($jc->jc_date)
-                            ->locale('id')
-                            ->translatedFormat('l, d F Y') }}
-                    </td>
-                </tr>
-
-                <tr>
-                    <td class="label">Barang Hasil</td>
-                    <td>:</td>
-                    <td>{{ $jc->description }}</td>
-                </tr>
-
-                <tr>
-                    <td class="label">Dibuat Oleh</td>
-                    <td>:</td>
-                    <td>{{ $jc->created_by }}</td>
-                </tr>
-
-                <tr>
-                    <td class="label">Dibuat Pada</td>
-                    <td>:</td>
-                    <td>
-                        {{ \Carbon\Carbon::parse($jc->created_at)
-                            ->format('d-m-Y H:i') }}
-                    </td>
-                </tr>
-            </table>
-        </td>
-    </tr>
-</table>
-
-{{-- ================= JUDUL ================= --}}
-<div style="text-align:right; margin: 18px 0 16px 0;">
-    <div style="font-size:13px; font-weight:bold;">
-        JC {{ $jc->batch_no }}
-    </div>
+<div style="
+    padding-left:8px;
+">
+{!! nl2br(e($jc->description)) !!}
 </div>
 
-{{-- ================= TABEL ITEM ================= --}}
-<table class="data">
-    <thead>
-        <tr>
-            <th width="5%">No</th>
-            <th width="20%">Part Number</th>
-            <th>Nama Part</th>
-            <th width="10%">Qty</th>
-            <th width="10%">Unit</th>
-            <th width="20%">Keterangan</th>
-        </tr>
-    </thead>
-    <tbody>
-        @forelse ($jc->items as $i => $item)
-        <tr>
-            <td>{{ $i + 1 }}</td>
-            <td class="left">{{ $item->part_no }}</td>
-            <td class="left">{{ $item->barang->part_name ?? '-' }}</td>
-            <td>{{ $item->qty }}</td>
-            <td>{{ $item->unit }}</td>
-            <td class="left">{{ $item->item_description ?? '-' }}</td>
-        </tr>
-        @empty
-        <tr>
-            <td colspan="6">Tidak ada item</td>
-        </tr>
-        @endforelse
-    </tbody>
+</td>
+</tr>
 </table>
+@endif
 
-{{-- ================= TANDA TANGAN ================= --}}
-<table width="100%" style="margin-top:60px; text-align:center;">
-    <tr>
-        {{-- PEMBUAT --}}
-        <td width="50%">
-            <strong>Dibuat Oleh</strong><br><br>
 
-            <div style="height:70px;"></div>
+    <br><br><br>
 
-            <strong style="font-size:11px;">
-                {{ $jc->created_by }}
-            </strong>
-        </td>
+    {{-- SIGNATURE --}}
+    <table class="sign">
+        <tr>
 
-        {{-- MENGETAHUI --}}
-        <td width="50%">
-            <strong>Mengetahui</strong><br><br>
+            {{-- PENGAJU --}}
+            <td width="33%">
+                <b>Pengaju</b><br>
+                <span style="font-size:10px">(Admin / Partman WH)</span><br><br>
 
-            <div style="height:70px;"></div>
+                @if($jc->signed_pengaju_sign)
+                    <img src="{{ storage_path('app/public/'.$jc->signed_pengaju_sign) }}">
+                @endif
 
-            <strong style="font-size:11px;">
-                Manager / Atasan
-            </strong>
-        </td>
-    </tr>
-</table>
+                <br><br>
+                <b>{{ $jc->signed_pengaju_name ?? '-' }}</b>
+            </td>
+
+            {{-- SPV --}}
+            <td width="33%">
+                <b>Mengetahui</b><br>
+                <span style="font-size:10px">(SPV Warehouse)</span><br><br>
+
+                @if($jc->signed_spv_sign)
+                    <img src="{{ storage_path('app/public/'.$jc->signed_spv_sign) }}">
+                @endif
+
+                <br><br>
+                <b>{{ $jc->signed_spv_name ?? '-' }}</b>
+            </td>
+
+            {{-- PPIC --}}
+            <td width="33%">
+                <b>Menyetujui</b><br>
+                <span style="font-size:10px">(PPIC)</span><br><br>
+
+                @if($jc->signed_ppic_sign)
+                    <img src="{{ storage_path('app/public/'.$jc->signed_ppic_sign) }}">
+                @endif
+
+                <br><br>
+                <b>{{ $jc->signed_ppic_name ?? '-' }}</b>
+            </td>
+
+        </tr>
+    </table>
 
 </body>
 </html>

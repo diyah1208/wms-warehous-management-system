@@ -24,6 +24,7 @@ class BarangController extends Controller
         ['nama' => 'SITE BIB', 'kode' => 'BIB'],
         ['nama' => 'SITE AMI', 'kode' => 'AMI'],
         ['nama' => 'SITE TABANG', 'kode' => 'TABANG'],
+        ['nama' => 'SITE BCP+PIK', 'kode' => 'BCP'],
     ];
 
     public function index(Request $request)

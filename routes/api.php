@@ -57,23 +57,24 @@ Route::get('/email/verify/{id}/{hash}', function ($id, $hash) {
 
 
 Route::middleware('api')->post('/mr/sign', [MaterialRequestController::class, 'sign']);
-Route::delete(
-    '/mr/{kode}/signature',
-    [MaterialRequestController::class, 'clearSignature']
-)->where('kode', '.*');
+// Route::delete(
+//     '/mr/{kode}/signature',
+//     [MaterialRequestController::class, 'clearSignature']
+// )->where('kode', '.*');
 
 Route::middleware('api')->post('/pr/sign', [PurchaseRequestController::class, 'sign']);
-Route::delete(
-    '/pr/{kode}/signature',
-    [PurchaseRequestController::class, 'clearSignature']
-)->where('kode', '.*');
+Route::middleware('api')->post('/jb/sign', [JobCostingController::class, 'sign']);
+// Route::delete(
+//     '/pr/{kode}/signature',
+//     [PurchaseRequestController::class, 'clearSignature']
+// )->where('kode', '.*');
 
 
 Route::middleware('api')->post('/po/sign', [PurchaseOrderController::class, 'sign']);
-Route::delete(
-    '/po/{kode}/signature',
-    [PurchaseOrderController::class, 'clearSignature']
-)->where('kode', '.*');
+// Route::delete(
+//     '/po/{kode}/signature',
+//     [PurchaseOrderController::class, 'clearSignature']
+// )->where('kode', '.*');
 
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -117,14 +118,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/pr/open', [PurchaseOrderController::class, 'getPrOpen']);
     Route::get('/pr/kode/{kode}', [PurchaseRequestController::class, 'showKode'])->where('kode', '.*');
     Route::get('/pr/{id}', [PurchaseRequestController::class, 'show']);
-     Route::get('/pr/{kode}/export/pdf', [PurchaseRequestController::class,'exportPdf'])->where('kode', '.*');
+    Route::get('/pr/{kode}/export/pdf', [PurchaseRequestController::class,'exportPdf'])->where('kode', '.*');
 
     // PURCHASE ORDER
     Route::get('/po/export', [PurchaseOrderController::class, 'exportPo']);
-    Route::get('/po/{kode}/export/pdf', [PurchaseOrderController::class,'exportPdf']);
+    Route::get('/po/{kode}/export/pdf', [PurchaseOrderController::class,'exportPdf'])
+    ->where('kode', '.*');
     Route::get('/po', [PurchaseOrderController::class, 'index']);
     Route::get('/po/kode/{kode}', [PurchaseOrderController::class, 'showKode'])->where('kode', '.*');
     Route::get('/po/{id}', [PurchaseOrderController::class, 'show']);
+    
     
     //PEMINJAMAN
     Route::get('/peminjaman', [PeminjamanController::class, 'index']);
@@ -133,12 +136,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/peminjaman/export-excel', [PeminjamanController::class, 'exportPeminjaman']);
     
     // JOB COSTING
+    
     Route::get('/job-costing', [JobCostingController::class, 'index']);
     Route::post('/job-costing', [JobCostingController::class, 'store']);
-    Route::get('/job-costing/{id}', [JobCostingController::class, 'show'])
-        ->whereNumber('id');
+    Route::put('/job-costing/{id}/done', [JobCostingController::class, 'updateStatusToDone']);
+    Route::get('/job-costing/{kode}/export/pdf',[JobCostingController::class, 'exportPdf'])->where('kode', '.*');
+    Route::get('/job-costing/{id}', [JobCostingController::class, 'show'])->whereNumber('id');
     Route::get('/job-costing/kode/{kode}', [JobCostingController::class, 'showByKode']);
     Route::get('/job-costing/export', [JobCostingController::class, 'export']);
+    
 
 
     // RECEIVE

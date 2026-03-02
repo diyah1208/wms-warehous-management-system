@@ -10,20 +10,27 @@ class SpbInvoiceModel extends Model
     protected $primaryKey = 'spb_invoice_id';
 
     protected $fillable = [
-        'spb_id',
         'spb_do_id',
         'invoice_no',
         'invoice_date',
         'invoice_email_date',
-        'po_pic',
     ];
 
-    public function spb()
-    {
-        return $this->belongsTo(SpbModel::class, 'spb_id', 'spb_id');
-    }
     public function do()
     {
-        return $this->belongsTo(SpbDoModel::class, 'spb_do_id', 'spb_do_id');
+        return $this->belongsTo(
+            SpbDoModel::class,
+            'spb_do_id',
+            'spb_do_id'
+        );
+    }
+
+    public function details()
+    {
+        return $this->hasMany(
+            SpbInvDetailModel::class,
+            'spb_invoice_id',
+            'spb_invoice_id'
+        );
     }
 }

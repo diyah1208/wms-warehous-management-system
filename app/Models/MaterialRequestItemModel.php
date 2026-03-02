@@ -10,8 +10,8 @@ class MaterialRequestItemModel extends Model
     protected $table = 'dtl_material_request';
     protected $primaryKey = 'dtl_mr_id';
 
-    protected $fillable = [
-        'mr_id',
+protected $fillable = [
+'mr_id',
         'part_id',
         'dtl_mr_part_number',
         'dtl_mr_part_name',
@@ -24,7 +24,17 @@ class MaterialRequestItemModel extends Model
                   'signature_url',
   'sign_at',
 
-    ];
+    // 🔥 SIGN FLOW MR
+    'sign_step',
+
+    'signed_pengaju_name',
+    'signed_pengaju_sign',
+    'signed_pengaju_at',
+
+    'signed_gl_name',
+    'signed_gl_sign',
+    'signed_gl_at',
+];
 
     public function materialRequest()
     {

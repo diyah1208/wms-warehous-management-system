@@ -14,7 +14,8 @@ class JobCostingItem extends Model
         'part_no',
         'item_description',
         'qty',
-        'unit'
+        'unit',
+        'finish_part'
     ];
 
     public function barang()

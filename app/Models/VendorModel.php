@@ -9,6 +9,11 @@ class VendorModel extends Model
     protected $table = 'vendors';   // 🔥 WAJIB
     protected $primaryKey = 'id';   // 🔥 WAJIB (karena PK = id)
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+
     protected $fillable = [
         'vendor_no',
         'vendor_name',

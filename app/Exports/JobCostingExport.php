@@ -40,7 +40,7 @@ class JobCostingExport implements
                     'batch_no'      => $jc->batch_no,
                     'tanggal' => \Carbon\Carbon::parse($jc->jc_date)->format('d-m-Y'),
 
-                    'barang_hasil'  => $jc->description,
+                    'barang_hasil'  => $jc->finish_part,
                     'dibuat_oleh'   => $jc->created_by,
                     'jumlah_item'   => 0,
 
@@ -61,7 +61,7 @@ class JobCostingExport implements
                     'batch_no'      => $jc->batch_no,
                    'tanggal' => \Carbon\Carbon::parse($jc->jc_date)->format('d-m-Y'),
 
-                    'barang_hasil'  => $jc->description,
+                    'barang_hasil'  => $jc->finish_part,
                     'dibuat_oleh'   => $jc->created_by,
                     'jumlah_item'   => $jumlahItem,
 

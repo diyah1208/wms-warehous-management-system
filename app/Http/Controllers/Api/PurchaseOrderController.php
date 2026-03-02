@@ -66,7 +66,7 @@ class PurchaseOrderController extends Controller
             'po_estimasi'    => 'nullable|date',
             'po_keterangan'  => 'nullable|string',
             'po_pic'         => 'required|string',
-            'po_payment_term' => 'required|in:CASH,COD,NET_7,NET_14,NET_30',
+            'po_payment_term' => 'required|string',
             'po_status'      => 'required|in:pending,purchased',
             'details'        => 'required|array',
             'details.*.part_id' => 'required',
@@ -123,7 +123,6 @@ foreach ($request->details as $item) {
             'message' => 'Purchase Order berhasil dibuat'
         ], 201);
     }
-
 public function showKode($kode)
 {
     $kode = urldecode($kode);
@@ -138,8 +137,24 @@ public function showKode($kode)
     ->where('po_kode', $kode)
     ->firstOrFail();
 
-    return response()->json($po);
+return response()->json([
+    'po_id' => $po->po_id,
+    'po_kode' => $po->po_kode,
+    'po_status' => $po->po_status,
+    'po_detail_status' => $po->po_detail_status,
+    'po_tanggal' => $po->po_tanggal,
+    'po_estimasi' => $po->po_estimasi,
+    'po_payment_term' => $po->po_payment_term, // 🔥 INI WAJIB
+    'po_pic' => $po->po_pic,
+    'po_keterangan' => $po->po_keterangan,
+    'signed_pengaju_sign' => $po->signed_pengaju_sign,
+    'signed_pengaju_name' => $po->signed_pengaju_name,
+    'signed_pengaju_at' => $po->signed_pengaju_at,
+    'details' => $po->details,
+    'purchase_request' => $po->purchaseRequest,
+]);
 }
+
 
     public function show($id)
     {
@@ -153,8 +168,6 @@ public function showKode($kode)
             'tanggal' => $po->po_tanggal,
             'tanggal_estimasi' => $po->po_estimasi,
             'po_payment_term' => $request->po_payment_term,
-'payment_term' => $po->po_payment_term,
-
             'status' => strtolower($po->po_status),
             'po_detail_status' => $po->po_detail_status, 
             'pic' => $po->po_pic,
@@ -183,19 +196,22 @@ public function showKode($kode)
             ], 403);
         }
 
-        $data = $request->validate([
-            'po_detail_status' => 'required|string|max:50', 
-            'po_keterangan' => 'nullable|string',
-            'po_estimasi' => 'nullable|date',
-        ]);
+      $data = $request->validate([
+    'po_status' => 'required|in:pending,purchased',
+    'po_detail_status' => 'required|string|max:50',
+    'po_keterangan' => 'nullable|string',
+    'po_estimasi' => 'nullable|date',
+]);
 
-        DB::transaction(function () use ($po, $data) {
-            $po->update([
-                'po_detail_status' => $data['po_detail_status'],
-                'po_keterangan' => $data['po_keterangan'] ?? $po->po_keterangan,
-                'po_estimasi' => $data['po_estimasi'] ?? $po->po_estimasi,
-            ]);
-        });
+      DB::transaction(function () use ($po, $data) {
+    $po->update([
+        'po_status'        => $data['po_status'],   // 🔥 INI YANG KURANG
+        'po_detail_status' => $data['po_detail_status'],
+        'po_keterangan'    => $data['po_keterangan'] ?? $po->po_keterangan,
+        'po_estimasi'      => $data['po_estimasi'] ?? $po->po_estimasi,
+    ]);
+});
+
 
         return response()->json([
             'status' => true,
@@ -243,112 +259,94 @@ public function exportPdf(string $kode)
 
 public function sign(Request $request): JsonResponse
 {
-    try {
-        $request->validate([
-            'kode' => 'required|string',
-            'signature' => 'required|string',
-        ]);
+    $request->validate([
+        'kode'      => 'required|string',
+        'signature' => 'required|string',
+        'name'      => 'required|string',
+        'role'      => 'required|string',
+    ]);
 
-        $kode = urldecode($request->kode);
+    $kode = urldecode($request->kode);
 
-        $po = PurchaseOrderModel::where('po_kode', $kode)->first();
-        if (!$po) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Purchase Order tidak ditemukan'
-            ], 404);
-        }
+    $po = PurchaseOrderModel::where('po_kode', $kode)->firstOrFail();
 
-        $signatureData = preg_replace(
-            '#^data:image/\w+;base64,#i',
-            '',
-            $request->signature
-        );
-
-        $signatureData = str_replace(' ', '+', $signatureData);
-        $decodedImage = base64_decode($signatureData);
-
-        if ($decodedImage === false) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Format signature tidak valid'
-            ], 422);
-        }
-
-        $safeKode = str_replace('/', '_', $po->po_kode);
-        $path = 'signatures/signature_' . $safeKode . '.png';
-
-        Storage::disk('public')->put($path, $decodedImage);
-
-        $po->update([
-            'signature_url' => $path,
-            'sign_at' => now(),
-        ]);
-
+    /* 🔒 HANYA PURCHASING */
+    if ($request->role !== 'purchasing') {
         return response()->json([
-            'success' => true,
-            'message' => 'Tanda tangan berhasil disimpan'
-        ]);
-
-    } catch (\Throwable $e) {
-        Log::error('PO SIGN ERROR', [
-            'message' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
+            'message' => 'Tidak berhak melakukan tanda tangan'
+        ], 403);
     }
+
+    /* 🔒 CEGAH SIGN ULANG */
+    if ($po->signed_pengaju_at) {
+        return response()->json([
+            'message' => 'PO sudah ditandatangani'
+        ], 422);
+    }
+
+    /* ================= SIMPAN SIGNATURE ================= */
+    $path = $this->saveSignature(
+        $request->signature,
+        $po->po_kode,
+        'pengaju'
+    );
+
+    $po->update([
+        'signed_pengaju_name' => $request->name,
+        'signed_pengaju_sign' => $path,
+        'signed_pengaju_at'   => now(),
+        'sign_step'           => 'done',
+    ]);
+
+    return response()->json([
+        'message'   => 'Tanda tangan berhasil',
+        'sign_step' => 'done',
+    ]);
+}
+
+private function saveSignature(string $base64, string $kode, string $level): string
+{
+    $clean = preg_replace('#^data:image/\w+;base64,#i', '', $base64);
+    $clean = str_replace(' ', '+', $clean);
+
+    $image = base64_decode($clean);
+    if ($image === false) {
+        throw new \Exception('Signature tidak valid');
+    }
+
+    $safeKode = str_replace('/', '_', $kode);
+    $filename = "{$level}_{$safeKode}_" . uniqid() . ".png";
+    $path = 'signatures/' . $filename;
+
+    Storage::disk('public')->put($path, $image);
+
+    return $path;
 }
 
 
 public function clearSignature(string $kode): JsonResponse
 {
-    try {
-        // 🔑 WAJIB: samakan dengan PR
-        $kode = urldecode($kode);
+    $kode = urldecode($kode);
 
-        $po = PurchaseOrderModel::where('po_kode', $kode)->first();
+    $po = PurchaseOrderModel::where('po_kode', $kode)->firstOrFail();
 
-        if (!$po) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Purchase Order tidak ditemukan'
-            ], 404);
-        }
-
-        // 🗑️ hapus file signature jika ada
-        if ($po->signature_url && Storage::disk('public')->exists($po->signature_url)) {
-            Storage::disk('public')->delete($po->signature_url);
-        }
-
-        // 🔄 reset kolom signature
-        $po->update([
-            'signature_url' => null,
-            'sign_at' => null,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Signature berhasil direset'
-        ]);
-
-    } catch (\Throwable $e) {
-        Log::error('PO CLEAR SIGNATURE ERROR', [
-            'message' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-        ]);
-
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal reset signature'
-        ], 500);
+    if ($po->signed_pengaju_sign &&
+        Storage::disk('public')->exists($po->signed_pengaju_sign)) {
+        Storage::disk('public')->delete($po->signed_pengaju_sign);
     }
+
+    $po->update([
+        'signed_pengaju_name' => null,
+        'signed_pengaju_sign' => null,
+        'signed_pengaju_at'   => null,
+        'sign_step'           => 'purchasing',
+    ]);
+
+    return response()->json([
+        'message' => 'Signature berhasil direset'
+    ]);
 }
+
 public function exportPo()
 {
     $pos = PurchaseOrderModel::orderBy('created_at', 'desc')->get();

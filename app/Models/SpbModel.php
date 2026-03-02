@@ -38,7 +38,7 @@ class SpbModel extends Model
 
     public function do()
     {
-        return $this->hasMany(SpbDo::class, 'spb_id', 'spb_id');
+        return $this->hasMany(SpbDoModel::class, 'spb_id', 'spb_id');
     }
 
     public function invoice()

@@ -10,19 +10,37 @@ class SpbDoModel extends Model
     protected $primaryKey = 'spb_do_id';
 
     protected $fillable = [
-        'spb_id',
+        'spb_po_id',
         'do_no',
         'do_date',
         'do_status_part',
         'do_pic',
     ];
 
-    public function spb()
+    public function po()
     {
-        return $this->belongsTo(SpbModel::class, 'spb_id', 'spb_id');
+        return $this->belongsTo(
+            SpbPoModel::class,
+            'spb_po_id',
+            'spb_po_id'
+        );
     }
-    public function invoice()
+
+    public function details()
     {
-        return $this->hasMany(SpbInvoice::class, 'spb_do_detail', 'spb_do_detail');
+        return $this->hasMany(
+            SpbDoDetailModel::class,
+            'spb_do_id',
+            'spb_do_id'
+        );
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(
+            SpbInvoiceModel::class,
+            'spb_do_id',
+            'spb_do_id'
+        );
     }
 }

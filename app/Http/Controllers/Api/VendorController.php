@@ -90,7 +90,9 @@ public function update(Request $request, $id)
     {
         $vendor = VendorModel::findOrFail($id);
         $vendor->update([
-            'is_active' => !$vendor->is_active
+            // 'is_active' => !$vendor->is_active
+            'is_active' => $vendor->is_active ? 0 : 1
+
         ]);
 
         return response()->json($vendor);

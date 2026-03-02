@@ -68,9 +68,9 @@ class CustomerController extends Controller
     {
         $customer = Customer::findOrFail($id);
         $customer->update([
-            'is_active' => !$customer->is_active
+            //'is_active' => !$customer->is_active
+            'is_active' => $customer->is_active ? 0 : 1
         ]);
-
         return response()->json($customer);
     }
 }

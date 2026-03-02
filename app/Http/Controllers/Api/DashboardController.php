@@ -9,7 +9,6 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        /* ================= SUMMARY ================= */
         $summary = [
             'total_stock'       => DB::table('tb_stock')->sum('stk_qty'),
             'stock_min_warning' => DB::table('tb_stock')
@@ -29,7 +28,6 @@ class DashboardController extends Controller
             'total_receive'     => DB::table('tb_receive_item')->count(),
         ];
 
-        /* ================= STOCK WARNING ================= */
         $stockWarning = DB::table('tb_stock')
             ->join('tb_barang', 'tb_barang.part_id', '=', 'tb_stock.part_id')
             ->whereColumn('stk_qty', '<=', 'stk_min')
@@ -44,7 +42,6 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        /* ================= LATEST MR ================= */
         $latestMR = DB::table('tb_material_request')
             ->select(
                 'mr_kode',
@@ -56,7 +53,6 @@ class DashboardController extends Controller
             // ->limit(5)
             ->get();
 
-        /* ================= LATEST DELIVERY ================= */
         $latestDelivery = DB::table('tb_delivery')
             ->select(
                 'dlv_kode',
@@ -69,7 +65,6 @@ class DashboardController extends Controller
             // ->limit(5)
             ->get();
 
-        /* ================= LATEST RECEIVE ================= */
         $latestReceive = DB::table('tb_receive_item')
             ->select(
                 'ri_kode',
