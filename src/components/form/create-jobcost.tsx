@@ -92,10 +92,36 @@ useEffect(() => {
     .catch(() => toast.error("Gagal ambil master part"));
 }, []);
 
-  useEffect(() => {
-    getAllStocks()
-      .then(setStocks)
-      .catch(() => toast.error("Gagal ambil stock"));
+  // useEffect(() => {
+  //   getAllStocks()
+  //     .then(setStocks)
+  //     .catch(() => toast.error("Gagal ambil stock"));
+  // }, []);
+      useEffect(() => {
+      async function fetchStocks() {
+      try {
+        let page = 1;
+        const limit = 15000;
+        let lastPage = 1;
+
+        do {
+          const res = await getAllStocks(page, limit);
+
+          setStocks(prev => [...prev, ...res.data]); // ⬅ update tiap page
+          lastPage = res.last_page;
+
+          // console.log("FETCH PAGE:", page);
+
+          page++;
+        } while (page <= lastPage);
+
+      } catch (error) {
+        console.error(error);
+        toast.error("Gagal mengambil data stok barang");
+      }
+    }
+
+    fetchStocks();
   }, []);
 
   /* ================= PERFORMANCE MAP ================= */

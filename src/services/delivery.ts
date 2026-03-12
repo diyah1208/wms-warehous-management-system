@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type { DeliveryReceive } from "@/types"; 
+import { encodeSafe } from "@/lib/utils";
 
 //const BASE_URL = "http://localhost:8000/api/deliveries"; 
 
@@ -29,7 +30,7 @@ export async function getAllDelivery(): Promise<DeliveryReceive[]> {
 export async function getDeliveryByKode(dlv_kode: string): Promise<DeliveryReceive | null> {
   try {
     const res = await api.get(
-      `/deliveries/kode/${encodeURIComponent(dlv_kode)}`
+      `/deliveries/kode/${encodeSafe(dlv_kode)}`
     );
 
     return res.data ?? null;
@@ -47,6 +48,7 @@ export async function createDelivery(data: DeliveryReceive) {
 
   const payload = {
     dlv_kode: data.dlv_kode,
+    dlv_kode_it: data.dlv_kode_it,
     dlv_ekspedisi: data.dlv_ekspedisi,
     dlv_dari_gudang: data.dlv_dari_gudang,
     dlv_ke_gudang: data.dlv_ke_gudang,
@@ -76,15 +78,11 @@ export async function createDelivery(data: DeliveryReceive) {
   return api.post("/deliveries", payload);
 }
 
-// export async function updateDelivery(kode_it: string, data: any): Promise<boolean> {
-//   try {
-//     await api.patch(`/deliveries/kode/${encodeURIComponent(kode_it)}/status`, data);
-//     return true;
-//   } catch (error: any) {
-//     console.error("Error updating delivery:", error);
-//     throw new Error(error.response?.data?.message ?? "Failed to update delivery");
-//   }
-// }
+export async function generateDlv(): Promise<string> {
+  const res = await api.get(`/deliveries/generate-kode`)
+  return res.data;
+}
+
 
 export async function updateDelivery(
   dlv_kode: string,
@@ -95,7 +93,7 @@ export async function updateDelivery(
 ): Promise<boolean> {
   try {
     await api.patch(
-      `/deliveries/kode/${encodeURIComponent(dlv_kode)}/status`,
+      `/deliveries/kode/${encodeSafe(dlv_kode)}/status`,
       payload
     );
     return true;
@@ -115,7 +113,7 @@ export async function update(
   }
 ) {
   const res = await api.put(
-    `/deliveries/kode/${encodeURIComponent(dlv_kode)}`
+    `/deliveries/kode/${encodeSafe(dlv_kode)}`
     , payload);
   return res.data;
 }
@@ -128,7 +126,7 @@ export async function updatePickupPlan(
 ): Promise<boolean> {
   try {
     await api.patch(
-      `/deliveries/kode/${encodeURIComponent(dlv_kode)}/pickup-plan`,
+      `/deliveries/kode/${encodeSafe(dlv_kode)}/pickup-plan`,
       payload
     );
     return true;
@@ -154,7 +152,7 @@ export async function deliveryReceive(
 ): Promise<boolean> {
   try {
     await api.post(
-      `/deliveries/${encodeURIComponent(dlv_kode)}/receive`,
+      `/deliveries/${encodeSafe(dlv_kode)}/receive`,
       payload
     );
     return true;
@@ -168,7 +166,7 @@ export async function deliveryReceive(
 
 export async function downloadDeliveryPdf(kode: string) {
   const res = await api.get(
-    `/deliveries/${encodeURIComponent(kode)}/export/pdf`,
+    `/deliveries/${encodeSafe(kode)}/export/pdf`,
     { responseType: "blob" }
   );
 
@@ -211,7 +209,7 @@ export async function submitDeliverySignature(
   signed_penerima_name: string
 ) {
   const res = await api.post(
-    `/deliveries/${kode}/sign-penerima`,
+    `/deliveries/${encodeSafe(kode)}/sign-penerima`,
     {
       signature: signatureBase64,
       signed_penerima_name: signed_penerima_name
@@ -221,6 +219,24 @@ export async function submitDeliverySignature(
   return res.data;
 }
 
+export async function updateDeliveryResi(
+  dlv_kode: string,
+  payload: {
+    dlv_no_resi?: string | null;
+  }
+): Promise<boolean> {
+  try {
+    await api.patch(
+      `/deliveries/${encodeSafe(dlv_kode)}/resi`,
+      payload
+    );
+    return true;
+  } catch (error: any) {
+    throw new Error(
+      error.response?.data?.message ?? "Gagal update no resi"
+    );
+  }
+}
 
 
 

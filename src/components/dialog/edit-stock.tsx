@@ -8,6 +8,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -16,6 +25,7 @@ import { toast } from "sonner";
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { Pencil } from "lucide-react";
 import { saveStock } from "@/services/stock";
+import { LokasiList } from "@/types/enum";
 
 interface MyDialogProps {
   onSubmit?: () => void;
@@ -25,6 +35,7 @@ interface MyDialogProps {
 
 export function EditStockDialog({ stock, refresh }: MyDialogProps) {
   const [open, setOpen] = useState(false);
+  const [selectedFrom, setSelectedFrom] = useState<string>(stock.stk_location);
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     
@@ -42,7 +53,7 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
     try {
       const res = await saveStock({
         part_id: Number(stock.part_id),
-        stk_location: stock.stk_location,
+        stk_location: selectedFrom,
         stk_qty: parseInt(qty, 10),
         stk_min: parseInt(min, 10),
         stk_max: parseInt(max, 10),
@@ -109,7 +120,7 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
             </div>
 
             {/* Lokasi Gudang – FULL WIDTH */}
-            <div className="grid gap-2 sm:col-span-2">
+            {/* <div className="grid gap-2 sm:col-span-2">
               <Label htmlFor="stk_location">Lokasi Gudang</Label>
               <Input
                 id="stk_location"
@@ -117,6 +128,32 @@ export function EditStockDialog({ stock, refresh }: MyDialogProps) {
                 defaultValue={stock.stk_location}
                 disabled
               />
+            </div> */}
+            {/* Lokasi Gudang */}
+            <div className="grid gap-2 sm:col-span-2">
+              <Label htmlFor="stk_location">
+                Dari Gudang <span className="text-red-500">*</span>
+              </Label>
+
+              <Select
+                required
+                value={selectedFrom}
+                onValueChange={(v) => setSelectedFrom(v)}
+              >
+                <SelectTrigger id="stk_location">
+                  <SelectValue placeholder="Pilih lokasi" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  {LokasiList
+                    .filter((lokasi) => lokasi.kode !== "unassigned")
+                    .map((lokasi) => (
+                      <SelectItem key={lokasi.kode} value={lokasi.nama}>
+                        {lokasi.nama}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Min Stock */}

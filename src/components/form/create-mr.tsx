@@ -172,17 +172,17 @@ useEffect(() => {
       !user
     ) {
       toast.warning("Data belum lengkap.");
-      console.log(
-        "Data belum lengkap:",
-        kodeMR,
-        duedate,
-        tanggalMR,
-        lokasi,
-        status,
-        mrItems.length,
-        kodeMR,
-        user
-      );
+      // console.log(
+      //   "Data belum lengkap:",
+      //   kodeMR,
+      //   duedate,
+      //   tanggalMR,
+      //   lokasi,
+      //   status,
+      //   mrItems.length,
+      //   kodeMR,
+      //   user
+      // );
       return;
     }
 
@@ -202,14 +202,22 @@ useEffect(() => {
 
     try {
       const res = await createMR(data);
-      if (res) {
-        toast.success("Material Request berhasil dibuat.");
-        setRefresh((prev) => !prev);
-        setMRItems([]);
-        setTanggalMR(new Date());
-        setDueDate(undefined);
-        form.reset();
-      } else {
+    if (res) {
+  toast.success("Material Request berhasil dibuat.");
+
+  setRefresh((prev) => !prev);
+
+  // reset form state
+  setMRItems([]);
+  setSelectedPart(undefined);
+  setTanggalMR(new Date());
+  setDueDate(undefined);
+
+  // generate kode MR baru
+  fetchKodeMRSilent();
+
+  form.reset();
+} else {
         toast.error("Gagal membuat Material Request. Silakan coba lagi.");
       }
     } catch (error) {
@@ -260,13 +268,11 @@ useEffect(() => {
   id="create-mr-form"
   className="grid grid-cols-12 gap-6"
 >
-  {closed && (
+  {/* {closed && (
         <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black">
           
-          {/* STRIPE */}
           <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" />
 
-          {/* CONTENT */}
           <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
             <div className="text-4xl font-black tracking-widest uppercase">
               🚫 TRANSAKSI MATERIAL REQUEST DITUTUP
@@ -291,7 +297,7 @@ useEffect(() => {
         className={`col-span-12 grid grid-cols-12 gap-4 ${
           closed ? "opacity-50" : ""
         }`}
-      >
+      > */}
 <div className="col-span-12 grid grid-cols-12 gap-4">
   <div className="col-span-12 md:col-span-4">
     <Label>Kode MR</Label>
@@ -457,7 +463,7 @@ useEffect(() => {
           </TableBody>
         </Table>
       </div>
-      </fieldset>
+      {/* </fieldset> */}
     </form>
   );
 }

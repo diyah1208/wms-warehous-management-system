@@ -90,18 +90,40 @@ export interface UserComplete {
 ========================== */
 
 //export type MRStatus = "open" | "partial" | "closed";
-
 export interface MRDetail {
-  dtl_mr_id?: string;
-  mr_id?: string;
   part_id?: string;
   dtl_mr_part_number: string;
   dtl_mr_part_name: string;
   dtl_mr_satuan: string;
-  dtl_mr_prioritas: string;
   dtl_mr_qty_request: number;
+  dtl_mr_prioritas: string;
   dtl_mr_qty_received: number;
+
+  dtl_mr_approved?: number;
+  dtl_mr_approved_at?: string | null;
+  dtl_mr_approved_by?: string | null;
+
+  dtl_mr_rejected?: number;
+  dtl_mr_rejected_at?: string | null;
+  dtl_mr_rejected_by?: string | null;
 }
+export type MRStatus = 
+  | "pending"
+  | "open"
+  | "partial"
+  | "closed";
+
+// export interface MRDetail {
+//   dtl_mr_id?: string;
+//   mr_id?: string;
+//   part_id?: string;
+//   dtl_mr_part_number: string;
+//   dtl_mr_part_name: string;
+//   dtl_mr_satuan: string;
+//   dtl_mr_prioritas: string;
+//   dtl_mr_qty_request: number;
+//   dtl_mr_qty_received: number;
+// }
 
 // export interface MRReceive {
 //   mr_id?: string;
@@ -501,7 +523,6 @@ export interface UpdateMRItemPayload {
   dtl_mr_qty_request: number;
 }
 
-export type MRStatus = "open" | "partial" | "closed";
 
 export interface MRDetail {
   dtl_mr_id?: string;
@@ -554,9 +575,10 @@ export interface PRItemReceive {
 export interface DeliveryReceive {
   dlv_id?: string;
   dlv_kode: string;
+  dlv_kode_it?: string | null;
   mr_id?: string;
   dlv_dari_gudang: string;
-  dlv_ke_gudang : string;
+  dlv_ke_gudang: string;
   dlv_ekspedisi: string;
   dlv_no_resi: string;
   dlv_tanggal: string;
@@ -565,20 +587,15 @@ export interface DeliveryReceive {
   dlv_pic: string;
   created_at: string;
   updated_at: string;
-
-  signed_pengirim_name?: string | null;
-  signed_pengirim_sign?: string | null;
-  signed_pengirim_at?: string | null;
-
-  signed_logistik_name?: string | null;
-  signed_logistik_sign?: string | null;
-  signed_logistik_at?: string | null;
-
+  packing_at?: string | null;
+  pickup_plan_at?: string | null;
+  pickup_at?: string | null;
+  on_delivery_at?: string | null;
+  delivered_at?: string | null;
   signed_penerima_name?: string | null;
   signed_penerima_sign?: string | null;
   signed_penerima_at?: string | null;
   details: DeliveryDetail[];
-  mr_kode?: string | null;
   mr?: MRReceive;
 }
 /* ==========================
@@ -612,22 +629,51 @@ export interface DeliveryDetail {
 //   dtl_mr_qty_request: number;
 //   dtl_mr_qty_received: number;
 // }
-export interface DeliveryReceive {
-  dlv_id?: string;
-  dlv_kode: string;
-  mr_id?: string;
-  dlv_dari_gudang: string;
-  dlv_ke_gudang: string;
-  dlv_ekspedisi: string;
-  dlv_no_resi: string;
-  dlv_jumlah_koli: number;
-  dlv_status: string;
-  dlv_pic: string;
-  created_at: string;
-  updated_at: string;
-  details: DeliveryDetail[];
-  mr?: MRReceive;
-}
+// export interface DeliveryReceive {
+//   dlv_id?: string;
+//   dlv_kode: string;
+//   mr_id?: string;
+//   dlv_dari_gudang: string;
+//   dlv_ke_gudang: string;
+//   dlv_ekspedisi: string;
+//   dlv_no_resi: string;
+//   dlv_jumlah_koli: number;
+//   dlv_status: string;
+//   dlv_pic: string;
+//   created_at: string;
+//   updated_at: string;
+//   details: DeliveryDetail[];
+//   mr?: MRReceive;
+// }
+// export interface DeliveryReceive {
+//   dlv_id?: string;
+//   dlv_kode: string;
+//   mr_id?: string;
+//   dlv_kode_it?: string;
+//   dlv_dari_gudang: string;
+//   dlv_ke_gudang: string;
+//   dlv_ekspedisi: string;
+//   dlv_no_resi: string;
+//   dlv_jumlah_koli: number;
+//   dlv_status: string;
+//   dlv_pic: string;
+//   created_at: string;
+//   updated_at: string;
+//   packing_at?: string | null;
+//   pickup_plan_at?: string | null;
+//   pickup_at?: string | null;
+//   on_delivery_at?: string | null;
+//   delivered_at?: string | null;
+
+//   // Signature
+//   signed_penerima_name?: string | null;
+//   signed_penerima_sign?: string | null;
+//   signed_penerima_at?: string | null;
+
+//   // Relasi
+//   details: DeliveryDetail[];
+//   mr?: MRReceive;
+// }
 
 /* ==========================
    STOCK & MASTER
@@ -797,7 +843,7 @@ export interface Spb {
 }
 
 export interface SpbDetail{
-  spb_detail_id: number;
+  spb_dtl_id: number;
   spb_id: number;
   part_id?: string;
   dtl_spb_part_number: string;
@@ -806,7 +852,18 @@ export interface SpbDetail{
   dtl_spb_qty: number;
   created_at?: string;
   updated_at?: string;
+  dtl_spb_qty_returned?: number; 
 }
+
+// export interface SpbDetail {
+//   dtl_spb_id: number;
+//   part_id: number;
+//   part_number: string;
+//   part_name: string;
+//   part_satuan: string;
+//   dtl_spb_qty: number;
+//   dtl_spb_qty_returned: number;
+// }
 
 export interface SpbPo {
   spb_po_id: number;
@@ -829,6 +886,7 @@ export interface SpbDo {
   created_at?: string;
   updated_at?: string;
   spb?: Spb;
+    po?: SpbPo;
   details?: {
     spb_do_dtl_id: number;
     spb_dtl_id: number;
@@ -991,4 +1049,30 @@ finish_part?: string;
   signature_url?: string | null;
 };
 
+export interface ReturnSpb {
+  rtn_id: number;
+  rtn_kode: string;
+  spb_id: number;
+  rtn_tanggal: string;
+  rtn_note?: string | null;
+  rtn_status: string;
+  created_at?: string;
+  updated_at?: string;
+  spb?: Spb;
+
+  details: ReturnSpbDetail[];
+}
+
+export interface ReturnSpbDetail {
+  rtn_detail_id: number;
+  rtn_id: number;
+  spb_dtl_id: number;
+  part_id: number;
+  dtl_rtn_qty_return: number;
+  created_at?: string;
+  updated_at?: string;
+
+  // karena backend pakai with('details.part')
+  part?: MasterPart;
+}
 

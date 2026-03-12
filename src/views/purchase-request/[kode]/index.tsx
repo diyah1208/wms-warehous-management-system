@@ -131,11 +131,11 @@ useEffect(() => {
   const interval = setInterval(async () => {
     try {
       const res = await getPrByKode(prKode);
-      console.log("PR POLL:", {
-        pengaju: res?.signed_pengaju_sign,
-        spv: res?.signed_spv_sign,
-        ppic: res?.signed_ppic_sign,
-      });
+      // console.log("PR POLL:", {
+      //   pengaju: res?.signed_pengaju_sign,
+      //   spv: res?.signed_spv_sign,
+      //   ppic: res?.signed_ppic_sign,
+      // });
 
       if (!res) return;
 

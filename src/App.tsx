@@ -36,10 +36,12 @@ import PRSign from "@/views/pr-sign";
 import POSign from "@/views/po-sign";
 import PeminjamanIndex from "./views/peminjaman/index.tsx";
 import PeminjamanDetailPage from "./views/peminjaman/[kode]/index.tsx";
-import Dokumentasi from "./views/dokumentasi/index.tsx";
+//import Dokumentasi from "./views/dokumentasi/index.tsx";
 import JobCostingIndex from "./views/job-costing/index.tsx";
 import JobCostingDetailPage from "./views/job-costing/[kode]/index.tsx";
 import JcSign from "./views/jc-sign/index.tsx";
+import ReturnSpbIndex from "./views/return/index.tsx";
+import ReturnSpbDetailPage from "./views/return/[kode]/index.tsx";
 
 
 export default function App() {
@@ -63,14 +65,14 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-        <Route
+        {/* <Route
             path="/dokumentasi"
             element={
               <ProtectedRoute>
                 <Dokumentasi />
               </ProtectedRoute> 
             }
-          />
+          /> */}
 
           {/* ================= DASHBOARD ================= */}
           <Route
@@ -306,6 +308,24 @@ export default function App() {
             }
           />
           <Route path="/setting" element={<Setting />} />
+          {/* ================= RETURN SPB ================= */}
+          <Route
+            path="/return"
+            element={
+              <ProtectedRoute>
+                <ReturnSpbIndex />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/return/kode/:kode"
+            element={
+              <ProtectedRoute>
+                <ReturnSpbDetailPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* ================= FALLBACK ================= */}
           <Route path="*" element={<NotFound />} />

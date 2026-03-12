@@ -1,5 +1,6 @@
 import api from "@/lib/axios";
 import type { POReceive, RI } from "@/types";
+import { encodeSafe } from "@/lib/utils";
 
 export async function getAllRi(): Promise<RI[]> {
   const res = await api.get("/receive");
@@ -11,8 +12,13 @@ export async function getPurchasedPO(): Promise<POReceive[]> {
   return res.data.data;
 }
 
+// export async function getRIByKode(ri_kode: string): Promise<RI> {
+//   const res = await api.get(`/receive/kode/${encodeURIComponent(ri_kode)}`);
+//   return res.data;
+// }
+
 export async function getRIByKode(ri_kode: string): Promise<RI> {
-  const res = await api.get(`/receive/kode/${encodeURIComponent(ri_kode)}`);
+  const res = await api.get(`/receive/kode/${encodeSafe(ri_kode)}`);
   return res.data;
 }
 
@@ -100,13 +106,28 @@ export async function downloadReceiveExcel(filters: any) {
 //   window.URL.revokeObjectURL(url);
 // }
 
+// export async function submitReceiveSignature(
+//   kode: string,
+//   signatureBase64: string,
+//   signed_penerima_name: string
+// ) {
+//   const res = await api.post(
+//     `/receive/${kode}/sign-penerima`,
+//     {
+//       signature: signatureBase64,
+//       signed_penerima_name: signed_penerima_name
+//     }
+//   );
+
+//   return res.data;
+// }
 export async function submitReceiveSignature(
   kode: string,
   signatureBase64: string,
   signed_penerima_name: string
 ) {
   const res = await api.post(
-    `/receive/${kode}/sign-penerima`,
+    `/receive/${encodeSafe(kode)}/sign-penerima`,
     {
       signature: signatureBase64,
       signed_penerima_name: signed_penerima_name
@@ -116,9 +137,21 @@ export async function submitReceiveSignature(
   return res.data;
 }
 
+// export async function downloadReceivePdf(kode: string) {
+//   const res = await api.get(
+//     `receive/${encodeURIComponent(kode)}/export/pdf`,
+//     { responseType: "blob" }
+//   );
+
+//   const blob = new Blob([res.data], { type: "application/pdf" });
+//   const url = window.URL.createObjectURL(blob);
+
+//   window.open(url);
+// }
+
 export async function downloadReceivePdf(kode: string) {
   const res = await api.get(
-    `receive/${encodeURIComponent(kode)}/export/pdf`,
+    `/receive/${encodeSafe(kode)}/export/pdf`,
     { responseType: "blob" }
   );
 

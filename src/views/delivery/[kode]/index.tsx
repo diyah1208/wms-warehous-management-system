@@ -243,13 +243,13 @@ export function DeliveryDetail() {
         {/* LEFT ACTIONS */}
         <div className="flex flex-wrap gap-2">
           {/* WAREHOUSE */}
-          {user?.role === "warehouse" && dlvry.dlv_status === "pending" && (
+          {user?.role === "warehouse" || user?.role === "superadmin" && dlvry.dlv_status === "pending" && (
             <ConfirmDialog
               text="Mulai Packing"
               onClick={() => handleUpdateStatus("packing")}
             />
           )}
-          {user?.role === "warehouse" &&
+          {user?.role === "warehouse" || user?.role === "superadmin" &&
             dlvry.dlv_status === "packing" &&
             !isHandCarry && (
               <SetReadyToPickupDialog
@@ -257,7 +257,7 @@ export function DeliveryDetail() {
                 refresh={() => setRefresh((p) => !p)}
               />
             )}
-          {user?.role === "warehouse" &&
+          {user?.role === "warehouse" || user?.role === "superadmin" &&
             dlvry.dlv_status === "pending" &&
             dlvry.dlv_ke_gudang === user.lokasi &&
             !dlvry.signed_penerima_sign && (
@@ -266,7 +266,7 @@ export function DeliveryDetail() {
               </Button>
             )}
           {/* LOGISTIK */}
-          {user?.role === "logistik" &&
+          {user?.role === "logistik" || user?.role === "superadmin" &&
             dlvry.dlv_status === "ready to pickup" && (
               <ConfirmDialog
                 text="Pickup Barang"
@@ -275,14 +275,14 @@ export function DeliveryDetail() {
             )}
 
           {/* USER */}
-          {user?.role === "warehouse" &&
+          {user?.role === "warehouse" || user?.role === "superadmin" &&
             dlvry.dlv_status === "on delivery" &&
             dlvry.dlv_ke_gudang === user.lokasi && (
               <Button onClick={() => setOpenReceive(true)}>
                 Konfirmasi Barang Diterima
               </Button>
             )}
-            {user?.role === "warehouse" &&
+            {user?.role === "warehouse" || user?.role === "superadmin" &&
               isHandCarry &&
               dlvry.dlv_status === "packing" &&
               dlvry.dlv_ke_gudang === user.lokasi && (

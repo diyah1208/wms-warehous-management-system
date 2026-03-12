@@ -51,7 +51,7 @@ export default function PendingApprovalPage() {
   }, [count]);
 
   const handleLogout = () => {
-    console.log("CIHUYY");
+    //console.log("CIHUYY");
     logout();
   };
 

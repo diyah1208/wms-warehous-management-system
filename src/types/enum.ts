@@ -15,7 +15,7 @@ export type Lokasi = {
 
 export const LokasiList: Lokasi[] = [
   { nama: "JAKARTA", kode: "JKT" }, // jawa
-  { nama: "TANJUNG ENIM", kode: "ENIM" }, // sumatera
+  { nama: "MUARA ENIM", kode: "ENIM" }, // sumatera
   { nama: "BALIKPAPAN", kode: "BPN" }, // Kalimantan
   { nama: "SITE BA", kode: "BA" }, // Sumatera
   { nama: "SITE TAL", kode: "TAL" }, // Kalimantan
@@ -25,6 +25,7 @@ export const LokasiList: Lokasi[] = [
   { nama: "SITE AMI", kode: "AMI" }, // Kalimantan
   { nama: "SITE TABANG", kode: "TAB" }, // Tabang
   { nama: "SITE BCP+PIK", kode: "BCP" }, // BCP+PIK
+  { nama: "SITE DIZA", kode: "DIZA" }, // DIZA
   // { nama: "unassigned", kode: "unassigned" },
 ];
 

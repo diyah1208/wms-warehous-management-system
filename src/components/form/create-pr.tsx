@@ -130,18 +130,34 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
   }, []);
 
   // ================= FETCH MR =================
+  // useEffect(() => {
+  //   async function fetchMR() {
+  //     try {
+  //       const mr = await getAllMr();
+  //       setMR(mr);
+  //       setFilteredMR(mr);
+  //     } catch {
+  //       toast.error("Gagal mengambil data MR");
+  //     }
+  //   }
+  //   fetchMR();
+  // }, []);
   useEffect(() => {
-    async function fetchMR() {
-      try {
-        const mr = await getAllMr();
-        setMR(mr);
-        setFilteredMR(mr);
-      } catch {
-        toast.error("Gagal mengambil data MR");
-      }
+  async function fetchMR() {
+    try {
+      const mr = await getAllMr();
+
+      const validMr = mr.filter((m) => m.mr_status === "open");
+
+      setMR(validMr);
+      setFilteredMR(validMr);
+    } catch {
+      toast.error("Gagal mengambil data MR");
     }
-    fetchMR();
-  }, []);
+  }
+
+  fetchMR();
+}, []);
 
   // ================= SUBMIT =================
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -258,13 +274,11 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
       id="create-pr-form"
       className="grid grid-cols-12 gap-4"
     >
-      {closed && (
+      {/* {closed && (
         <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black">
           
-          {/* STRIPE */}
           <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" />
 
-          {/* CONTENT */}
           <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
             <div className="text-4xl font-black tracking-widest uppercase">
               🚫 TRANSAKSI PURCHASE REQUEST DITUTUP
@@ -289,7 +303,7 @@ export default function CreatePRForm({ user, setRefresh }: CreatePRFormProps) {
         className={`col-span-12 grid grid-cols-12 gap-4 ${
           closed ? "opacity-50" : ""
         }`}
-      ></fieldset>
+      ></fieldset> */}
       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         {/* Kode PR */}
         <div className="flex flex-col gap-2">

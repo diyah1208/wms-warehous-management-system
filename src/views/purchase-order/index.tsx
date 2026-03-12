@@ -464,7 +464,7 @@ function renderPoStatus(status: string) {
         </SectionFooter>
       </SectionContainer>
             {/* Tambah PO - DENGAN ERROR HANDLING */}
-   {user?.role === "purchasing" && (
+   {user?.role === "purchasing" || user?.role === "superadmin" && (
   <SectionContainer span={12}>
     <SectionHeader>Tambah PO Baru</SectionHeader>
     <SectionBody className="grid grid-cols-12 gap-2">

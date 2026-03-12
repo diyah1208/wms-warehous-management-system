@@ -37,10 +37,10 @@ export async function getSpbDetail(spbId: number): Promise<Spb> {
   const res = await api.get(`/spb/${spbId}`);
   return res.data.data ?? res.data;
 }
-export async function generateSpb(): Promise<string> {
-  const res = await api.get(`/spb/generate-kode`)
-  return res.data;
-}
+// export async function generateSpb(): Promise<string> {
+//   const res = await api.get(`/spb/generate-kode`)
+//   return res.data;
+// }
 
 export async function createSpb(data: SpbCreate) {
 
@@ -132,13 +132,54 @@ export async function getSpbByKode(kode: string) {
   return res.data;
 }
 
+export async function generateSpb(gudang: string): Promise<string> {
+  const res = await api.get(`/spb/generate-kode`, {
+    params: {
+      spb_gudang: gudang,
+    },
+  });
+
+  return res.data;
+}
+
 export async function updateSpb(spb_id: number, payload: any) {
   const res = await api.put(`/spb/${spb_id}`, payload);
   return res.data;
 }
 
-export async function downloadSpbExcel() {
-  const res = await api.get("/spb/export-excel", {
+// export async function downloadSpbExcel() {
+//   const res = await api.get("/spb/export-excel", {
+//     responseType: "blob",
+//   });
+
+//   const blob = new Blob([res.data], {
+//     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+//   });
+
+//   const url = window.URL.createObjectURL(blob);
+
+//   const a = document.createElement("a");
+//   a.href = url;
+//   a.download = "DAFTAR_SPB.xlsx";
+//   document.body.appendChild(a);
+//   a.click();
+
+//   document.body.removeChild(a);
+//   window.URL.revokeObjectURL(url);
+// }
+
+export async function downloadSpbExcel(filters: any) {
+  const res = await api.get(`/spb/export-excel`, {
+    params: {
+      search: filters.search,
+      status: filters.status,
+      startDate: filters.startDate
+        ? filters.startDate.toISOString().split("T")[0]
+        : undefined,
+      endDate: filters.endDate
+        ? filters.endDate.toISOString().split("T")[0]
+        : undefined,
+    },
     responseType: "blob",
   });
 
@@ -178,7 +219,9 @@ export function downloadSpbPdf(kode: string) {
     });
 }
 
-
-
+export async function deleteSpb(spb_id: number) {
+  const res = await api.delete(`/spb/${spb_id}`);
+  return res.data;
+}
 
 

@@ -128,13 +128,11 @@ export default function CreateSpbPoForm({ setRefresh }: CreateSpbPoFormProps) {
     id="create-spb-po-form"
     className="grid grid-cols-12 gap-4"
   >
-      {closed && (
+      {/* {closed && (
           <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black">
             
-            {/* STRIPE */}
             <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" />
 
-            {/* CONTENT */}
             <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
               <div className="text-4xl font-black tracking-widest uppercase">
                 🚫 TRANSAKSI SPB-PO DITUTUP
@@ -159,7 +157,7 @@ export default function CreateSpbPoForm({ setRefresh }: CreateSpbPoFormProps) {
           className={`col-span-12 grid grid-cols-12 gap-4 ${
             closed ? "opacity-50" : ""
           }`}
-        >
+        > */}
     {/* ================= ROW 1 ================= */}
     <div className="col-span-12 lg:col-span-6 space-y-2">
       <Label>Pilih SPB<span className="text-red-500">*</span></Label>
@@ -282,7 +280,7 @@ export default function CreateSpbPoForm({ setRefresh }: CreateSpbPoFormProps) {
     </TableBody>
   </Table>
 </div>
-</fieldset>
+{/* </fieldset> */}
   </form>
 );
 }

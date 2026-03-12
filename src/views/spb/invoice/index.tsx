@@ -7,6 +7,13 @@ import WithSidebar from "@/components/layout/WithSidebar";
 import { MyPagination } from "@/components/my-pagination";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { DatePicker } from "@/components/date-picker";
 import {
   Table,
   TableBody,
@@ -19,7 +26,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getAllSpbInv } from "@/services/spb";
 import type { SpbInvoice } from "@/types";
 import { PagingSize } from "@/types/enum";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Filter, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import CreateSpbInvoiceForm from "@/components/form/create-spb-inv";
@@ -33,9 +40,13 @@ export default function SpbInvoicePage() {
   const [toShow, setToShow] = useState<SpbInvoice[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // filter
+  // 🔎 FILTER STATE
   const [noSpb, setNoSpb] = useState("");
   const [noInvoice, setNoInvoice] = useState("");
+  const [spbLokasi, setSpbLokasi] = useState("");
+  const [noDo, setNoDo] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState<Date | undefined>();
+  const [emailDate, setEmailDate] = useState<Date | undefined>();
 
   /* =========================
      FETCH DATA
@@ -66,13 +77,48 @@ export default function SpbInvoicePage() {
 
     if (noInvoice) {
       temp = temp.filter((r) =>
-        r.invoice_no.toLowerCase().includes(noInvoice.toLowerCase())
+        r.invoice_no?.toLowerCase().includes(noInvoice.toLowerCase())
+      );
+    }
+
+    if (noDo) {
+      temp = temp.filter((r) =>
+        r.do?.do_no?.toLowerCase().includes(noDo.toLowerCase())
+      );
+    }
+
+    if (invoiceDate) {
+      temp = temp.filter((r) => {
+        if (!r.invoice_date) return false;
+        const d = new Date(r.invoice_date);
+        return (
+          d.getFullYear() === invoiceDate.getFullYear() &&
+          d.getMonth() === invoiceDate.getMonth() &&
+          d.getDate() === invoiceDate.getDate()
+        );
+      });
+    }
+
+    if (emailDate) {
+      temp = temp.filter((r) => {
+        if (!r.invoice_email_date) return false;
+        const d = new Date(r.invoice_email_date);
+        return (
+          d.getFullYear() === emailDate.getFullYear() &&
+          d.getMonth() === emailDate.getMonth() &&
+          d.getDate() === emailDate.getDate()
+        );
+      });
+    }
+     if (spbLokasi) {
+      temp = temp.filter((r) =>
+        r.do?.po?.spb?.spb_gudang?.toLowerCase().includes(spbLokasi.toLowerCase())
       );
     }
 
     setFiltered(temp);
     setCurrentPage(1);
-  }, [rows, noSpb, noInvoice]);
+  }, [rows, noSpb, noInvoice, noDo, invoiceDate, emailDate,spbLokasi]);
 
   /* =========================
      PAGINATION
@@ -86,30 +132,93 @@ export default function SpbInvoicePage() {
   function resetFilter() {
     setNoSpb("");
     setNoInvoice("");
+    setNoDo("");
+    setInvoiceDate(undefined);
+    setEmailDate(undefined);
     toast.success("Filter direset");
   }
 
   return (
     <WithSidebar>
-      {/* LIST INVOICE */}
       <SectionContainer span={12}>
         <SectionHeader>SPB - Invoice</SectionHeader>
 
         <SectionBody className="grid grid-cols-12 gap-3">
-          {/* FILTER */}
-          <div className="col-span-12 flex gap-2">
-            <Input
-              placeholder="Cari No SPB"
-              value={noSpb}
-              onChange={(e) => setNoSpb(e.target.value)}
-            />
-            <Input
-              placeholder="Cari No Invoice"
-              value={noInvoice}
-              onChange={(e) => setNoInvoice(e.target.value)}
-            />
+
+          {/* 🔍 SEARCH BAR */}
+          <div className="col-span-12 flex items-center gap-2">
+
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Cari No SPB..."
+                value={noSpb}
+                onChange={(e) => setNoSpb(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* FILTER POPOVER */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+
+              <PopoverContent className="w-80 space-y-4">
+                <div className="space-y-1">
+                  <h4 className="font-medium">Filter Lanjutan</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Saring data invoice.
+                  </p>
+                </div>
+
+                <div className="grid gap-3">
+                  <div>
+                    <Label>No Invoice</Label>
+                    <Input
+                      value={noInvoice}
+                      onChange={(e) => setNoInvoice(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>No DO</Label>
+                    <Input
+                      value={noDo}
+                      onChange={(e) => setNoDo(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Tanggal Invoice</Label>
+                    <DatePicker
+                      value={invoiceDate}
+                      onChange={setInvoiceDate}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Tanggal Email</Label>
+                    <DatePicker
+                      value={emailDate}
+                      onChange={setEmailDate}
+                    />
+                  </div>
+                   <div>
+                    <Label>Lokasi SPB</Label>
+                    <Input
+                      value={spbLokasi}
+                      onChange={(e) => setSpbLokasi(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <Button variant="outline" size="icon" onClick={resetFilter}>
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4 text-red-500" />
             </Button>
           </div>
 
@@ -120,6 +229,7 @@ export default function SpbInvoicePage() {
                 <TableRow>
                   <TableHead>No</TableHead>
                   <TableHead>No SPB</TableHead>
+                  <TableHead>Lokasi</TableHead>
                   <TableHead>No DO</TableHead>
                   <TableHead>No Invoice</TableHead>
                   <TableHead>Tanggal Invoice</TableHead>
@@ -133,7 +243,8 @@ export default function SpbInvoicePage() {
                       <TableCell>
                         {PagingSize * (currentPage - 1) + (i + 1)}
                       </TableCell>
-                      <TableCell>{row.spb?.spb_no}</TableCell>
+                      <TableCell>{row.do?.po?.spb?.spb_no}</TableCell>
+                      <TableCell>{row.do?.po?.spb?.spb_gudang}</TableCell>
                       <TableCell>{row.do?.do_no}</TableCell>
                       <TableCell>{row.invoice_no}</TableCell>
                       <TableCell>{row.invoice_date}</TableCell>
@@ -144,7 +255,7 @@ export default function SpbInvoicePage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center">
+                    <TableCell colSpan={6} className="text-center">
                       Tidak ada data
                     </TableCell>
                   </TableRow>
@@ -167,8 +278,7 @@ export default function SpbInvoicePage() {
         </SectionFooter>
       </SectionContainer>
 
-      {/* ADD INVOICE */}
-      {user?.role === "finance" && (
+      {user?.role === "finance" || user?.role === "superadmin" && (
         <SectionContainer span={12}>
           <SectionHeader>Buat Invoice</SectionHeader>
           <SectionBody>

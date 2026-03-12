@@ -440,7 +440,7 @@ function renderPrStatus(status: string) {
       </SectionContainer>
 
       {/* Tambah (tidak ada perubahan) */}
-      {user?.role === "warehouse" && (
+      {user?.role === "warehouse" || user?.role === "superadmin"&& (
         <SectionContainer span={12}>
           <SectionHeader>Tambah PR Baru</SectionHeader>
           <SectionBody>

@@ -89,44 +89,61 @@ async function fetchMr() {
 }, [refresh]);
 
 
-function renderMrStatus(status: string) {
-  const value = status?.toLowerCase();
 
-  switch (value) {
-    case "open":
+function renderMrStatus(mr: MRReceive) {
+  const status = mr.mr_status?.toLowerCase();
+
+  if (mr.details && mr.details.length > 0) {
+
+    const allProcessed = mr.details.every(
+      (d) =>
+        Number(d.dtl_mr_approved) === 1 ||
+        Number(d.dtl_mr_rejected) === 1
+    );
+
+    if (!allProcessed) {
       return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-red-100 text-red-700">
+        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-yellow-100 text-yellow-700">
           <Clock className="h-3 w-3" />
-          OPEN
+          PENDING
         </span>
       );
-
-    case "partial":
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-orange-100 text-orange-700">
-          <AlertTriangle className="h-3 w-3" />
-          PARTIAL
-        </span>
-      );
-
-    case "closed":
-    case "close":
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-green-100 text-green-700">
-          <CheckCircle className="h-3 w-3" />
-          CLOSED
-        </span>
-      );
-
-    default:
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
-          {status?.toUpperCase()}
-        </span>
-      );
+    }
   }
-}
 
+  if (status === "open") {
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-red-100 text-red-700">
+        <Clock className="h-3 w-3" />
+        OPEN
+      </span>
+    );
+  }
+
+  if (status === "partial") {
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-orange-100 text-orange-700">
+        <AlertTriangle className="h-3 w-3" />
+        PARTIAL
+      </span>
+    );
+  }
+
+  if (status === "closed" || status === "close") {
+    return (
+      <span className="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 bg-green-100 text-green-700">
+        <CheckCircle className="h-3 w-3" />
+        CLOSED
+      </span>
+    );
+  }
+
+  return (
+    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+      {mr.mr_status?.toUpperCase()}
+    </span>
+  );
+}
   function filterMrs() {
     let filtered = mrs;
 
@@ -417,7 +434,7 @@ useEffect(() => {
                       <TableCell className="border p-2">{mr.mr_lokasi}</TableCell>
                       <TableCell className="border p-2">{mr.mr_pic}</TableCell>
 <TableCell className="border p-2 text-center">
-  {renderMrStatus(mr.mr_status)}
+{renderMrStatus(mr)}
 </TableCell>
 
 
@@ -478,7 +495,7 @@ useEffect(() => {
       </SectionContainer>
 
       {/* Tambah MR (Hanya untuk role warehouse) */}
-      {user?.role === "warehouse" && (
+      {user?.role === "warehouse" || user?.role === "superadmin" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah MR Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">

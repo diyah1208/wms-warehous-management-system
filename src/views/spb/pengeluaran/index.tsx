@@ -7,7 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import WithSidebar from "@/components/layout/WithSidebar";
 import { Button } from "@/components/ui/button";
 import type {Spb } from "@/types";
-import { ClipboardPlus, FileSpreadsheet, Filter, Info, Search, X } from "lucide-react";
+import { ClipboardPlus, FileSpreadsheet, Filter, Info, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -30,7 +30,7 @@ import {
 import { formatTanggal } from "@/lib/utils";
 import { PagingSize } from "@/types/enum";
 import CreateSpbForm from "@/components/form/create-spb";
-import { downloadSpbExcel, getAllSpb } from "@/services/spb";
+import { deleteSpb, downloadSpbExcel, getAllSpb } from "@/services/spb";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -199,6 +199,17 @@ export default function SpbPage() {
     setCurrentPage(page);
   }
 
+  const handleDelete = async (id: number) => {
+  if (!confirm("Yakin hapus SPB? Stok akan dikembalikan.")) return;
+
+  try {
+    await deleteSpb(id);
+    toast.success("SPB berhasil dihapus");
+    setRefresh((prev) => !prev); // trigger reload data
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || "Gagal hapus SPB");
+  }
+};
   return (
     <WithSidebar>
       {/* Data MR */}
@@ -358,11 +369,22 @@ export default function SpbPage() {
                     <Info className="h-4 w-4" />
                   </Link>
                 </Button>
-                 {user?.role === "warehouse" &&(
+                 {user?.role === "superadmin" && (
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="border-red-400 text-red-600 hover:bg-red-50"
+                    onClick={() => handleDelete(mr.spb_id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+                 {user?.role === "warehouse" || user?.role === "superadmin"&&(
                 <EditSpbDialog spb={mr} refresh={setRefresh} />
                     )}
             
                 </div>
+                
             
               </TableCell>
             </TableRow>
@@ -397,7 +419,7 @@ export default function SpbPage() {
       </SectionContainer>
 
       {/* Tambah MR (Hanya untuk role warehouse) */}
-      {user?.role === "warehouse" && (
+      {user?.role === "warehouse" || user?.role === "superadmin"&& (
         <SectionContainer span={12}>
           <SectionHeader>Tambah SPB Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">

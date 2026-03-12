@@ -105,12 +105,13 @@
 import axios from "axios";
 
 const api = axios.create({
-  //baseURL: "https://wms-lourdes.my.id/be-wms/public/api",
+  baseURL: "https://wms-lourdes.my.id/be-wms/public/api",
   //baseURL: "http://localhost:8000/api",
-  baseURL: "http://10.10.6.197:8000/api",
+    //baseURL: "http://10.10.6.197:8000/api",
   //baseURL: "http://192.168.1.238:8000/api",
   //baseURL: "http://192.168.1.252:8000/api",
   //baseURL: "https://wms-gis.my.id/be-wms-gis/public/api",
+  //baseURL: "http://192.168.1.108:8000/api",
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",

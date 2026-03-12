@@ -66,13 +66,37 @@ export default function CreatePeminjamanForm({
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [loadingKode, setLoadingKode] = useState(false);
 
+    useEffect(() => {
+      async function fetchStocks() {
+      try {
+        let page = 1;
+        const limit = 15000;
+        let lastPage = 1;
 
+        do {
+          const res = await getAllStocks(page, limit);
+
+          setStocks(prev => [...prev, ...res.data]); // ⬅ update tiap page
+          lastPage = res.last_page;
+
+          // console.log("FETCH PAGE:", page);
+
+          page++;
+        } while (page <= lastPage);
+
+      } catch (error) {
+        console.error(error);
+        toast.error("Gagal mengambil data stok barang");
+      }
+    }
+
+    fetchStocks();
+  }, []);
 
   useEffect(() => {
     (async () => {
       try {
         setParts(await getMasterParts());
-        setStocks(await getAllStocks());
         setPmjKode(await generatePmj());
       } catch {
         toast.error("Gagal load data awal");

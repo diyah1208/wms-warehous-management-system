@@ -111,22 +111,48 @@ export default function CreateSpbForm({
 
 
 
-   useEffect(() => {
-    async function fetchStock() {
+  //  useEffect(() => {
+  //   // async function fetchStock() {
+  //   //   try {
+  //   //     const parts = await getAllStocks();
+  //   //     setStocks(parts);
+  //   //   } catch {
+  //   //     toast.error("Gagal mengambil data master part");
+  //   //   }
+  //   // }
+
+  // }, []);
+         useEffect(() => {
+      async function fetchStocks() {
       try {
-        const parts = await getAllStocks();
-        setStocks(parts);
-      } catch {
-        toast.error("Gagal mengambil data master part");
+        let page = 1;
+        const limit = 15000;
+        let lastPage = 1;
+
+        do {
+          const res = await getAllStocks(page, limit);
+
+          setStocks(prev => [...prev, ...res.data]); // ⬅ update tiap page
+          lastPage = res.last_page;
+
+          // console.log("FETCH PAGE:", page);
+
+          page++;
+        } while (page <= lastPage);
+
+      } catch (error) {
+        console.error(error);
+        toast.error("Gagal mengambil data stok barang");
       }
     }
-    fetchStock();
+
+    fetchStocks();
   }, []);
 
   async function fetchKodeSpbWithToast() {
     //const toastId = toast.loading("Menghasilkan Kode SPB...");
     try {
-      const kode = await generateSpb();
+      const kode = await generateSpb(user.lokasi);
       setKodeSpb(kode);
       //toast.success("Kode SPB siap", { id: toastId });
     } catch {

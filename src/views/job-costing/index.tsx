@@ -344,7 +344,7 @@ const navigate = useNavigate();
       </SectionContainer>
 
       {/* ================= CREATE ================= */}
-      {user?.role === "warehouse" && user?.lokasi === "JAKARTA" && (
+      {user?.role === "warehouse" || user?.role === "superadmin" && user?.lokasi === "JAKARTA" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah Job Costing</SectionHeader>
 

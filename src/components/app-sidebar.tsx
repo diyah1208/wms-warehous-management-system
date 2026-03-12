@@ -133,6 +133,11 @@ const data = {
           url: "/spb/invoice",
           icon: ReceiptText,
         },
+        {
+          title: "Return SPB",
+          url: "/return",
+          icon: Repeat,
+        },
       ],
     },
     {
@@ -197,8 +202,8 @@ export function AppSidebar({
       </SidebarHeader>
 
       <SidebarContent>
-        {user.role === "admin" && (
-          <NavMain label="Admin" items={markActive(data.navAdmin)} />
+        {user.role === "superadmin" && (
+          <NavMain label="Superadmin" items={markActive(data.navAdmin)} />
         )}
         <NavMain items={markActive(visibleNavMain)} />
         <NavMain label="About" items={markActive(data.navSecondary)} />

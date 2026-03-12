@@ -43,6 +43,8 @@ import { Label } from "@radix-ui/react-label";
 
 export default function BarangDanStok() {
   const [stocks, setStocks] = useState<Stock[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  // console.log("stocks state:", stocks)
   const [masterParts, setMasterParts] = useState<MasterPart[]>([]);
   const [refresh, setRefresh] = useState<boolean>(false);
    const { user } = useAuth();
@@ -56,15 +58,40 @@ useEffect(() => {
       toast.error("Gagal mengambil data master part");
     }
   }
-
   async function fetchStocks() {
     try {
-      const res = await getAllStocks();
-      if (res) setStocks(res);
+      let page = 1;
+      const limit = 15000;
+      let lastPage = 1;
+
+      do {
+        const res = await getAllStocks(page, limit);
+
+        setStocks(prev => [...prev, ...res.data]); // ⬅ update tiap page
+        lastPage = res.last_page;
+
+        // console.log("FETCH PAGE:", page);
+
+        page++;
+      } while (page <= lastPage);
+
     } catch (error) {
+      console.error(error);
       toast.error("Gagal mengambil data stok barang");
     }
   }
+
+
+  // async function fetchStocks() {
+  //   try {
+  //     // const res = await getAllStocks();
+  //     const res = await getAllStocks(currentPage, 10);
+  //     console.log("STOCK RESULT:", res); 
+  //     if (res) setStocks(res);
+  //   } catch (error) {
+  //     toast.error("Gagal mengambil data stok barang");
+  //   }
+  // }
 
   fetchMasterPart();
   fetchStocks();
@@ -89,7 +116,8 @@ useEffect(() => {
       <DataMasterPartSection masterParts={masterParts as MasterPart[]} 
       setRefresh={setRefresh}/>
       {/* Tambah */}
-      {user?.role === "warehouse" && (
+      {/* {user?.role === "purchasing" || user?.role === "superadmin" && ( */}
+      {(user?.role === "purchasing" || user?.role === "superadmin") && (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Barang</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -148,7 +176,7 @@ function MasterPartCollumnsGenerator(
       accessorKey: "aksi",
       cell: (_: any, row: MasterPart) => (
         <div className="flex justify-center gap-2">
-          {userRole === "warehouse" && (
+          {userRole === "purchasing" || userRole === "superadmin" && (
             <>
               <EditPartDialog refresh={setRefresh} part={row} />
 
@@ -609,26 +637,66 @@ function DataStokSection({
       new Set(data.map((s) => s.stk_location).filter(Boolean))
     );
   }
+  useEffect(() => {
+  let data = [...stocks];
 
-  function pivotStockByLokasi(data: Stock[]) {
-    const map = new Map<string, PivotStockRow>();
+  // console.log("stocks masuk:", data.length);
 
-    data.forEach((s) => {
-      const pn = s.barang?.part_number ?? "-";
-
-      if (!map.has(pn)) {
-        map.set(pn, {
-          part_number: pn,
-          part_name: s.barang?.part_name ?? "-",
-          part_satuan: s.barang?.part_satuan ?? "-",
-        });
-      }
-
-      map.get(pn)![s.stk_location] = s.stk_qty ?? 0;
-    });
-
-    return Array.from(map.values());
+  if (pn) {
+    data = data.filter((s) =>
+      s.barang?.part_number?.toLowerCase().includes(pn.toLowerCase())
+    );
   }
+
+  const pivot = pivotStockByLokasi(data);
+
+  // console.log("pivot result:", pivot.length);
+
+  setFilteredStock(pivot);
+  setCurrentPage(1);
+
+}, [stocks, pn, pnm, uom, lokasiFilter]);
+
+  // function pivotStockByLokasi(data: Stock[]) {
+  //   const map = new Map<string, PivotStockRow>();
+
+  //   data.forEach((s) => {
+  //     const pn = s.barang?.part_number ?? "-";
+
+  //     if (!map.has(pn)) {
+  //       map.set(pn, {
+  //         part_number: pn,
+  //         part_name: s.barang?.part_name ?? "-",
+  //         part_satuan: s.barang?.part_satuan ?? "-",
+  //       });
+  //     }
+
+  //     map.get(pn)![s.stk_location] = s.stk_qty ?? 0;
+  //   });
+
+  //   return Array.from(map.values());
+  // }
+  function pivotStockByLokasi(data: Stock[]) {
+  const map = new Map<string, PivotStockRow>();
+
+  data.forEach((s) => {
+    const pn = s.barang?.part_number;
+
+    if (!pn) return;
+
+    if (!map.has(pn)) {
+      map.set(pn, {
+        part_number: pn,
+        part_name: s.barang?.part_name ?? "-",
+        part_satuan: s.barang?.part_satuan ?? "-",
+      });
+    }
+
+    map.get(pn)![s.stk_location] = s.stk_qty ?? 0;
+  });
+
+  return Array.from(map.values());
+}
 
   useEffect(() => {
     let data = [...stocks];
@@ -706,7 +774,7 @@ function DataStokSection({
             );
           }
 
-          if (userRole !== "warehouse") {
+          if (!["warehouse", "superadmin"].includes(userRole ?? "")) {
             return (
               <span className="text-xs text-muted-foreground">
               </span>

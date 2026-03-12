@@ -43,7 +43,7 @@ import {
   CommandList,
 } from "../ui/command";
 import { cn } from "@/lib/utils";
-import { createDelivery } from "@/services/delivery";
+import { createDelivery, generateDlv } from "@/services/delivery";
 import { getAllStocks } from "@/services/stock";
 import { AddItemDeliveryDialog } from "../dialog/add-item-delivery";
 import { DatePicker } from "../date-picker";
@@ -95,7 +95,10 @@ export default function CreateDeliveryForm({
   const [selectedMr, setSelectedMr] = useState<MRReceive>();
   const [selectedFrom, setSelectedFrom] = useState<string>("");
   const [dlvTanggal, setDlvTanggal] = useState<Date | undefined>(undefined);
+  const [loadingKode, setLoadingKode] = useState(false);
+  const [dlvKode, setDlvKode] = useState("Loading...");
   const closed = isClosedDate(dlvTanggal);
+  const [kodeIt, setKodeIt] = useState("");
 
   const [stocks, setStocks] = useState<Stock[]>([]);
   const [deliveryItems, setDeliveryItems] = useState<DeliveryDetail[]>([]);
@@ -127,19 +130,59 @@ export default function CreateDeliveryForm({
     fetchMR();
   }, []);
 
-  useEffect(() => {
-    async function fetchStock() {
+  // useEffect(() => {
+  //   async function fetchStock() {
+  //     try {
+  //       const res = await getAllStocks();
+  //       setStocks(Array.isArray(res) ? res : []);
+  //     } catch {
+  //       toast.error("Gagal mengambil data Stocks.");
+  //       setStocks([]);
+  //     }
+  //   }
+  //   fetchStock();
+  // }, []);
+
+    useEffect(() => {
+      async function fetchStocks() {
       try {
-        const res = await getAllStocks();
-        setStocks(Array.isArray(res) ? res : []);
-      } catch {
-        toast.error("Gagal mengambil data Stocks.");
-        setStocks([]);
+        let page = 1;
+        const limit = 15000;
+        let lastPage = 1;
+
+        do {
+          const res = await getAllStocks(page, limit);
+
+          setStocks(prev => [...prev, ...res.data]); // ⬅ update tiap page
+          lastPage = res.last_page;
+
+          // console.log("FETCH PAGE:", page);
+
+          page++;
+        } while (page <= lastPage);
+
+      } catch (error) {
+        console.error(error);
+        toast.error("Gagal mengambil data stok barang");
       }
     }
-    fetchStock();
+
+    fetchStocks();
   }, []);
 
+
+  async function handleRefreshKode() {
+    try {
+      setLoadingKode(true);
+      const newKode = await generateDlv();
+      setDlvKode(newKode);
+      toast.success("Kode Delivery diperbarui");
+    } catch {
+      toast.error("Gagal refresh kode delivery");
+    } finally {
+      setLoadingKode(false);
+    }
+  }
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -161,13 +204,16 @@ export default function CreateDeliveryForm({
     const form = event.currentTarget;
     const formData = new FormData(form);
 
-    const dlv_kode = formData.get("dlv_kode") as string;
+    //const dlv_kode = formData.get("dlv_kode") as string;
+    const dlv_kode = dlvKode;
+    const dlv_kode_it = kodeIt;
     const dlv_ekspedisi = formData.get("dlv_ekspedisi") as string;
     const dlv_no_resi = (formData.get("dlv_no_resi") as string) ?? "";
     const dlv_jumlah_koli = formData.get("dlv_jumlah_koli") as string;
 
     const data: DeliveryReceive = {
-      dlv_kode,
+      dlv_kode, 
+      dlv_kode_it,
       dlv_ekspedisi,
       dlv_dari_gudang: selectedFrom,
       dlv_ke_gudang: selectedMr.mr_lokasi,
@@ -299,14 +345,14 @@ export default function CreateDeliveryForm({
 
   return (
     <form id="create-delivery-form" onSubmit={handleSubmit} className="grid grid-cols-12 gap-4">
-      {closed && (
-        <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black">
+      {/* {closed && ( */}
+        {/* // <div className="col-span-12 relative overflow-hidden rounded-xl border-[6px] border-red-700 bg-black"> */}
           
           {/* STRIPE */}
-          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" />
+          {/* <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,rgba(255,0,0,0.5),rgba(255,0,0,0.5)_14px,rgba(0,0,0,0.7)_14px,rgba(0,0,0,0.7)_28px)] animate-pulse" /> */}
 
           {/* CONTENT */}
-          <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
+          {/* <div className="relative z-10 p-8 text-center space-y-3 text-red-100">
             <div className="text-4xl font-black tracking-widest uppercase">
               🚫 TRANSAKSI DELIVERY DITUTUP
             </div>
@@ -324,20 +370,51 @@ export default function CreateDeliveryForm({
             </div>
           </div>
         </div>
-      )}
-      <fieldset
+      )} */}
+      {/* <fieldset
         disabled={closed}
         className={`col-span-12 grid grid-cols-12 gap-4 ${
           closed ? "opacity-50" : ""
         }`}
-      >
+      > */}
       <div className="flex flex-col col-span-12 lg:col-span-6 gap-4">
         <input type="hidden" name="dlv_pic" value={user.nama} />
-        <div className="flex flex-col gap-2">
-          <Label>Kode IT<span className="text-red-500">*</span></Label>
-          <Input name="dlv_kode" required />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* KODE DELIVERY */}
+          <div className="space-y-2">
+            <Label>Kode Delivery</Label>
 
+            <div className="flex gap-2">
+              <Input
+                value={dlvKode}
+                disabled
+                className="h-11 flex-1"
+              />
+              <Button
+                variant="outline"
+                type="button"
+                disabled={loadingKode}
+                onClick={handleRefreshKode}
+              >
+                Refresh
+              </Button>
+            </div>
+          </div>
+
+          {/* KODE IT */}
+          <div className="space-y-2">
+            <Label>No. Dokumen</Label>
+            <Input
+              name="kode_it"
+              placeholder="Masukkan kode IT jika ada..."
+              value={kodeIt}
+              onChange={(e) => setKodeIt(e.target.value)}
+              className="h-11"
+            />
+          </div>
+
+        </div>
+        
         <div className="flex flex-col gap-2">
           <Label>Delivery untuk MR<span className="text-red-500">*</span></Label>
 
@@ -611,7 +688,7 @@ export default function CreateDeliveryForm({
 
         </Table>
       </div>
-      </fieldset>
+      {/* </fieldset> */}
     </form>
   );
 }

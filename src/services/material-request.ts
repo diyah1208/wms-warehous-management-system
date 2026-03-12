@@ -139,3 +139,11 @@ export async function downloadMrExcel() {
   document.body.removeChild(a);
   window.URL.revokeObjectURL(url);
 }
+
+export async function approveMrDetail(detailId: number) {
+  return api.put(`/mr/detail/${detailId}/approve`);
+}
+
+export async function rejectMrDetail(detailId: number) {
+  return api.put(`/mr/detail/${detailId}/reject`);
+}

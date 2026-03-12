@@ -86,7 +86,7 @@ export default function MasterCustomerPage() {
       {/* =======================
           TAMBAH CUSTOMER
       ======================== */}
-      {user?.role === "purchasing" && (
+      {user?.role === "purchasing" || user?.role === "superadmin"&& (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Customer</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -126,7 +126,8 @@ export default function MasterCustomerPage() {
 ========================= */
 function CustomerColumnsGenerator(
   setRefresh: Dispatch<SetStateAction<boolean>>,
-  setCustomers: Dispatch<SetStateAction<MasterCustomer[]>>
+  setCustomers: Dispatch<SetStateAction<MasterCustomer[]>>,
+  userRole?: string
 ) {
   return [
     {
@@ -177,12 +178,16 @@ function CustomerColumnsGenerator(
 {
   header: "Aksi",
   accessorKey: "aksi",
-  cell: (_: any, row: MasterCustomer) => (
-    <div className="flex gap-2">
+  cell: (_: any, row: MasterCustomer) => {
 
-      {/* =====================
-          EDIT — hanya muncul kalau AKTIF
-      ====================== */}
+    // ⛔ Kalau bukan purchasing → tidak tampil apa apa
+    if (userRole !== "purchasing") {
+      return null;
+    }
+
+    return (
+      <div className="flex gap-2">
+
       {row.is_active ? (
         <TooltipProvider>
           <Tooltip>
@@ -302,14 +307,15 @@ function CustomerColumnsGenerator(
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      )}
+  )}
 
-    </div>
-  ),
-},
-  ];
+      </div>
+    );
+  },
 }
 
+  ];   // ⬅️ tutup array columns
+}  
 /* =========================
    SECTION TABLE
 ========================= */
@@ -322,7 +328,7 @@ function DataMasterCustomerSection({
   setCustomers: Dispatch<SetStateAction<MasterCustomer[]>>; // ✅ FIX
   setRefresh: Dispatch<SetStateAction<boolean>>;
 }) {
-
+const { user } = useAuth();
   const [filteredCustomers, setFilteredCustomers] =
     useState<MasterCustomer[]>([]);
   const [tableCustomers, setTableCustomers] =
@@ -330,10 +336,15 @@ function DataMasterCustomerSection({
 
   const pageSize = PagingSize;
   const [currentPage, setCurrentPage] = useState<number>(1);
-const columns = useMemo(
-  () => CustomerColumnsGenerator(setRefresh,setCustomers),
-  [setRefresh,setCustomers]
-);
+const columns = useMemo(() => {
+  const cols = CustomerColumnsGenerator(setRefresh, setCustomers, user?.role);
+
+  if (user?.role !== "purchasing") {
+    return cols.filter((col) => col.accessorKey !== "aksi");
+  }
+
+  return cols;
+}, [setRefresh, setCustomers, user]);
   // filter state
   const [customerNo, setCustomerNo] = useState("");
   const [customerName, setCustomerName] = useState("");

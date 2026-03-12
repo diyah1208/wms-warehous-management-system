@@ -87,7 +87,7 @@ useEffect(() => {
       {/* =======================
           TAMBAH VENDOR
       ======================== */}
-      {user?.role === "purchasing" && (
+      {user?.role === "purchasing" || user?.role === "superadmin" && (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Vendor</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
@@ -330,6 +330,8 @@ function DataMasterVendorSection({
   setRefresh: Dispatch<SetStateAction<boolean>>;
   setVendors: Dispatch<SetStateAction<MasterVendor[]>>;
 }) {
+
+  const { user } = useAuth();
   const [filteredVendors, setFilteredVendors] =
     useState<MasterVendor[]>([]);
   const [tableVendors, setTableVendors] =
@@ -341,11 +343,15 @@ function DataMasterVendorSection({
   // filter state
   const [vendorNo, setVendorNo] = useState("");
   const [vendorName, setVendorName] = useState("");
-const columns = useMemo(
-  () => VendorColumnsGenerator(setRefresh,setVendors),
-  [setRefresh,setVendors]
-);
+const columns = useMemo(() => {
+  const cols = VendorColumnsGenerator(setRefresh, setVendors);
 
+  if (user?.role !== "purchasing") {
+    return cols.filter((col: any) => col.accessorKey !== "aksi");
+  }
+
+  return cols;
+}, [setRefresh, setVendors, user?.role]);
   useEffect(() => {
     setFilteredVendors(vendors);
     setTableVendors(vendors.slice(0, pageSize));

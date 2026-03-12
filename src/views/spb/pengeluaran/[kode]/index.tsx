@@ -195,7 +195,7 @@ export function SpbDetail() {
                   {Array.isArray(pr.details) && pr.details.length > 0 ? (
                     pr.details.map((item, index) => (
                       <TableRow
-                        key={item.spb_detail_id ?? index}
+                        key={item.spb_dtl_id ?? index}
                         className="[&>td]:border"
                       >
                         <TableCell className="text-center">

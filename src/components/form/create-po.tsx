@@ -100,7 +100,7 @@ const [editingIndex, setEditingIndex] = useState<number | null>(null);
     async function fetchPR() {
       try {
         const res = await getOpenPr(); 
-        console.log("📦 Data PR dari API:", res);
+        //console.log("📦 Data PR dari API:", res);
         setPrList(Array.isArray(res) ? res : []);
       } catch (err) {
         console.error("Error fetching PR:", err);
@@ -207,7 +207,7 @@ details: poDetails.map((d) => ({
 };
 
 
-    console.log("📤 Payload yang dikirim:", payload);
+    //console.log("📤 Payload yang dikirim:", payload);
 
     try {
       await createPO(payload);
@@ -371,7 +371,7 @@ details: poDetails.map((d) => ({
   key={pr.pr_id || pr.pr_kode}
   value={pr.pr_kode}
   onSelect={(currentValue) => {
-    console.log("✅ Selected:", currentValue, pr);
+   // console.log("✅ Selected:", currentValue, pr);
 
     setSelectedPR(pr);
 

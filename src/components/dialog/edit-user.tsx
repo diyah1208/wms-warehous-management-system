@@ -123,6 +123,7 @@ export function EditUserDialog({
                 <SelectContent>
                   <SelectGroup>
                     <SelectLabel>Daftar Role</SelectLabel>
+                    <SelectItem value="superadmin">Superadmin</SelectItem>
                     <SelectItem value="direktur">Direktur</SelectItem>
                     <SelectItem value="manager">Manajer</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>

@@ -44,6 +44,33 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { DatePicker } from "@/components/date-picker";
+import { EditDeliveryResiDialog } from "@/components/dialog/edit-delivery-resi";
+
+const formatPickup = (dateString?: string | null) => {
+  if (!dateString) return "-";
+
+  const date = new Date(dateString);
+
+  return date.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+};
+function formatTanggalIndo(dateString: string) {
+  return new Intl.DateTimeFormat("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false, 
+  }).format(new Date(dateString));
+}
+
 
 export default function DeliveryPage() {
   const [refresh, setRefresh] = useState<boolean>(false);
@@ -377,11 +404,13 @@ export default function DeliveryPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="p-2 border">No</TableHead>
+                  <TableHead className="p-2 border">Kode Delivery</TableHead>         
                   <TableHead className="p-2 border">Kode IT</TableHead>
                   <TableHead className="p-2 border">Kode MR</TableHead>
                   <TableHead className="p-2 border">Dari Gudang</TableHead>
                   <TableHead className="p-2 border">Ke Gudang</TableHead>
                   <TableHead className="p-2 border">Ekspedisi</TableHead>
+                   <TableHead className="p-2 border">No. Resi</TableHead>
                   <TableHead className="p-2 border">Jumlah Koli</TableHead>
                   <TableHead className="p-2 border">Status</TableHead>
                   <TableHead className="p-2 border">Aksi</TableHead>
@@ -399,6 +428,9 @@ export default function DeliveryPage() {
                         {deliv.dlv_kode}
                       </TableCell>
                       <TableCell className="p-2 border">
+                        {deliv.dlv_kode_it}
+                      </TableCell>
+                      <TableCell className="p-2 border">
                         {deliv.mr?.mr_kode}
                       </TableCell>
                       <TableCell className="p-2 border">
@@ -410,27 +442,45 @@ export default function DeliveryPage() {
                       <TableCell className="p-2 border">
                         {deliv.dlv_ekspedisi}
                       </TableCell>
+                       <TableCell className="p-2 border">
+                        {deliv.dlv_no_resi}
+                      </TableCell>
                       <TableCell className="p-2 border">
                         {deliv.dlv_jumlah_koli}
                       </TableCell>
                       <TableCell className="p-2 border text-center">
-                        <StatusBadge status={deliv.dlv_status} />
+                        <div className="flex flex-col items-center gap-1">
+                          <StatusBadge status={deliv.dlv_status} />
+
+                          {deliv.dlv_status === "ready to pickup" && deliv.pickup_plan_at && (
+                            <span className="text-[11px] text-purple-500 font-medium">
+                              {formatPickup(deliv.pickup_plan_at)}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell className="p-2 border">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          className="border-sky-400 text-sky-600 hover:bg-sky-50"
-                          asChild
-                        >
-                          <Link
-                            to={`/deliveries/kode/${encodeURIComponent(
-                              deliv.dlv_kode
-                            )}`}
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            className="border-sky-400 text-sky-600 hover:bg-sky-50"
+                            asChild
                           >
-                            <Info className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                            <Link
+                              to={`/deliveries/kode/${encodeURIComponent(
+                                deliv.dlv_kode
+                              )}`}
+                            >
+                              <Info className="h-4 w-4" />
+                            </Link>
+                          </Button>
+
+                          <EditDeliveryResiDialog
+                            delivery={deliv}
+                            refresh={setRefresh}
+                          />
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -460,7 +510,7 @@ export default function DeliveryPage() {
       </SectionContainer>
 
       {/* Tambah */}
-      {user?.role === "warehouse" && (
+      {user?.role === "warehouse" || user?.role === "superadmin" && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah Delivery Baru</SectionHeader>
           <SectionBody>

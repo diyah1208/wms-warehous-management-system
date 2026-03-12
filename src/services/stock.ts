@@ -1,10 +1,17 @@
 import api from "@/lib/axios";
 import type { Stock } from "@/types";
 
-export async function getAllStocks(): Promise<Stock[]> {
-  const res = await api.get("/stock");
+// export async function getAllStocks(): Promise<Stock[]> {
+//   const res = await api.get("/stock");
+//   return res.data.data;
+// }
+
+export async function getAllStocks(page = 1, limit = 15000) {
+  const res = await api.get(`/stock?page=${page}&limit=${limit}`);
   return res.data.data;
 }
+
+
 export async function saveStock(data: {
   part_id: number;
   stk_location: string;
