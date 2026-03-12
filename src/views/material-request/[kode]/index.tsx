@@ -358,7 +358,7 @@ async function handleReject(detailId: number) {
               <TableHead>Jumlah Permintaan</TableHead>
               <TableHead>Jumlah Diterima</TableHead>
               <TableHead>Stok Saat Ini</TableHead>
-         {user?.role === "warehouse" || user?.role === "superadmin"&& (
+         {(user?.role === "warehouse" || user?.role === "superadmin")&& (
   <TableHead className="print:hidden">Aksi</TableHead>
 )}
             </TableRow>
@@ -465,7 +465,7 @@ async function handleReject(detailId: number) {
     {stockQty}
   </TableCell>
 
-{user?.role === "warehouse" || user?.role === "superadmin"&& (
+{(user?.role === "warehouse" || user?.role === "superadmin") && (
   <TableCell className="print:hidden">
     <EditMRDetailDialog
       mrId={mr.mr_id!}

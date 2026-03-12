@@ -252,7 +252,7 @@ export default function SpbDoPage() {
       </SectionContainer>
 
       {/* ADD DO */}
-      {user?.role === "logistik" || user?.role === "superadmin"&& (
+      {(user?.role === "logistik" || user?.role === "superadmin") && (
         <SectionContainer span={12}>
           <SectionHeader>Attach DO ke SPB</SectionHeader>
           <SectionBody>

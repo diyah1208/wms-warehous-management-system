@@ -510,7 +510,8 @@ export default function DeliveryPage() {
       </SectionContainer>
 
       {/* Tambah */}
-      {user?.role === "warehouse" || user?.role === "superadmin" && (
+      {/* {user?.role === "warehouse" || user?.role === "superadmin" && ( */}
+      {(user?.role === "warehouse" || user?.role === "superadmin") && (
         <SectionContainer span={12}>
           <SectionHeader>Tambah Delivery Baru</SectionHeader>
           <SectionBody>

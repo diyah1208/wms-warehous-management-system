@@ -245,7 +245,7 @@ export default function SpbPoPage() {
       </SectionContainer>
 
       {/* FORM ATTACH PO */}
-      {user?.role === "marketing" || user?.role === "superadmin"&& (
+      {(user?.role === "marketing" || user?.role === "superadmin")&& (
         <SectionContainer span={12}>
           <SectionHeader>Attach PO ke SPB</SectionHeader>
           <SectionBody>

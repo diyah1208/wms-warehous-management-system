@@ -87,7 +87,7 @@ useEffect(() => {
       {/* =======================
           TAMBAH VENDOR
       ======================== */}
-      {user?.role === "purchasing" || user?.role === "superadmin" && (
+      {(user?.role === "purchasing" || user?.role === "superadmin") && (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Vendor</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">

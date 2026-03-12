@@ -379,7 +379,7 @@ export default function SpbPage() {
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 )}
-                 {user?.role === "warehouse" || user?.role === "superadmin"&&(
+                 {(user?.role === "warehouse" || user?.role === "superadmin")&&(
                 <EditSpbDialog spb={mr} refresh={setRefresh} />
                     )}
             
@@ -419,7 +419,7 @@ export default function SpbPage() {
       </SectionContainer>
 
       {/* Tambah MR (Hanya untuk role warehouse) */}
-      {user?.role === "warehouse" || user?.role === "superadmin"&& (
+      {(user?.role === "warehouse" || user?.role === "superadmin")&& (
         <SectionContainer span={12}>
           <SectionHeader>Tambah SPB Baru</SectionHeader>
           <SectionBody className="grid grid-cols-12 gap-2">

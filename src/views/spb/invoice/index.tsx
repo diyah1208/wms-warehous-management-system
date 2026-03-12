@@ -278,7 +278,7 @@ export default function SpbInvoicePage() {
         </SectionFooter>
       </SectionContainer>
 
-      {user?.role === "finance" || user?.role === "superadmin" && (
+      {(user?.role === "finance" || user?.role === "superadmin") && (
         <SectionContainer span={12}>
           <SectionHeader>Buat Invoice</SectionHeader>
           <SectionBody>

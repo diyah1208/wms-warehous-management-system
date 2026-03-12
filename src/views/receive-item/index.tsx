@@ -341,7 +341,7 @@ export default function ReceiveItem() {
           />
         </SectionFooter>
       </SectionContainer>
-      {user?.role === "warehouse" || user?.role === "superadmin"&& (
+      {(user?.role === "warehouse" || user?.role === "superadmin") && (
       <SectionContainer span={12}>
         <SectionHeader>Buat Receive Item (RI) Baru</SectionHeader>
         <SectionBody>

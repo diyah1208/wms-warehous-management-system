@@ -86,7 +86,7 @@ export default function MasterCustomerPage() {
       {/* =======================
           TAMBAH CUSTOMER
       ======================== */}
-      {user?.role === "purchasing" || user?.role === "superadmin"&& (
+      {(user?.role === "purchasing" || user?.role === "superadmin") && (
       <SectionContainer span={12}>
         <SectionHeader>Tambah Customer</SectionHeader>
         <SectionBody className="grid grid-cols-12 gap-2">
