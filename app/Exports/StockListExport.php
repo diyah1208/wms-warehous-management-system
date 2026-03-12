@@ -2,7 +2,9 @@
 
 namespace App\Exports;
 
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Generator;
+use App\Models\StockModel;
+use Maatwebsite\Excel\Concerns\FromGenerator;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -11,65 +13,78 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 
 class StockListExport implements 
-    FromCollection, 
-    WithHeadings, 
-    WithStyles, 
-    ShouldAutoSize
+    FromGenerator,
+    WithHeadings,
+    WithStyles
 {
-    protected $stocks;
 
-    public function __construct($stocks)
+    public function generator(): Generator
     {
-        $this->stocks = $stocks;
-    }
+        $stocks = StockModel::with('barang')
+            ->orderBy('part_id')
+            ->cursor();
 
-    public function collection()
-    {
-        return $this->stocks
-            ->groupBy('part_id')
-            ->values()
-            ->map(function ($rows, $i) {
+        $grouped = [];
 
-                $barang = $rows->first()->barang;
+        foreach ($stocks as $stock) {
 
-                $get = fn ($lokasi) =>
-                    (int) $rows->where('stk_location', $lokasi)->sum('stk_qty');
+            $partId = $stock->part_id;
 
-                $balikpapan = $get('BALIKPAPAN');
-                $jakarta    = $get('JAKARTA');
-                $ami        = $get('SITE AMI');
-                $ba         = $get('SITE BA');
-                $bib        = $get('SITE BIB');
-                $mifa       = $get('SITE MIFA');
-                $mip        = $get('SITE MIP');
-                $tabang     = $get('SITE TABANG');
-                $tal        = $get('SITE TAL');
-                $tanjung    = $get('MUARA ENIM');
-                $bcp    = $get('BCP+PIK');
-
-                $sum = $balikpapan + $jakarta + $ami + $ba + $bib
-                     + $mifa + $mip + $tabang + $tal + $tanjung + $bcp;
-                $sum = $balikpapan + $jakarta;
-
-                return [
-                    'no'          => $i + 1,
-                    'part_number' => $barang->part_number,
-                    'part_name'   => $barang->part_name,
-                    'satuan'      => $barang->part_satuan,
-                    'balikpapan'  => $balikpapan,
-                    'jakarta'     => $jakarta,
-                    'ami'         => $ami,
-                    'ba'          => $ba,
-                    'bib'         => $bib,
-                    'mifa'        => $mifa,
-                    'mip'         => $mip,
-                    'tabang'      => $tabang,
-                    'tal'         => $tal,
-                    'tanjung'     => $tanjung,
-                    'bcp'     => $bcp,
-                    'sum'         => $sum,
+            if (!isset($grouped[$partId])) {
+                $grouped[$partId] = [
+                    'barang' => $stock->barang,
+                    'locations' => []
                 ];
-            });
+            }
+
+            $grouped[$partId]['locations'][$stock->stk_location] =
+                ($grouped[$partId]['locations'][$stock->stk_location] ?? 0)
+                + $stock->stk_qty;
+        }
+
+        $i = 1;
+
+        foreach ($grouped as $data) {
+
+            $loc = $data['locations'];
+            $barang = $data['barang'];
+
+            $balikpapan = $loc['BALIKPAPAN'] ?? 0;
+            $jakarta    = $loc['JAKARTA'] ?? 0;
+            $ami        = $loc['SITE AMI'] ?? 0;
+            $ba         = $loc['SITE BA'] ?? 0;
+            $bib        = $loc['SITE BIB'] ?? 0;
+            $mifa       = $loc['SITE MIFA'] ?? 0;
+            $mip        = $loc['SITE MIP'] ?? 0;
+            $tabang     = $loc['SITE TABANG'] ?? 0;
+            $tal        = $loc['SITE TAL'] ?? 0;
+            $tanjung    = $loc['MUARA ENIM'] ?? 0;
+            $bcp        = $loc['BCP+PIK'] ?? 0;
+            $diza       = $loc['SITE DIZA'] ?? 0;
+
+            $sum = $balikpapan + $jakarta + $ami + $ba + $bib
+                 + $mifa + $mip + $tabang + $tal + $tanjung + $bcp + $diza;
+
+            yield [
+                $i++,
+                $barang->part_number ?? '',
+                $barang->part_name ?? '',
+                $barang->part_satuan ?? '',
+                $balikpapan,
+                $jakarta,
+                $ami,
+                $ba,
+                $bib,
+                $mifa,
+                $mip,
+                $tabang,
+                $tal,
+                $tanjung,
+                $bcp,
+                $diza,
+                $sum
+            ];
+        }
     }
 
     public function headings(): array
@@ -90,16 +105,58 @@ class StockListExport implements
             'SITE TAL',
             'MUARA ENIM',
             'BCP+PIK',
+            'SITE DIZA',
             'TOTAL',
         ];
     }
 
+    // public function styles(Worksheet $sheet)
+    // {
+    //     $lastRow    = $sheet->getHighestRow();
+    //     $lastColumn = $sheet->getHighestColumn();
+
+    //     return [
+
+    //         1 => [
+    //             'font' => [
+    //                 'bold' => true,
+    //             ],
+    //             'alignment' => [
+    //                 'horizontal' => Alignment::HORIZONTAL_CENTER,
+    //                 'vertical'   => Alignment::VERTICAL_CENTER,
+    //             ],
+    //             'borders' => [
+    //                 'allBorders' => [
+    //                     'borderStyle' => Border::BORDER_THIN,
+    //                 ],
+    //             ],
+    //         ],
+
+    //         "A2:{$lastColumn}{$lastRow}" => [
+    //             'alignment' => [
+    //                 'vertical' => Alignment::VERTICAL_CENTER,
+    //             ],
+    //             'borders' => [
+    //                 'allBorders' => [
+    //                     'borderStyle' => Border::BORDER_THIN,
+    //                 ],
+    //             ],
+    //         ],
+
+    //         "E2:{$lastColumn}{$lastRow}" => [
+    //             'alignment' => [
+    //                 'horizontal' => Alignment::HORIZONTAL_RIGHT,
+    //             ],
+    //         ],
+    //     ];
+    // }
     public function styles(Worksheet $sheet)
     {
         $lastRow    = $sheet->getHighestRow();
         $lastColumn = $sheet->getHighestColumn();
-
+    
         return [
+    
             // HEADER
             1 => [
                 'font' => [
@@ -115,7 +172,7 @@ class StockListExport implements
                     ],
                 ],
             ],
-
+    
             // BODY
             "A2:{$lastColumn}{$lastRow}" => [
                 'alignment' => [
@@ -127,13 +184,24 @@ class StockListExport implements
                     ],
                 ],
             ],
-
-            // ANGKA (kolom stok & total rata kanan)
+    
+            // ANGKA rata kanan
             "E2:{$lastColumn}{$lastRow}" => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_RIGHT,
                 ],
             ],
+    
+            // KECILKAN PART NAME
+            "C2:C{$lastRow}" => [
+                'font' => [
+                    'size' => 9
+                ],
+                'alignment' => [
+                    'wrapText' => false
+                ],
+            ],
+    
         ];
     }
 }

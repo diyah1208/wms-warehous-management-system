@@ -32,54 +32,27 @@ class PeminjamanController extends Controller
         return response()->json($data);
     }
 
-    // public function showByKode($kode)
-    // {
-    //     $peminjaman = PeminjmanModel::with([
-    //         'details',
-    //     ])
-    //     ->where('pmj_kode', $kode)
-    //     ->firstOrFail();
-
-    //     return response()->json($peminjaman);
-    // }
-
-    // public function showByKode($kode)
-    // {
-    //     $peminjaman = PeminjmanModel::with('details')
-    //         ->whereRaw("REPLACE(pmj_kode,'/0','/') = ?", [$kode])
-    //         ->first();
-
-    //     if (!$peminjaman) {
-    //         return response()->json([
-    //             'message' => 'Data peminjaman tidak ditemukan'
-    //         ], 404);
-    //     }
-
-    //     return response()->json($peminjaman);
-    // }
     public function showByKode($kode)
-{
-    $kode = base64_decode($kode);
+    {
+        $kode = base64_decode($kode);
 
-    $peminjaman = PeminjmanModel::with('details')
-        ->where('pmj_kode', $kode)
-        ->first();
+        $peminjaman = PeminjmanModel::with('details')
+            ->where('pmj_kode', $kode)
+            ->first();
 
-    if (!$peminjaman) {
-        return response()->json([
-            'kode_dicari' => $kode,
-            'message' => 'Data tidak ditemukan'
-        ], 404);
+        if (!$peminjaman) {
+            return response()->json([
+                'kode_dicari' => $kode,
+                'message' => 'Data tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json($peminjaman);
     }
-
-    return response()->json($peminjaman);
-}
-
-
 
     public function store(Request $request)
     {
-        ClosingBook::check($request->pmj_tanggal);
+        // ClosingBook::check($request->pmj_tanggal);
 
         $request->validate([
             "pmj_lokasi" => "required",

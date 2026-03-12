@@ -20,32 +20,7 @@ use App\Exports\DeliveryListExport;
 
 class DeliveryController extends Controller
 {
-    // public function index(Request $request)
-    // {
-    //     return response()->json(
-    //         DB::table('tb_delivery')
-    //             ->leftJoin(
-    //                 'tb_material_request',
-    //                 'tb_delivery.mr_id',
-    //                 '=',
-    //                 'tb_material_request.mr_id'
-    //             )
-    //             ->select(
-    //                 'tb_delivery.dlv_id',
-    //                 'tb_delivery.dlv_kode',
-    //                 'tb_delivery.dlv_status',
-    //                 'tb_delivery.dlv_dari_gudang',
-    //                 'tb_delivery.dlv_ke_gudang',
-    //                 'tb_delivery.dlv_ekspedisi',
-    //                 'tb_delivery.created_at',
-    //                 'tb_material_request.mr_kode as mr_kode'
-
-    //             )
-    //             ->orderByDesc('tb_delivery.created_at')
-    //             ->paginate(5)
-    //     );
-    // }
-     public function index()
+    public function index()
     {
         return response()->json(
             DeliveryModel::with(['details', 'mr'])
@@ -56,16 +31,30 @@ class DeliveryController extends Controller
 
     public function showKode($kode)
     {
+        $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decodedKode = base64_decode($base64);
+
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode Delivery tidak valid'
+            ], 400);
+        }
         return response()->json(
             DeliveryModel::with(['details', 'mr.details'])
-                ->where('dlv_kode', $kode)
+                ->where('dlv_kode', $decodedKode)
                 ->firstOrFail()
         );
     }
 
     public function store(Request $request)
     {
-        ClosingBook::check($request->dlv_tanggal);
+        // ClosingBook::check($request->dlv_tanggal);
 
         $request->validate([
             'dlv_kode'        => 'required|unique:tb_delivery,dlv_kode',
@@ -81,18 +70,22 @@ class DeliveryController extends Controller
 
         if (strtoupper($request->dlv_ekspedisi) !== 'HAND CARRY') {
         
-            if (!$request->filled('dlv_no_resi')) {
-                return response()->json([
-                    'message' => 'No resi wajib diisi untuk ekspedisi'
-                ], 422);
-            }
+            // if (!$request->filled('dlv_no_resi')) {
+            //     return response()->json([
+            //         'message' => 'No resi wajib diisi untuk ekspedisi'
+            //     ], 422);
+            // }
         
-            $exists = DeliveryModel::where('dlv_no_resi', $request->dlv_no_resi)->exists();
-        
-            if ($exists) {
-                return response()->json([
-                    'message' => 'No resi sudah pernah digunakan!'
-                ], 422);
+            if ($request->filled('dlv_no_resi') && trim($request->dlv_no_resi) !== '') {
+
+                $exists = DeliveryModel::where('dlv_no_resi', trim($request->dlv_no_resi))
+                    ->exists();
+
+                if ($exists) {
+                    return response()->json([
+                        'message' => 'No resi sudah pernah digunakan!'
+                    ], 422);
+                }
             }
         }
 
@@ -100,6 +93,7 @@ class DeliveryController extends Controller
 
             $delivery = DeliveryModel::create([
                 'dlv_kode'        => $request->dlv_kode,
+                'dlv_kode_it'     => $request->dlv_kode_it,
                 'mr_id'           => $request->mr_id,
                 'dlv_dari_gudang' => $request->dlv_dari_gudang,
                 'dlv_ke_gudang'   => $request->dlv_ke_gudang,
@@ -146,16 +140,109 @@ class DeliveryController extends Controller
             'message' => 'Delivery berhasil dibuat',
         ]);
     }
+    public function updateResi(Request $request, $kode)
+    {
+        $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decodedKode = base64_decode($base64);
+
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode Delivery tidak valid'
+            ], 400);
+        }
+
+        $delivery = DeliveryModel::where('dlv_kode', $decodedKode)->firstOrFail();
+
+        $request->validate([
+            'dlv_no_resi' => 'nullable|string',
+        ]);
+
+        if ($request->filled('dlv_no_resi')) {
+
+            $exists = DeliveryModel::where('dlv_no_resi', $request->dlv_no_resi)
+                ->where('dlv_id', '!=', $delivery->dlv_id)
+                ->exists();
+
+            if ($exists) {
+                return response()->json([
+                    'message' => 'No resi sudah digunakan!'
+                ], 422);
+            }
+        }
+
+        $delivery->update([
+            'dlv_no_resi' => $request->dlv_no_resi,
+        ]);
+
+        return response()->json([
+            'message' => 'No resi berhasil diperbarui',
+            'data' => $delivery
+        ]);
+    }
 
 
+    // public function updateStatus(Request $request, $kode)
+    // {
+    //     $delivery = DeliveryModel::with('details')
+    //         ->where('dlv_kode', $kode)
+    //         ->firstOrFail();
+
+    //     $request->validate([
+    //         'status' => 'required|in:packing,ready to pickup,on delivery,delivered',
+    //     ]);
+
+    //     $allowed = [
+    //         'pending'         => ['packing'],
+    //         'packing'         => ['ready to pickup', 'delivered'],
+    //         'ready to pickup' => ['on delivery'],
+    //         'on delivery'     => ['delivered'],
+    //     ];
+
+    //     if (!in_array($request->status, $allowed[$delivery->dlv_status] ?? [])) {
+    //         throw new Exception('Perubahan status tidak valid');
+    //     }
+
+    //     if ($request->status === 'packing') {
+    //         $this->moveToPacking($delivery);
+    //     }
+
+    //     $delivery->update([
+    //         'dlv_status' => $request->status,
+    //     ]);
+
+    //     return response()->json([
+    //         'message' => 'Status delivery diperbarui',
+    //     ]);
+    // }
     public function updateStatus(Request $request, $kode)
     {
-        $delivery = DeliveryModel::with('details')
-            ->where('dlv_kode', $kode)
+        $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decodedKode = base64_decode($base64);
+
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode Delivery tidak valid'
+            ], 400);
+        }
+
+        $delivery = DeliveryModel::where('dlv_kode', $decodedKode)
             ->firstOrFail();
 
         $request->validate([
             'status' => 'required|in:packing,ready to pickup,on delivery,delivered',
+            'pickup_plan_at' => 'nullable|date',
         ]);
 
         $allowed = [
@@ -169,13 +256,29 @@ class DeliveryController extends Controller
             throw new Exception('Perubahan status tidak valid');
         }
 
+        $updateData = [
+            'dlv_status' => $request->status,
+        ];
+
         if ($request->status === 'packing') {
             $this->moveToPacking($delivery);
+            $updateData['packing_at'] = now();
         }
 
-        $delivery->update([
-            'dlv_status' => $request->status,
-        ]);
+        if ($request->status === 'ready to pickup') {
+            $updateData['pickup_plan_at'] = $request->pickup_plan_at ?? now();
+        }
+
+        if ($request->status === 'on delivery') {
+            $updateData['pickup_at'] = now();
+            $updateData['on_delivery_at'] = now();
+        }
+
+        if ($request->status === 'delivered') {
+            $updateData['delivered_at'] = now();
+        }
+
+        $delivery->update($updateData);
 
         return response()->json([
             'message' => 'Status delivery diperbarui',
@@ -215,8 +318,23 @@ class DeliveryController extends Controller
 
     public function receive(Request $request, $kode)
     {
+        $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decodedKode = base64_decode($base64);
+
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode Delivery tidak valid'
+            ], 400);
+        }
+
         $delivery = DeliveryModel::with(['details', 'mr.details'])
-            ->where('dlv_kode', $kode)
+            ->where('dlv_kode', $decodedKode)
             ->firstOrFail();
 
         $isHandCarry = strtolower($delivery->dlv_ekspedisi) === 'hand carry';
@@ -288,7 +406,6 @@ class DeliveryController extends Controller
                     ->increment('dtl_mr_qty_received', $input['qty_received']);
             }
 
-            /* UPDATE STATUS MR */
             $mr = MaterialRequestModel::with('details')
                 ->lockForUpdate()
                 ->findOrFail($delivery->mr_id);
@@ -314,13 +431,28 @@ class DeliveryController extends Controller
     }
     public function signPenerima(Request $request, $kode)
     {
+        $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decodedKode = base64_decode($base64);
+
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode Delivery tidak valid'
+            ], 400);
+        }
+
         $request->validate([
             'signature' => 'required|string',
             'signed_penerima_name'      => 'required|string',
         ]);
 
         $delivery = DeliveryModel::with('details')
-            ->where('dlv_kode', $kode)
+            ->where('dlv_kode', $decodedKode)
             ->firstOrFail();
 
         // if ($delivery->dlv_status !== 'delivered') {
@@ -362,8 +494,22 @@ class DeliveryController extends Controller
 
     public function exportPdf($kode)
     {
+        $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decodedKode = base64_decode($base64);
+
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode Delivery tidak valid'
+            ], 400);
+        }
         $delivery = DeliveryModel::with(['details', 'mr.details'])
-            ->where('dlv_kode', $kode)
+            ->where('dlv_kode', $decodedKode)
             ->firstOrFail();
 
         $pdf = Pdf::loadView(
@@ -371,8 +517,11 @@ class DeliveryController extends Controller
             compact('delivery')
         )->setPaper('A4', 'portrait');
 
+        // return $pdf->download(
+        //     'DELIVERY_' . $delivery->dlv_kode . '.pdf'
+        // );
         return $pdf->download(
-            'DELIVERY_' . $delivery->dlv_kode . '.pdf'
+            'DELIVERY_' . str_replace('/', '_', $delivery->dlv_kode) . '.pdf'
         );
     }
 
@@ -436,5 +585,18 @@ class DeliveryController extends Controller
             new DeliveryListExport($deliveries),
             "Delivery_{$tanggalFile}.xlsx"
         );
+    }
+
+    public function generateKode()
+    {
+        $tahun = now()->format('Y');
+        $bulan = now()->format('m');
+
+        $lastId = DeliveryModel::max('dlv_id');
+        $nextNumber = $lastId ? $lastId + 1 : 1;
+
+        $kode = "DEL/{$tahun}/{$bulan}/{$nextNumber}";
+
+        return response()->json($kode);
     }
 }

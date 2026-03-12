@@ -27,4 +27,8 @@ class SpbDetailModel extends Model
     {
         return $this->belongsTo(SpbModel::class, 'spb_id', 'spb_id');
     }
+    public function returnDetails()
+    {
+        return $this->hasMany(ReturnSpbDetailModel::class, 'spb_dtl_id', 'spb_dtl_id');
+    }
 }

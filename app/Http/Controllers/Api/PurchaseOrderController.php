@@ -72,7 +72,6 @@ class PurchaseOrderController extends Controller
             'details.*.part_id' => 'required',
             'details.*.dtl_po_qty' => 'required|numeric|min:1',
             'details.*.dtl_po_harga' => 'required|numeric|min:1',
-// 'details.*.vendor_id'   => 'required|exists:vendors,id',
 
         ]);
 
@@ -81,11 +80,11 @@ class PurchaseOrderController extends Controller
             $pr = PurchaseRequestModel::lockForUpdate()
                 ->where('pr_id', $request->pr_id)
                 ->firstOrFail();
-foreach ($request->details as $item) {
-    if ($item['dtl_po_qty'] <= 0) {
-        abort(422, 'Qty PO harus lebih dari 0');
-    }
-}
+            foreach ($request->details as $item) {
+                if ($item['dtl_po_qty'] <= 0) {
+                    abort(422, 'Qty PO harus lebih dari 0');
+                }
+            }
 
             $po = PurchaseOrderModel::create([
                 'po_kode' => $request->po_kode,
@@ -109,7 +108,7 @@ foreach ($request->details as $item) {
                     'dtl_po_satuan'      => $item['dtl_po_satuan'],
                     'dtl_po_qty'         => $item['dtl_po_qty'],
                      'dtl_po_harga'       => $item['dtl_po_harga'] ?? null, // 🔥
-    'vendor_id'          => $item['vendor_id'] ?? null,    // 🔥
+                     'vendor_id'          => $item['vendor_id'] ?? null,    // 🔥
                     'dtl_qty_received'   => 0,
                 ]);
             }

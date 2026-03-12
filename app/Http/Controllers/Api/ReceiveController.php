@@ -49,11 +49,12 @@ class ReceiveController extends Controller
 
     public function showByKode($kode)
     {
+        $decodedKode = $this->decodeKode($kode);
         $receive = ReceiveModel::with([
             'purchaseOrder',
             'details',
         ])
-        ->where('ri_kode', $kode)
+        ->where('ri_kode', $decodedKode)
         ->firstOrFail();
 
         return response()->json($receive);
@@ -61,7 +62,7 @@ class ReceiveController extends Controller
 
     public function store(Request $request)
     {
-        ClosingBook::check($request->ri_tanggal);
+        // ClosingBook::check($request->ri_tanggal);
         $request->validate([
             "ri_kode" => "required|unique:tb_receive_item,ri_kode",
             "po_id"   => "required|exists:tb_purchase_order,po_id",
@@ -250,13 +251,27 @@ class ReceiveController extends Controller
 
     public function signPenerima(Request $request, $kode)
     {
+         $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decodedKode = base64_decode($base64);
+
+        if (!$decodedKode) {
+            return response()->json([
+                'message' => 'Kode Delivery tidak valid'
+            ], 400);
+        }
         $request->validate([
             'signature' => 'required|string',
             'signed_penerima_name' => 'required|string',
         ]);
 
         $receive = ReceiveModel::with('details')
-            ->where('ri_kode', $kode)
+            ->where('ri_kode', $decodedKode)
             ->firstOrFail();
 
         $path = $this->saveSignature($request->signature);
@@ -294,8 +309,9 @@ class ReceiveController extends Controller
     }
     public function exportPdf($kode)
     {
+        $decodedKode = $this->decodeKode($kode);
         $receive = ReceiveModel::with(['details'])
-            ->where('ri_kode', $kode)
+            ->where('ri_kode', $decodedKode)
             ->firstOrFail();
 
         $pdf = Pdf::loadView(
@@ -303,8 +319,26 @@ class ReceiveController extends Controller
             compact('receive')
         )->setPaper('A4', 'portrait');
 
-        return $pdf->download(
-            'RECEIVE_' . $receive->ri_kode . '.pdf'
-        );
+        $filename = 'RECEIVE_' . str_replace('/', '_', $receive->ri_kode) . '.pdf';
+
+        return $pdf->download($filename);
+    }
+    
+    private function decodeKode($kode)
+    {
+        $base64 = strtr($kode, '-_', '+/');
+
+        $padLength = strlen($base64) % 4;
+        if ($padLength) {
+            $base64 .= str_repeat('=', 4 - $padLength);
+        }
+
+        $decoded = base64_decode($base64);
+
+        if (!$decoded) {
+            abort(400, 'Kode Receive tidak valid');
+        }
+
+        return $decoded;
     }
 }

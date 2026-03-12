@@ -14,9 +14,9 @@ use App\Exports\BarangListExport;
 class BarangController extends Controller
 {
     private const LOKASI_LIST = [
-        ['nama' => 'JAKARTA', 'kode' => 'HO'],
+        ['nama' => 'JAKARTA', 'kode' => 'JKT'],
         ['nama' => 'MUARA ENIM', 'kode' => 'ENIM'],
-        ['nama' => 'BALIKPAPAN', 'kode' => 'BPN'],
+        ['nama' => 'BALIKPAPAN', 'kode' => 'BPP'],
         ['nama' => 'SITE BA', 'kode' => 'BA'],
         ['nama' => 'SITE TAL', 'kode' => 'TAL'],
         ['nama' => 'SITE MIP', 'kode' => 'MIP'],
@@ -25,6 +25,7 @@ class BarangController extends Controller
         ['nama' => 'SITE AMI', 'kode' => 'AMI'],
         ['nama' => 'SITE TABANG', 'kode' => 'TABANG'],
         ['nama' => 'SITE BCP+PIK', 'kode' => 'BCP'],
+        ['nama' => 'SITE DIZA', 'kode' => 'DIZA'],
     ];
 
     public function index(Request $request)

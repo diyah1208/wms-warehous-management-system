@@ -23,7 +23,13 @@ protected $fillable = [
                 'mr_last_edit_by',
                   'signature_url',
   'sign_at',
-
+   // 🔥 APPROVAL FIELD
+    'dtl_mr_approved',
+    'dtl_mr_approved_at',
+    'dtl_mr_approved_by',
+'dtl_mr_rejected',
+'dtl_mr_rejected_at',
+'dtl_mr_rejected_by',
     // 🔥 SIGN FLOW MR
     'sign_step',
 

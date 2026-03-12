@@ -24,15 +24,24 @@ use Carbon\Carbon;
 
 class SpbController extends Controller
 {
-    // public function index()
-    // {
-    //     return response()->json(
-    //         SpbModel::get()
-    //     );
-    // }
+     private array $lokasiKodeMap = [
+        'JAKARTA'        => 'JKT',
+        'MUARA ENIM'     => 'ENIM',
+        'BALIKPAPAN'     => 'BPN',
+        'SITE BA'        => 'TJE',
+        'SITE TAL'       => 'AMMSBS',
+        'SITE MIP'       => 'LHT',
+        'SITE MIFA'      => 'AMM',
+        'SITE BIB'       => 'BIB',
+        'SITE AMI'       => 'AMI',
+        'SITE TABANG'    => 'AMMIPT',
+        'SITE BCP_PIK'   => 'BCP',
+        'SITE DIZA'      => 'AMMDMP',
+    ];
     public function index()
     {
         $data = SpbModel::with(['po','details','po.details.spbDetail'])
+            ->where('spb_is_deleted', 0)
             ->orderByDesc('spb_id')
             ->get();
 
@@ -52,22 +61,43 @@ class SpbController extends Controller
     
         $spb = SpbModel::with(['details'])
             ->where('spb_no', $decodedKode)
+            ->where('spb_is_deleted', 0)
             ->firstOrFail();
     
         return response()->json($spb);
     }
-// public function view(Request $request)
-// {
-//     return response()->json(['ok' => true]);
-// }
 
+    // public function view(Request $request)
+    // {
+    //     $limit  = $request->get('limit', 10);
+    //     $search = $request->get('search');
+
+    //     $query = DB::table('v_spb_report')
+    //     ->where('spb_is_deleted', 0);
+
+    //     if ($search) {
+    //         $query->where(function ($q) use ($search) {
+    //             $q->where('spb_no', 'like', "%$search%")
+    //               ->orWhere('spb_part_name', 'like', "%$search%")
+    //               ->orWhere('spb_part_number', 'like', "%$search%")
+    //               ->orWhere('po_no', 'like', "%$search%")
+    //               ->orWhere('do_no', 'like', "%$search%")
+    //               ->orWhere('invoice_no', 'like', "%$search%");
+    //         });
+    //     }
+
+    //     return response()->json(
+    //         $query->orderBy('spb_created_at', 'desc')
+    //               ->paginate($limit)
+    //     );
+    // }
     public function view(Request $request)
     {
-        $limit  = $request->get('limit', 10);
         $search = $request->get('search');
-
-        $query = DB::table('v_spb_report');
-
+    
+        $query = DB::table('v_spb_report')
+            ->where('spb_is_deleted', 0);
+    
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('spb_no', 'like', "%$search%")
@@ -78,16 +108,16 @@ class SpbController extends Controller
                   ->orWhere('invoice_no', 'like', "%$search%");
             });
         }
-
+    
         return response()->json(
             $query->orderBy('spb_created_at', 'desc')
-                  ->paginate($limit)
+                  ->get()
         );
     }
 
     public function store(Request $request)
     {
-        ClosingBook::check($request->spb_tanggal);
+        // ClosingBook::check($request->spb_tanggal);
         $request->validate([
             'spb_tanggal' => 'required|date',
             'spb_no'      => 'required',
@@ -173,25 +203,146 @@ class SpbController extends Controller
             'data' => $spb
         ]);
     }
-
-    public function generateKodeSpb()
+    private function getLokasiKode(string $lokasi): string
     {
-        $lokasiKode = 'TJE'; 
-        $tahun = now()->format('Y'); 
-        $bulan = now()->format('m'); 
+        return $this->lokasiKodeMap[strtoupper($lokasi)] ?? 'UNK';
+    }
+    
+    // public function generateKodeSpb(Request $request)
+    // {
+    //     $lokasiNama = strtoupper(trim($request->spb_gudang));
+    //     $lokasiKode = $this->getLokasiKode($lokasiNama);
+    //     $tahunBulan = now()->format('Y/m');
+    
+    //     $last = SpbModel::where('spb_gudang', $lokasiNama)
+    //         ->where('spb_no', 'like', "%/$tahunBulan/%")
+    //         ->orderBy('spb_id', 'desc')
+    //         ->first();
+    
+    //     $nextNumber = $last
+    //         ? ((int) substr($last->spb_no, -5)) + 1
+    //         : 1;
+    
+    //     return response()->json(sprintf(
+    //         "GMI%s/%s/%05d",
+    //         $lokasiKode,
+    //         $tahunBulan,
+    //         $nextNumber
+    //     ));
+    // }
+    public function generateKodeSpb(Request $request)
+{
+    $lokasiNama = strtoupper(trim($request->spb_gudang));
+    $lokasiKode = $this->getLokasiKode($lokasiNama);
+    $tahunBulan = now()->format('Y/m');
 
-        $lastId = SpbModel::max('spb_id');
+    $last = SpbModel::where('spb_no', 'like', "GMI{$lokasiKode}/$tahunBulan/%")
+        ->orderBy('spb_no', 'desc')
+        ->first();
 
-        $nextNumber = $lastId ? $lastId + 1 : 1;
+    $nextNumber = 1;
 
-        $kode = "GMITJIE/{$tahun}/{$bulan}/{$nextNumber}";
-
-        return response()->json($kode);
+    if ($last) {
+        $lastNumber = (int) last(explode('/', $last->spb_no));
+        $nextNumber = $lastNumber + 1;
     }
 
-    public function exportSpbExcel()
+    return response()->json(sprintf(
+        "GMI%s/%s/%0d",
+        $lokasiKode,
+        $tahunBulan,
+        $nextNumber
+    ));
+}
+
+    // public function generateKodeSpb()
+    // {
+    //     $lokasiKode = 'TJE'; 
+    //     $tahun = now()->format('Y'); 
+    //     $bulan = now()->format('m'); 
+
+    //     $lastId = SpbModel::max('spb_id');
+
+    //     $nextNumber = $lastId ? $lastId + 1 : 1;
+
+    //     $kode = "GMITJIE/{$tahun}/{$bulan}/{$nextNumber}";
+
+    //     return response()->json($kode);
+    // }
+
+    // public function exportSpbExcel()
+    // {
+    //     $data = DB::table('v_spb_report')
+    //         ->orderBy('spb_created_at', 'desc')
+    //         ->get();
+
+    //     return Excel::download(
+    //         new SpbListExport($data),
+    //         'DAFTAR_SPB.xlsx'
+    //     );
+    // }
+
+    public function exportSpbExcel(Request $request)
     {
-        $data = DB::table('v_spb_report')
+        $query = DB::table('v_spb_report')
+        ->where('spb_is_deleted', 0);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('spb_no', 'like', "%{$search}%")
+                ->orWhere('dtl_spb_part_name', 'like', "%{$search}%")
+                ->orWhere('dtl_spb_part_number', 'like', "%{$search}%")
+                ->orWhere('po_no', 'like', "%{$search}%")
+                ->orWhere('do_no', 'like', "%{$search}%")
+                ->orWhere('invoice_no', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('startDate')) {
+            $query->whereDate('spb_tanggal', '>=', $request->startDate);
+        }
+
+        if ($request->filled('endDate')) {
+            $query->whereDate('spb_tanggal', '<=', $request->endDate);
+        }
+        if ($request->status === 'NO_PO') {
+            $query->where(function ($q) {
+                $q->whereNull('po_no')
+                ->orWhereRaw("TRIM(po_no) = ''")
+                ->orWhere('po_no', '-',)
+                ->orWhere('po_no', 'NULL');
+            });
+        }
+
+        if ($request->status === 'NO_DO') {
+            $query->where(function ($q) {
+                $q->whereNotNull('po_no')
+                ->whereRaw("TRIM(po_no) != ''");
+            })
+            ->where(function ($q) {
+                $q->whereNull('do_no')
+                ->orWhereRaw("TRIM(do_no) = ''")
+                ->orWhere('do_no', '-')
+                ->orWhere('do_no', 'NULL');
+            });
+        }
+
+        if ($request->status === 'NO_INV') {
+            $query->where(function ($q) {
+                $q->whereNotNull('do_no')
+                ->whereRaw("TRIM(do_no) != ''");
+            })
+            ->where(function ($q) {
+                $q->whereNull('invoice_no')
+                ->orWhereRaw("TRIM(invoice_no) = ''")
+                ->orWhere('invoice_no', '-')
+                ->orWhere('invoice_no', 'NULL');
+            });
+        }
+
+        $data = $query
             ->orderBy('spb_created_at', 'desc')
             ->get();
 
@@ -200,6 +351,7 @@ class SpbController extends Controller
             'DAFTAR_SPB.xlsx'
         );
     }
+   
     public function printSpb(string $kode)
     {
         $decodedKode = base64_decode(strtr($kode, '-_', '+/'));
@@ -220,5 +372,40 @@ class SpbController extends Controller
         return $pdf->download(
             'SPB_' . str_replace('/', '_', $spb->spb_no) . '.pdf'
         );
+    }
+
+    public function deleteSpb($id)
+    {
+        DB::transaction(function () use ($id) {
+
+            $spb = SpbModel::with('details')->findOrFail($id);
+
+            if ($spb->spb_is_deleted == 1) {
+                throw new Exception('SPB sudah pernah dihapus');
+            }
+
+            foreach ($spb->details as $detail) {
+
+                $stock = StockModel::where('part_id', $detail->part_id)
+                    ->where('stk_location', $spb->spb_gudang)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (!$stock) {
+                    throw new Exception("Stock tidak ditemukan untuk part_id {$detail->part_id}");
+                }
+
+                $stock->increment('stk_qty', $detail->dtl_spb_qty);
+            }
+
+            $spb->update([
+                'spb_is_deleted' => 1
+            ]);
+        });
+
+        return response()->json([
+            'status' => true,
+            'message' => 'SPB berhasil dihapus dan stok dikembalikan'
+        ]);
     }
 }

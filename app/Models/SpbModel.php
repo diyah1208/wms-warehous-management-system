@@ -24,6 +24,7 @@ class SpbModel extends Model
         'spb_status',
         'spb_pic',
         'spb_gudang',
+        'spb_is_deleted',
     ];
 
     public function details()

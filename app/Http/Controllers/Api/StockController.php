@@ -15,15 +15,29 @@ use App\Models\BarangModel;
 class StockController extends Controller
 {
   
+    // public function index(Request $request)
+    // {
+    //     $data = StockModel::with('barang')
+    //         ->orderBy('stk_location')
+    //         ->get();
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data'   => $data
+    //     ]);
+    // }
     public function index(Request $request)
     {
-        $data = StockModel::with('barang')
-            ->orderBy('stk_location')
-            ->get();
+        $query = StockModel::with('barang')
+            ->orderBy('stk_location');
+
+        $perPage = $request->get('limit', 1000);
+
+        $data = $query->paginate($perPage);
 
         return response()->json([
             'status' => true,
-            'data'   => $data
+            'data' => $data
         ]);
     }
 
@@ -65,12 +79,28 @@ class StockController extends Controller
         ], 201);
     }
 
+    // public function exportStock()
+    // {
+    //     $deliveries = StockModel::with('barang')->get();
+
+    //     return Excel::download(
+    //         new StockListExport($deliveries), 
+    //         'DAFTAR_STOCK.xlsx'
+    //     );
+    // }
+    // public function exportStock()
+    // {
+    //     return Excel::download(
+    //         new StockListExport(),
+    //         'DAFTAR_STOCK.xlsx'
+    //     );
+    // }
     public function exportStock()
     {
-        $deliveries = StockModel::with('barang')->get();
-
+        set_time_limit(0);
+    
         return Excel::download(
-            new StockListExport($deliveries), 
+            new StockListExport(),
             'DAFTAR_STOCK.xlsx'
         );
     }

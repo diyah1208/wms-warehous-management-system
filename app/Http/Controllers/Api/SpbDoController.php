@@ -15,6 +15,7 @@ class SpbDoController extends Controller
     public function index()
     {
        $data = SpbDoModel::with([
+        'po.spb',
             'po.details.spbDetail',
             'details.poDetail.spbDetail'
         ])
@@ -131,13 +132,74 @@ class SpbDoController extends Controller
 //         'do_no' => $do->do_no,
 //     ]);
 // }
+// public function store(Request $request)
+// {
+//     ClosingBook::check($request->do_date);
+
+//     $request->validate([
+//         'spb_po_id' => 'required',
+//         'do_no'     => 'required',
+//         'do_date'   => 'required|date',
+//         'details'   => 'required|array|min:1',
+//     ]);
+
+//     $do = null;
+
+//     DB::transaction(function () use ($request, &$do) {
+
+//         $do = SpbDoModel::where('spb_po_id', $request->spb_po_id)->first();
+
+//         if (!$do) {
+//             $do = SpbDoModel::create([
+//                 'spb_po_id' => $request->spb_po_id,
+//                 'do_no'     => $request->do_no,
+//                 'do_date'   => $request->do_date,
+//                 'do_status_part' => 'DELIVERED',
+//             ]);
+//         } else {
+//             $do->update([
+//                 'do_no'   => $request->do_no,
+//                 'do_date' => $request->do_date,
+//             ]);
+
+//             DB::table('dtl_spb_do')
+//                 ->where('spb_do_id', $do->spb_do_id)
+//                 ->delete();
+//         }
+
+//         foreach ($request->details as $item) {
+//             DB::table('dtl_spb_do')->insert([
+//                 'spb_do_id'     => $do->spb_do_id,
+//                 'spb_po_dtl_id' => $item['spb_po_dtl_id'],
+//                 'created_at'    => now(),
+//                 'updated_at'    => now(),
+//             ]);
+//         }
+
+//         $po = SpbPoModel::findOrFail($request->spb_po_id);
+
+//         SpbModel::where('spb_id', $po->spb_id)
+//             ->update([
+//                 'spb_status' => 'DO_ATTACH'
+//             ]);
+//     });
+
+//     return response()->json([
+//         'status' => true,
+//         'message' => 'Delivery Order berhasil disimpan',
+//         'spb_do_id' => $do->spb_do_id,
+//         'do_no' => $do->do_no,
+//     ]);
+// }
+// }
+
 public function store(Request $request)
 {
-    ClosingBook::check($request->do_date);
+    // ClosingBook::check($request->do_date);
 
     $request->validate([
-        'spb_po_id' => 'required',
-        'do_no'     => 'required',
+        'spb_po_id' => 'required|exists:tb_spb_po,spb_po_id',
+        'do_no'     => 'required|unique:tb_spb_do,do_no',
         'do_date'   => 'required|date',
         'details'   => 'required|array|min:1',
     ]);
@@ -146,32 +208,17 @@ public function store(Request $request)
 
     DB::transaction(function () use ($request, &$do) {
 
-        // 🔥 CEK APAKAH SUDAH ADA DO UNTUK PO INI
-        $do = SpbDoModel::where('spb_po_id', $request->spb_po_id)->first();
+        /** CREATE HEADER DO (SELALU BARU) */
+        $do = SpbDoModel::create([
+            'spb_po_id' => $request->spb_po_id,
+            'do_no'     => $request->do_no,
+            'do_date'   => $request->do_date,
+            'do_status_part' => 'DELIVERED',
+        ]);
 
-        if (!$do) {
-            // Kalau belum ada → create
-            $do = SpbDoModel::create([
-                'spb_po_id' => $request->spb_po_id,
-                'do_no'     => $request->do_no,
-                'do_date'   => $request->do_date,
-                'do_status_part' => 'DELIVERED',
-            ]);
-        } else {
-            // Kalau sudah ada → update saja
-            $do->update([
-                'do_no'   => $request->do_no,
-                'do_date' => $request->do_date,
-            ]);
-
-            // HAPUS DETAIL LAMA
-            DB::table('dtl_spb_do')
-                ->where('spb_do_id', $do->spb_do_id)
-                ->delete();
-        }
-
-        // INSERT DETAIL BARU
+        /** INSERT DETAIL DO */
         foreach ($request->details as $item) {
+
             DB::table('dtl_spb_do')->insert([
                 'spb_do_id'     => $do->spb_do_id,
                 'spb_po_dtl_id' => $item['spb_po_dtl_id'],
@@ -180,7 +227,7 @@ public function store(Request $request)
             ]);
         }
 
-        // UPDATE STATUS SPB
+        /** UPDATE STATUS SPB */
         $po = SpbPoModel::findOrFail($request->spb_po_id);
 
         SpbModel::where('spb_id', $po->spb_id)
@@ -191,9 +238,9 @@ public function store(Request $request)
 
     return response()->json([
         'status' => true,
-        'message' => 'Delivery Order berhasil disimpan',
+        'message' => 'Delivery Order berhasil dibuat',
         'spb_do_id' => $do->spb_do_id,
-        'do_no' => $do->do_no,
+        'do_no' => $do->do_no
     ]);
 }
 }

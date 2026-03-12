@@ -11,6 +11,7 @@ class DeliveryModel extends Model
 
     protected $fillable = [
         'dlv_kode',
+        'dlv_kode_it',
         'mr_id',
         'dlv_dari_gudang',
         'dlv_ke_gudang',

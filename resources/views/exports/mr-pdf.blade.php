@@ -116,7 +116,7 @@ table { width:100%; border-collapse:collapse; }
 <b>Pengaju</b><br><br>
 
 @if($mr->signed_pengaju_sign)
- <img src="{{ storage_path('app/public/'.$pr->signed_pengaju_sign) }}">
+ <img src="{{ storage_path('app/public/'.$mr->signed_pengaju_sign) }}">
 @endif
 
 <br>

@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\PeminjamanController;
 use App\Http\Controllers\Api\JobCostingController;
+use App\Http\Controllers\Api\SpbReturnController;
 use App\Http\Middleware\CheckInputOpen;
 
 
@@ -111,6 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mr/kode/{kode}', [MaterialRequestController::class, 'showKode'])->where('kode', '.*');
     Route::get('/mr/{id}', [MaterialRequestController::class, 'show']);
     Route::get('/mr/{kode}/export/pdf', [MaterialRequestController::class,'exportPdf'])->where('kode', '.*');
+    
 
     // PURCHASE REQUEST
     Route::get('/pr/export', [PurchaseRequestController::class, 'exportPr']);
@@ -157,7 +159,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // DELIVERY
     Route::get('/deliveries', [DeliveryController::class, 'index']);
-    Route::get('/deliveries/kode/{kode}', [DeliveryController::class, 'showKode']);
+    Route::get('/deliveries/generate-kode', [DeliveryController::class, 'generateKode']);
+    Route::get('/deliveries/kode/{kode}', [DeliveryController::class, 'showKode'])->where('kode', '.*');
     Route::get('/deliveries/export-excel', [DeliveryController::class, 'exportDeliveryHeader']);
     Route::get('/deliveries/{kode}/export/pdf', [DeliveryController::class, 'exportPdf']);
 
@@ -171,6 +174,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/spb/kode/{kode}', [SpbController::class, 'showKode'])->where('kode', '.*');
     Route::get('/spb/export-excel', [SpbController::class, 'exportSpbExcel']);
     Route::get('/spb/print/{kode}', [SpbController::class, 'printSpb'])->where('kode', '.*');
+    Route::delete('/spb/{id}', [SpbController::class, 'deleteSpb']);
 
     // VENDOR
     Route::get('/vendors', [VendorController::class, 'index']);
@@ -212,6 +216,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // MR
     Route::post('/mr', [MaterialRequestController::class, 'store']);
     Route::put('/mr/{id}', [MaterialRequestController::class, 'update']);
+    Route::put('/mr/detail/{id}/reject', [MaterialRequestController::class, 'rejectDetail']);
+    Route::put('/mr/detail/{id}/approve', [MaterialRequestController::class, 'approveDetail']);
     Route::delete('/mr/{id}', [MaterialRequestController::class, 'destroy']);
 
     // PR
@@ -226,11 +232,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // RECEIVE
     Route::post('/receive', [ReceiveController::class, 'store']);
-    Route::post('/receive/{kode}/sign-penerima', [ReceiveController::class, 'signPenerima']);
+    Route::post('/receive/{kode}/sign-penerima', [ReceiveController::class, 'signPenerima']) ->where('kode', '.*');
 
     // DELIVERY
     Route::post('/deliveries', [DeliveryController::class, 'store']);
     Route::put('/deliveries/kode/{kode}', [DeliveryController::class, 'update']);
+    Route::patch('/deliveries/{kode}/resi', [DeliveryController::class, 'updateResi']);
     Route::patch('/deliveries/kode/{kode}/status', [DeliveryController::class, 'updateStatus']);
     Route::patch('/deliveries/kode/{kode}/pickup-plan', [DeliveryController::class, 'updatePickupPlan']);
     Route::post('/deliveries/{kode}/receive', [DeliveryController::class, 'receive']);
@@ -254,4 +261,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/customers', [CustomerController::class, 'store']);
     Route::put('/customers/{id}', [CustomerController::class, 'update']);
     Route::put('/customers/{id}/toggle', [CustomerController::class, 'toggleStatus']);
+
+
+    Route::prefix('return-spb')->group(function () {
+
+        Route::get('/', [SpbReturnController::class, 'index']);
+
+        Route::get('/kode/{kode}', [SpbReturnController::class, 'showByKode']);
+
+        Route::post('/', [SpbReturnController::class, 'store']);
+
+        Route::get('/generate-kode', [SpbReturnController::class, 'generateKodeRtn']);
+
+    });
 });

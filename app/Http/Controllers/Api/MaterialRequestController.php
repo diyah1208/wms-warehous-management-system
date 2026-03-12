@@ -19,17 +19,18 @@ use App\Models\MaterialRequestModel as MaterialRequest;
 class MaterialRequestController extends Controller
 {
     private array $lokasiKodeMap = [
-        'JAKARTA'        => 'JKT',
-        'TANJUNG ENIM'   => 'ENIM',
-        'BALIKPAPAN'     => 'BPN',
+        'JAKARTA'        => 'HO',
+        'MUARA ENIM'   => 'ENIM',
+        'BALIKPAPAN'     => 'BPP',
         'SITE BA'        => 'BA',
         'SITE TAL'       => 'TAL',
         'SITE MIP'       => 'MIP',
         'SITE MIFA'      => 'MIFA',
         'SITE BIB'       => 'BIB',
         'SITE AMI'       => 'AMI',
-        'SITE TABANG'    => 'TAB',
+        'SITE TABANG'    => 'IPT',
         'SITE BCP_PIK'   => 'BCP',
+        'SITE DIZA'      => 'DIZA',
     ];
 
     private function getLokasiKode(string $lokasi): string
@@ -114,7 +115,7 @@ class MaterialRequestController extends Controller
                 'mr_lokasi'   => $lokasiNama,
                 'mr_pic'      => $request->mr_pic,
                 'mr_due_date' => $request->mr_due_date,
-                'mr_status'   => 'open',
+                'mr_status' => 'pending',
                 'mr_last_edit_by' => $request->mr_last_edit_by,
                 'sign_step'  => 'warehouse',
                 'mr_last_edit_at' => now(),
@@ -754,26 +755,186 @@ public function exportMr()
     /* =====================================================
      * GENERATE KODE MR
      * ===================================================== */
+    // public function generateKode(Request $request)
+    // {
+    //     $lokasiNama = strtoupper(trim($request->lokasi));
+    //     $lokasiKode = $this->getLokasiKode($lokasiNama);
+    //     $tahunBulan = now()->format('y/m');
+
+    //     $last = MaterialRequestModel::where('mr_lokasi', $lokasiNama)
+    //         ->where('mr_kode', 'like', "%/$tahunBulan/%")
+    //         ->orderBy('mr_id', 'desc')
+    //         ->first();
+
+    //     $nextNumber = $last
+    //         ? ((int) substr($last->mr_kode, -5)) + 1
+    //         : 1;
+
+    //     return response()->json(sprintf(
+    //         "GMI%s/%s/%03d",
+    //         $lokasiKode,
+    //         $tahunBulan,
+    //         $nextNumber
+    //     ));
+    // }
     public function generateKode(Request $request)
     {
         $lokasiNama = strtoupper(trim($request->lokasi));
         $lokasiKode = $this->getLokasiKode($lokasiNama);
-        $tahunBulan = now()->format('y/m');
-
+    
+        $tanggalFormat = now()->format('Y/m/d'); // 2026/03/04
+    
         $last = MaterialRequestModel::where('mr_lokasi', $lokasiNama)
-            ->where('mr_kode', 'like', "%/$tahunBulan/%")
+            ->where('mr_kode', 'like', "GMI$lokasiKode/$tanggalFormat/%")
             ->orderBy('mr_id', 'desc')
             ->first();
-
+    
         $nextNumber = $last
-            ? ((int) substr($last->mr_kode, -5)) + 1
+            ? ((int) substr($last->mr_kode, -3)) + 1
             : 1;
-
+    
         return response()->json(sprintf(
-            "GMI/%s/%s/%05d",
+            "GMI%s/%s/%0d",
             $lokasiKode,
-            $tahunBulan,
+            $tanggalFormat,
             $nextNumber
         ));
     }
+
+public function approveDetail(Request $request, $detailId)
+{
+    return DB::transaction(function () use ($detailId) {
+
+        $detail = MaterialRequestItemModel::with('materialRequest')
+            ->findOrFail($detailId);
+
+        $mr = $detail->materialRequest; 
+        if ($mr->sign_step !== 'done') {
+            return response()->json([
+                'message' => 'MR belum selesai tanda tangan Warehouse dan GL'
+            ], 403);
+        }
+
+        if ($mr->mr_status === 'closed') {
+            return response()->json([
+                'message' => 'MR sudah CLOSED'
+            ], 403);
+        }
+
+        if ($detail->dtl_mr_approved == 1) {
+            return response()->json([
+                'message' => 'Detail sudah diapprove'
+            ], 400);
+        }
+
+        $detail->update([
+            'dtl_mr_approved'    => 1,
+            'dtl_mr_approved_at' => now(),
+            'dtl_mr_approved_by' => auth()->user()->name ?? 'SYSTEM',
+        ]);
+
+        // ================= STATUS LOGIC =================
+
+        $totalDetails = $mr->details()->count();
+
+        $approvedCount = $mr->details()
+            ->where('dtl_mr_approved', 1)
+            ->count();
+
+        $rejectedCount = $mr->details()
+            ->where('dtl_mr_rejected', 1)
+            ->count();
+
+        $decidedCount = $approvedCount + $rejectedCount;
+
+        if ($decidedCount < $totalDetails) {
+            $status = 'pending';
+        } 
+        elseif ($approvedCount === 0 && $rejectedCount === $totalDetails) {
+            $status = 'closed';
+        } 
+        else {
+            $status = 'open';
+        }
+
+        $mr->update([
+            'mr_status' => $status,
+            'mr_last_edit_at' => now(),
+            'mr_last_edit_by' => auth()->user()->name ?? 'SYSTEM',
+        ]);
+
+        return response()->json([
+            'message' => 'Detail berhasil diapprove',
+            'mr_status' => $status
+        ]);
+    });
+}
+public function rejectDetail($detailId)
+{
+    return DB::transaction(function () use ($detailId) {
+
+        $detail = MaterialRequestItemModel::with('materialRequest')
+            ->findOrFail($detailId);
+
+        $mr = $detail->materialRequest;
+        if ($mr->sign_step !== 'done') {
+            return response()->json([
+                'message' => 'MR belum selesai tanda tangan Warehouse dan GL'
+            ], 403);
+        }
+
+        if ($mr->mr_status === 'closed') {
+            return response()->json([
+                'message' => 'MR sudah CLOSED'
+            ], 403);
+        }
+
+        if ($detail->dtl_mr_approved == 1) {
+            return response()->json([
+                'message' => 'Detail sudah diapprove'
+            ], 422);
+        }
+
+        $detail->update([
+            'dtl_mr_rejected'    => 1,
+            'dtl_mr_rejected_at' => now(),
+            'dtl_mr_rejected_by' => auth()->user()->name ?? 'SYSTEM',
+        ]);
+
+        // ================= STATUS LOGIC =================
+
+        $totalDetails = $mr->details()->count();
+
+        $approvedCount = $mr->details()
+            ->where('dtl_mr_approved', 1)
+            ->count();
+
+        $rejectedCount = $mr->details()
+            ->where('dtl_mr_rejected', 1)
+            ->count();
+
+        $decidedCount = $approvedCount + $rejectedCount;
+
+        if ($decidedCount < $totalDetails) {
+            $status = 'pending';
+        } 
+        elseif ($approvedCount === 0 && $rejectedCount === $totalDetails) {
+            $status = 'closed';
+        } 
+        else {
+            $status = 'open';
+        }
+
+        $mr->update([
+            'mr_status' => $status,
+            'mr_last_edit_at' => now(),
+            'mr_last_edit_by' => auth()->user()->name ?? 'SYSTEM',
+        ]);
+
+        return response()->json([
+            'message' => 'Detail berhasil direject',
+            'mr_status' => $status
+        ]);
+    });
+}
 }
